@@ -9,7 +9,7 @@ if [[ $1 == "install" ]]; then
       hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
       echo " * Compiling..."
       cd $INSTALL_ROOT/src;unset GOROOT;./all.bash > /dev/null 2>&1
-      mkdir $GVM_ROOT/packages/go-$2
+      mkdir -p $GVM_ROOT/packages/go-$2
       exit 0
     else
       echo "ERROR: Unknown go release version: '$2'"

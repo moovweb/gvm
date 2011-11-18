@@ -29,6 +29,6 @@ GVM is the Go Version Manager
   install    - install go versions
   uninstall  - uninstall go versions
   list       - list installed go versions
-  package    - manage go packages"
+  pkg        - manage go packages"
   fi
 fi

@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ $1 == "package" ]] && [[ $2 == "list" ]]; then
+if [[ $1 == "pkg" ]] && [[ $2 == "list" ]]; then
   echo "
 gvm packages
 "

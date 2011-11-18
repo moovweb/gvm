@@ -1,11 +1,11 @@
 #!/bin/bash
-if [[ $1 == "package" ]]; then
+if [[ $1 == "pkg" ]]; then
   if [ -f ~/.gvm/bin/gvm-$1-$2 ]; then
     ~/.gvm/bin/gvm-$1-$2 $@
   elif [[ -n $2 ]]; then
     echo "ERROR: Unrecognized command line argument: '$2'"
   else
-    echo "= gvm package
+    echo "= gvm pkg
 
   * http://github.com/jbussdieker/gvm
 
@@ -15,7 +15,7 @@ if [[ $1 == "package" ]]; then
 
   == Usage
 
-    gvm package Command
+    gvm pkg Command
 
   == Command
 
