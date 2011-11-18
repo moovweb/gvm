@@ -18,4 +18,3 @@ else
   use        - select a go version to use
   list       - list installed go versions"
 fi
-

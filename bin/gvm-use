@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [[ $1 == "use" ]]; then
   if [[ -n $2 ]]; then
     rm -f ~/.gvm/gos/default
