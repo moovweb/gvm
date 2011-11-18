@@ -1,0 +1,2 @@
+export GVM_VERSION=`cat ../VERSION`
+export PATH=$PATH:~/.gvm/bin

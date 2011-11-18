@@ -1,9 +1,13 @@
 #!/bin/bash
 GVM_DEST=~
+ENV_FILE=~/.bashrc
+SRC_REPO=git://github.com/jbussdieker/gvm.git
+
 if [ -d $GVM_DEST/.gvm ]; then
   echo "Already installed!"
 else
   echo "Installing"
-  cd $GVM_DEST && git clone git://github.com/jbussdieker/gvm.git .gvm > /dev/null 2>&1
+  cd $GVM_DEST && git clone $SRC_REPO .gvm > /dev/null 2>&1
+  echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
 fi
 
