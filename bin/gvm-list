@@ -1,0 +1,8 @@
+#!/bin/bash
+if [[ $1 == "list" ]]; then
+  ls -1 ~/.gvm/gos
+else
+  echo "Please use gvm [action] to call this file"
+  exit 1
+fi
+

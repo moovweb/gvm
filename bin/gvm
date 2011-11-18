@@ -6,6 +6,8 @@ elif [[ $1 == "install" ]]; then
   ~/.gvm/bin/gvm-install $@
 elif [[ $1 == "use" ]]; then
   ~/.gvm/bin/gvm-use $@
+elif [[ $1 == "list" ]]; then
+  ~/.gvm/bin/gvm-list $@
 else
   echo "== Usage
   gvm Action
@@ -13,6 +15,7 @@ else
   version    - print the gvm version number
   implode    - completely remove gvm
   install    - install go versions
-  use        - select a go version to use"
+  use        - select a go version to use
+  list       - list installed go versions"
 fi
 
