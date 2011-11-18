@@ -2,8 +2,8 @@
 
 if [[ $1 == "use" ]]; then
   if [[ -n $2 ]]; then
-    rm ~/.gvm/gos/default
-    ln -sf ~/.gvm/gos/go-$2 ~/.gvm/gos/default
+    rm -f ~/.gvm/gos/default
+    ln -s ~/.gvm/gos/go-$2 ~/.gvm/gos/default
     echo "Now using version $2"
     exit 0
   else
