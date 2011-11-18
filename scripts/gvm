@@ -1,2 +1,3 @@
 export GVM_VERSION=`cat ~/.gvm/VERSION`
-export PATH=$PATH:~/.gvm/bin
+export GOROOT=~/.gvm/gos/default
+export PATH=$PATH:~/.gvm/bin:~/.gvm/gos/default/bin
