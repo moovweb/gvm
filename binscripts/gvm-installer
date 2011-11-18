@@ -1,1 +1,9 @@
-echo "Congrats!"
+#!/bin/bash
+GVM_DEST=~/.gvm
+if [ -d $GVM_DEST ]; then
+  echo "Already installed!"
+else
+  echo "Installing"
+  mkdir $GVM_DEST
+fi
+
