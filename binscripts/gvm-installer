@@ -15,7 +15,9 @@ else
     fi
   else
     echo 'This must be a Mac... put this line in you profile and source it!'
+    echo
     echo ' [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"'
+    echo
     echo "Maybe send me the file name and I'll look for it next time :)"
     echo
   fi
