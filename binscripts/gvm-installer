@@ -1,9 +1,9 @@
 #!/bin/bash
-GVM_DEST=~/.gvm
-if [ -d $GVM_DEST ]; then
+GVM_DEST=~
+if [ -d $GVM_DEST/.gvm ]; then
   echo "Already installed!"
 else
   echo "Installing"
-  mkdir $GVM_DEST
+  cd $GVM_DEST && git clone git://github.com/jbussdieker/gvm.git .gvm > /dev/null 2>&1
 fi
 
