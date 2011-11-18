@@ -2,12 +2,17 @@
 INSTALL_ROOT=~/.gvm/gos/go-$2
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
-    echo "Installing version $2"
-    echo " * Downloading..."
-    hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
-    echo " * Compiling..."
-    cd $INSTALL_ROOT/src;unset GOROOT;./all.bash > /dev/null 2>&1
-    exit 0
+    curl -s https://go.googlecode.com/hg/.hgtags | grep release.r$2 > /dev/null 2>&1
+    if [[ $? == 0 ]]; then
+      echo "Installing version $2"
+      echo " * Downloading..."
+      hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
+      echo " * Compiling..."
+      cd $INSTALL_ROOT/src;unset GOROOT;./all.bash > /dev/null 2>&1
+      exit 0
+    else
+      echo "ERROR: Unknown go release version: '$2'"
+    fi
   else
     echo "ERROR: Please specifiy the version"
     exit 1
