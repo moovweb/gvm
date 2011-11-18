@@ -1,6 +1,14 @@
 #!/bin/bash
 if [[ $1 == "package" ]] && [[ $2 == "uninstall" ]]; then
-  echo "GOOD JOB!"
+  UNINSTALL_ROOT=~/.gvm/packages/default/$3-$4
+  if [[ -n $4 ]]; then
+    rm -rf $UNINSTALL_ROOT
+    echo "Uninstalled $3 version $4"
+    exit 0
+  else
+    echo "ERROR: Please specifiy the name and version"
+    exit 1
+  fi
 else
   echo "Please use gvm [action] to call this file"
   exit 1
