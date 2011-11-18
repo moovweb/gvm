@@ -8,6 +8,10 @@ if [ -d $GVM_DEST/.gvm ]; then
 else
   echo "Installing"
   cd $GVM_DEST && git clone $SRC_REPO .gvm > /dev/null 2>&1
-  echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
+
+  cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
+  fi
 fi
 
