@@ -5,7 +5,7 @@ elif [[ $1 == "implode" ]]; then
   rm -rf ~/.gvm
 else
   if [ -f ~/.gvm/bin/gvm-$1 ]; then
-    ~/.gvm/bin/gvm-install $@
+    ~/.gvm/bin/gvm-$1 $@
   elif [[ -n $1 ]]; then
     echo "ERROR: Unrecognized command line argument: '$1' ( see: 'gvm usage' )"
   else
