@@ -3,12 +3,12 @@ if [[ $1 == "list" ]]; then
   echo "
 gvm gos
 "
-  if [ -f ~/.gvm/gos/default ]; then
+  if [ -e $GVM_ROOT/gos/default ]; then
     CUR_VER=`readlink $GVM_ROOT/gos/default | awk '{ n=split($1,path,"/"); print path[n] }'`
+    ls -1 $GVM_ROOT/gos | grep ^go | sed 's/^/   /g' | sed 's/^   '$CUR_VER'/=> '$CUR_VER'/g'
   else
-    CUR_VER=asdfqwerzxcv
+    ls -1 $GVM_ROOT/gos | grep ^go | sed 's/^/   /g'
   fi
-  ls -1 $GVM_ROOT/gos | grep ^go | sed 's/^/   /g' $SELECTOR
   echo
 else
   echo "Please use gvm [action] to call this file"
