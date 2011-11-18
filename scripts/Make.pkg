@@ -1,0 +1,11 @@
+gvm: all
+	echo $(pkgdir)
+	echo _obj/$(TARG).a
+#	make $(GVM_ROOT)/scripts/Make.pkg all
+#
+#all: $(INSTALLFILES)
+#  echo $(INSTALLFILES)
+#gvminstall: $(INSTALLFILES)
+#  ifdef GVM_PACKAGE_INSTALL
+#    include $(GOROOT)/src/Makeaaa.pkg
+#  endif

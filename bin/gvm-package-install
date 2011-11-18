@@ -1,6 +1,12 @@
 #!/bin/bash
 if [[ $1 == "package" ]] && [[ $2 == "install" ]]; then
-  echo "GOOD JOB!"
+  if [[ -n $4 ]]; then
+    git clone git@github.com:moovweb/$3 $GVM_ROOT/packages/default/$3-$4
+    git checkout $4
+  else
+    echo "ERROR: Please specifiy the version"
+    exit 1
+  fi
 else
   echo "Please use gvm [action] to call this file"
   exit 1

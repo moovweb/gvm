@@ -1,6 +1,6 @@
 #!/bin/bash
 if [[ $1 == "package" ]] && [[ $2 == "list" ]]; then
-  echo "GOOD JOB!"
+  ls -1 $GVM_ROOT/packages/default
 else
   echo "Please use gvm [action] to call this file"
   exit 1
