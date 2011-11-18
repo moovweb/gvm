@@ -6,7 +6,7 @@ if [[ $1 == "install" ]]; then
     echo " * Downloading..."
     hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
     echo " * Compiling..."
-    cd $INSTALL_ROOT/src;./all.bash > /dev/null 2>&1
+    cd $INSTALL_ROOT/src;unset GOROOT;./all.bash > /dev/null 2>&1
     exit 0
   else
     echo "ERROR: Please specifiy the version"
