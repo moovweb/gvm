@@ -1,6 +1,7 @@
 #!/bin/bash
 if [[ $1 == "list" ]]; then
-  ls -1 ~/.gvm/gos
+  CUR_VER=`readlink ~/.gvm/gos/default | awk '{ n=split($1,path,"/"); print path[n] }'`
+  ls -1 ~/.gvm/gos | grep ^go | sed 's/^/   /g' | sed 's/^   '$CUR_VER'/=> '$CUR_VER'/g' #'s/^/foo-/g'
 else
   echo "Please use gvm [action] to call this file"
   exit 1
