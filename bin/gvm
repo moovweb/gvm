@@ -4,12 +4,15 @@ elif [[ $1 == "implode" ]]; then
   rm -rf ~/.gvm
 elif [[ $1 == "install" ]]; then
   ~/.gvm/bin/gvm-install $@
+elif [[ $1 == "use" ]]; then
+  ~/.gvm/bin/gvm-use $@
 else
   echo "== Usage
   gvm Action
 == Action
   version    - print the gvm version number
   implode    - completely remove gvm
-  install    - install go versions"
+  install    - install go versions
+  use        - select a go version to use"
 fi
 

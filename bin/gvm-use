@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ $1 == "use" ]]; then
+  if [[ -n $2 ]]; then
+    cp ~/.gvm/gos/go-$2/bin/* ~/.gvm/bin
+    echo "Now using version $2"
+    exit 0
+  else
+    echo "ERROR: Please specifiy the version"
+    exit 1
+  fi
+else
+  echo "Please use gvm [action] to call this file"
+  exit 1
+fi
+
