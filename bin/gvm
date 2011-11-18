@@ -3,19 +3,31 @@ if [[ $1 == "version" ]]; then
   echo "Go Version Manager v$GVM_VERSION"
 elif [[ $1 == "implode" ]]; then
   rm -rf ~/.gvm
-elif [[ $1 == "install" ]]; then
-  ~/.gvm/bin/gvm-install $@
-elif [[ $1 == "use" ]]; then
-  ~/.gvm/bin/gvm-use $@
-elif [[ $1 == "list" ]]; then
-  ~/.gvm/bin/gvm-list $@
 else
-  echo "== Usage
-  gvm Action
-== Action
+  if [ -f ~/.gvm/bin/gvm-$1 ]; then
+    ~/.gvm/bin/gvm-install $@
+  elif [[ -n $1 ]]; then
+    echo "ERROR: Unrecognized command line argument: '$1' ( see: 'gvm usage' )"
+  else
+    echo "= gvm
+
+* http://github.com/jbussdieker/gvm
+
+== DESCRIPTION:
+
+GVM is the Go Version Manager
+
+== Usage
+
+  gvm Command
+
+== Command
+
   version    - print the gvm version number
+  use        - select a go version to use
   implode    - completely remove gvm
   install    - install go versions
-  use        - select a go version to use
+  uninstall  - uninstall go versions
   list       - list installed go versions"
+  fi
 fi
