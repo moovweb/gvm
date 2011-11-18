@@ -1,0 +1,8 @@
+#!/bin/bash
+if [[ $1 == "package" ]] && [[ $2 == "install" ]]; then
+  echo "GOOD JOB!"
+else
+  echo "Please use gvm [action] to call this file"
+  exit 1
+fi
+

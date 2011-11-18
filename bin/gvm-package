@@ -1,0 +1,30 @@
+#!/bin/bash
+if [[ $1 == "package" ]]; then
+  if [ -f ~/.gvm/bin/gvm-$1-$2 ]; then
+    ~/.gvm/bin/gvm-$1-$2 $@
+  elif [[ -n $1 ]]; then
+    echo "ERROR: Unrecognized command line argument: '$2'"
+  else
+    echo "= gvm package
+
+  * http://github.com/jbussdieker/gvm
+
+  == DESCRIPTION:
+
+  GVM Package is used to manage various Go packages
+
+  == Usage
+
+    gvm package Command
+
+  == Command
+
+    install    - install go packages
+    uninstall  - uninstall go packages
+    list       - list installed go packages"
+  fi
+else
+  echo "Please use gvm [action] to call this file"
+  exit 1
+fi
+

@@ -7,7 +7,7 @@ else
   if [ -f ~/.gvm/bin/gvm-$1 ]; then
     ~/.gvm/bin/gvm-$1 $@
   elif [[ -n $1 ]]; then
-    echo "ERROR: Unrecognized command line argument: '$1' ( see: 'gvm usage' )"
+    echo "ERROR: Unrecognized command line argument: '$1'"
   else
     echo "= gvm
 
