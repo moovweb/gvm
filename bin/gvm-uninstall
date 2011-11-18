@@ -1,5 +1,5 @@
 #!/bin/bash
-UNINSTALL_ROOT=~/.gvm/gos/go-$2
+UNINSTALL_ROOT=$GVM_ROOT/gos/go-$2
 if [[ $1 == "uninstall" ]]; then
   if [[ -n $2 ]]; then
     rm -rf $UNINSTALL_ROOT

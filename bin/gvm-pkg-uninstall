@@ -1,6 +1,6 @@
 #!/bin/bash
 if [[ $1 == "pkg" ]] && [[ $2 == "uninstall" ]]; then
-  UNINSTALL_ROOT=~/.gvm/packages/default/$3-$4
+  UNINSTALL_ROOT=$GVM_ROOT/pkgs/default/$3-$4
   if [[ -n $4 ]]; then
     rm -rf $UNINSTALL_ROOT
     echo "Uninstalled $3 version $4"

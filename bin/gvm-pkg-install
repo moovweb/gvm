@@ -1,9 +1,12 @@
 #!/bin/bash
 if [[ $1 == "pkg" ]] && [[ $2 == "install" ]]; then
   if [[ -n $4 ]]; then
-    git clone git@github.com:moovweb/$3 $GVM_ROOT/packages/default/$3-$4 > /dev/null 2>&1
+    echo "Installing $3 version $4"
+    echo " * Downloading..."
+    git clone git@github.com:moovweb/$3 $GVM_ROOT/pkgs/default/$3-$4 > /dev/null 2>&1
     git checkout $4 > /dev/null 2>&1
-    cd $GVM_ROOT/packages/default/$3-$4; make install > /dev/null 2>&1
+    echo " * Compiling..."
+    cd $GVM_ROOT/pkgs/default/$3-$4; make install
   else
     echo "ERROR: Please specifiy the version"
     exit 1

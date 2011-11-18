@@ -3,7 +3,7 @@ if [[ $1 == "pkg" ]] && [[ $2 == "list" ]]; then
   echo "
 gvm packages
 "
-  ls -1 $GVM_ROOT/packages/default | sed 's/^/   /g'
+  ls -1 $GVM_ROOT/pkgs/default | sed 's/^/   /g'
   echo
 else
   echo "Please use gvm [action] to call this file"
