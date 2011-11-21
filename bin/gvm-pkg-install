@@ -1,12 +1,35 @@
 #!/bin/bash
 if [[ $1 == "pkg" ]] && [[ $2 == "install" ]]; then
   if [[ -n $4 ]]; then
+    # If the package is already installed then remove it first
+    if [ -d $GVM_ROOT/pkgs/default/$3/$4 ]; then
+      rm -rf $GVM_ROOT/pkgs/default/$3/$4
+    fi
+
     echo "Installing $3 version $4"
     echo " * Downloading..."
-    git clone git@github.com:moovweb/$3 $GVM_ROOT/pkgs/default/$3-$4 > /dev/null 2>&1
+
+    # Clone the package source
+    git clone git@github.com:moovweb/$3 $GVM_ROOT/pkgs/default/$3/$4 > /dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+      echo "Could not find $3 in any sources"
+      exit 1
+    fi
+
+    # Checkout the desired version
     git checkout $4 > /dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+      echo "Could not find version $4 of $3 in any sources"
+      exit 1
+    fi
+
+    # Compile package
     echo " * Compiling..."
-    cd $GVM_ROOT/pkgs/default/$3-$4; make install
+    cd $GVM_ROOT/pkgs/default/$3/$4; make install > /dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+      echo "Build failed!"
+      exit 1
+    fi
   else
     echo "ERROR: Please specifiy the version"
     exit 1
