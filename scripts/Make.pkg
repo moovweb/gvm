@@ -1,6 +1,11 @@
-gvm: all
-	echo $(pkgdir)
-	echo _obj/$(TARG).a
+gvm:
+	echo `cat PackageFile`
+
+#gvm: all
+#	echo $(pkgdir)
+#	echo _obj/$(TARG).a
+
+
 #	make $(GVM_ROOT)/scripts/Make.pkg all
 #
 #all: $(INSTALLFILES)
