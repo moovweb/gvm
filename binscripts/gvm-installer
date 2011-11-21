@@ -7,7 +7,7 @@ if [ -d $GVM_DEST/.gvm ]; then
   echo "Already installed!"
 else
   cd $GVM_DEST && git clone $SRC_REPO .gvm > /dev/null 2>&1
-
+  rm -rf $GVM_DEST/.gvm/.git
   if [ -e ~/.bashrc ]; then
     cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
