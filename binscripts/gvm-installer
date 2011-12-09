@@ -1,7 +1,7 @@
 #!/bin/bash
 GVM_DEST=~
 ENV_FILE=~/.bashrc
-SRC_REPO=git://github.com/jbussdieker/gvm.git
+SRC_REPO=git://github.com/moovweb/gvm.git
 
 if [ -d $GVM_DEST/.gvm ]; then
   echo "Already installed!"
