@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ -z `which hg` ]; then
+  echo 'Could not find mercurial (try `sudo apt-get install mercurial`)'
+  exit 1
+fi
+
