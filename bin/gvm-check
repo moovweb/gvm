@@ -8,3 +8,8 @@ if [ -z `which ar` ]; then
   echo '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
   exit 1
 fi
+
+if [ -z `which bison` ]; then
+  echo '* Could not find bison (try `sudo apt-get install bison`)'
+  exit 1
+fi
