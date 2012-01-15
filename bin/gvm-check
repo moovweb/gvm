@@ -18,3 +18,8 @@ if [ -z `which gcc` ]; then
   echo '* Could not find gcc (try `sudo apt-get install gcc`)'
   exit 1
 fi
+
+if [ -z `which make` ]; then
+  echo '* Could not find make (try `sudo apt-get install make`)'
+  exit 1
+fi
