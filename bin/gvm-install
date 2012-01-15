@@ -8,7 +8,7 @@ if [[ $1 == "install" ]]; then
       echo " * Downloading..."
       hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
       echo " * Compiling..."
-      cd $INSTALL_ROOT/src;unset GOROOT;./all.bash > /dev/null 2>&1
+      cd $INSTALL_ROOT/src;unset GOROOT;unset GOARCH; unset GOOS; unset GOPATH;./all.bash > /dev/null 2>&1
       mkdir -p $GVM_ROOT/pkgs/go-$2
       exit 0
     else
