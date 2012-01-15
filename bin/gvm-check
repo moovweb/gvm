@@ -4,7 +4,7 @@ if [ -z `which hg` ]; then
   exit 1
 fi
 
-if [ -z `ar` ]; then
+if [ -z `which ar` ]; then
   echo '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
   exit 1
 fi
