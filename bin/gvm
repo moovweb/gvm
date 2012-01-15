@@ -8,6 +8,10 @@ if [ -z "$GVM_ROOT" ]; then
   exit 1
 fi
 
+if [[ $1 == "implode" ]]; then
+  rm -rf $GVM_ROOT
+fi
+
 $GVM_ROOT/bin/gvm-check
 if [[ "$?" != "0" ]]; then
   echo "ERROR: Missing requirements. Please see messages above"
@@ -16,8 +20,6 @@ fi
 
 if [[ $1 == "version" ]]; then
   echo "Go Version Manager v$GVM_VERSION"
-elif [[ $1 == "implode" ]]; then
-  rm -rf $GVM_ROOT
 else
   if [ -f $GVM_ROOT/bin/gvm-$1 ]; then
     $GVM_ROOT/bin/gvm-$1 $@
