@@ -1,15 +1,12 @@
 #!/bin/bash
-if [ -z `which hg` ]; then
-  echo '* Could not find mercurial (try `sudo apt-get install mercurial`)'
-  exit 1
-fi
+function gvm_check_dep() {
+  if [ -z `which $1` ]; then
+    echo '* Could not find $2 (try `sudo apt-get install $3`)'
+    exit 1
+  fi
+}
 
-if [ -z `which ar` ]; then
-  echo '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
-  exit 1
-fi
-
-if [ -z `which bison` ]; then
-  echo '* Could not find bison (try `sudo apt-get install bison`)'
-  exit 1
-fi
+gvm_check_dep("hg", "mercurial", "mercurial")
+gvm_check_dep("ar", "binutils", "binutils (or binutils-multiarch)")
+gvm_check_dep("bison", "bison", "bison")
+gvm_check_dep("gcc", "gcc", "gcc")
