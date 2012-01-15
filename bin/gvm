@@ -10,6 +10,7 @@ fi
 
 if [[ $1 == "implode" ]]; then
   rm -rf $GVM_ROOT
+  exit 0
 fi
 
 $GVM_ROOT/bin/gvm-check
