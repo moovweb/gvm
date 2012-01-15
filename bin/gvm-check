@@ -1,7 +1,7 @@
 #!/bin/bash
 function gvm_check_dep() {
   if [ -z `which $1` ]; then
-    echo '* Could not find $2 (try `sudo apt-get install $3`)'
+    echo "* Could not find $2 (try `sudo apt-get install $3`)"
     exit 1
   fi
 }
