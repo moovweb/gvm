@@ -8,9 +8,14 @@ if [[ $1 == "install" ]]; then
       echo " * Downloading..."
       hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
       echo " * Compiling..."
-      cd $INSTALL_ROOT/src;unset GOROOT;unset GOARCH; unset GOOS; unset GOPATH;./all.bash > /dev/null 2>&1
-      mkdir -p $GVM_ROOT/pkgs/go-$2
-      exit 0
+      cd $INSTALL_ROOT/src;unset GOROOT;unset GOARCH; unset GOOS; unset GOPATH;./all.bash > $INSTALL_ROOT/install.log 2>&1
+      if [[ $? == 0 ]]; then
+        mkdir -p $GVM_ROOT/pkgs/go-$2
+        exit 0
+      else
+        echo "Failed to install version $2. See logs in $INSTALL_ROOT/install.log for details"
+        exit 1
+      fi
     else
       echo "ERROR: Unknown go release version: '$2'"
     fi
