@@ -6,7 +6,7 @@ function gvm_check_dep() {
   fi
 }
 
-gvm_check_dep("hg", "mercurial", "mercurial")
-gvm_check_dep("ar", "binutils", "binutils (or binutils-multiarch)")
-gvm_check_dep("bison", "bison", "bison")
-gvm_check_dep("gcc", "gcc", "gcc")
+gvm_check_dep "hg", "mercurial", "mercurial"
+gvm_check_dep "ar", "binutils", "binutils (or binutils-multiarch)"
+gvm_check_dep "bison", "bison", "bison"
+gvm_check_dep "gcc", "gcc", "gcc"
