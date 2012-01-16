@@ -1,24 +1,25 @@
 #!/bin/bash
 mkdir -p $GVM_ROOT/gos
-INSTALL_ROOT=$GVM_ROOT/gos/go-$2
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
-    curl -s https://go.googlecode.com/hg/.hgtags | grep $2 > /dev/null 2>&1
+    curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" > /dev/null 2>&1
     if [[ $? == 0 ]]; then
-      echo "Installing version $2"
+		  REVISION=`curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" | tail -n 1 | awk '{print $2;exit(0);}'`
+			INSTALL_ROOT=$GVM_ROOT/gos/go-$REVISION
+      echo "Installing version $REVISION"
       echo " * Downloading..."
-      hg clone -u $2 https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
+      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
       if [[ $? == 0 ]]; then
         echo " * Compiling..."
       else
-        echo "Failed to download version $2. See logs in $GVMROOT/download.log for details"
+        echo "Failed to download version $REVISION. See logs in $GVMROOT/download.log for details"
       fi
       cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
       if [[ $? == 0 ]]; then
-        mkdir -p $GVM_ROOT/pkgs/go-$2
+        mkdir -p $GVM_ROOT/pkgs/go-$REVISION
         exit 0
       else
-        echo "Failed to install version $2. See logs in $INSTALL_ROOT/install.log for details"
+        echo "Failed to install version $REVISION. See logs in $INSTALL_ROOT/install.log for details"
         exit 1
       fi
     else
