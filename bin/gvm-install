@@ -3,11 +3,11 @@ mkdir -p $GVM_ROOT/gos
 INSTALL_ROOT=$GVM_ROOT/gos/go-$2
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
-    curl -s https://go.googlecode.com/hg/.hgtags | grep release.r$2 > /dev/null 2>&1
+    curl -s https://go.googlecode.com/hg/.hgtags | grep $2 > /dev/null 2>&1
     if [[ $? == 0 ]]; then
       echo "Installing version $2"
       echo " * Downloading..."
-      hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
+      hg clone -u $2 https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
       if [[ $? == 0 ]]; then
         echo " * Compiling..."
       else
