@@ -4,8 +4,8 @@ Installing
 
 Installing Go
 =============
-    gvm install 60.3
-    gvm use 60.3
+    gvm install release.r60.3
+    gvm use release.r60.3
 Once this is done Go will be in the path and ready to use. $GOROOT is set automatically.
 
 List Go Versions
