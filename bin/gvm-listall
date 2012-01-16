@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ $1 == "install" ]]; then
+if [[ $1 == "listall" ]]; then
   echo "
 gvm gos (available)
 "
