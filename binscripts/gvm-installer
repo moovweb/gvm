@@ -21,5 +21,7 @@ else
     echo "Maybe send me the file name and I'll look for it next time :)"
     echo
   fi
+  [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
   echo "Installed GVM v$GVM_VERSION"
+  echo "Please restart your terminal session"
 fi

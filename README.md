@@ -2,6 +2,24 @@ Installing
 ==========
     bash < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer )
 
+Installing Go
+=============
+    gvm install 60.3
+    gvm use 60.3
+Once this is done Go will be in the path and ready to use. $GOROOT is set automatically.
+
+List Go Versions
+================
+To list all installed Go versions (The current version is prefixed with "=>"):
+
+    gvm list
+
+Uninstalling
+============
+To completely remove gvm and all installed Go versions and packages:
+
+    gvm implode
+
 Linux Requirements
 ==================
     sudo apt-get install curl
