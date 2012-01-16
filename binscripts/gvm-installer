@@ -21,5 +21,6 @@ else
     echo "Maybe send me the file name and I'll look for it next time :)"
     echo
   fi
+  source ~/.bashrc
   echo "Installed GVM v$GVM_VERSION"
 fi
