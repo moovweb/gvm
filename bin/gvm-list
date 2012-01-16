@@ -11,7 +11,7 @@ gvm gos
       ls -1 $GVM_ROOT/gos | grep ^go | sed 's/^/   /g'
     fi
   else
-    echo "No installed Go versions. `gvm install [version]` to install Go."
+    echo "No installed Go versions. \`gvm install [version]\` to install Go."
   fi
   echo
 else
