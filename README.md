@@ -20,6 +20,10 @@ To completely remove gvm and all installed Go versions and packages:
 
     gvm implode
 
+Mac OSX Requirements
+====================
+    Install mercurial from http://mercurial.berkwood.com/
+
 Linux Requirements
 ==================
     sudo apt-get install curl
