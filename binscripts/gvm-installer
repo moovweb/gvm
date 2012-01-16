@@ -23,4 +23,5 @@ else
   fi
   [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
   echo "Installed GVM v$GVM_VERSION"
+  echo "Please restart your terminal session"
 fi
