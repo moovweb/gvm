@@ -6,9 +6,13 @@ if [[ $1 == "install" ]]; then
     if [[ $? == 0 ]]; then
       echo "Installing version $2"
       echo " * Downloading..."
-      hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > /dev/null 2>&1
-      echo " * Compiling..."
-      cd $INSTALL_ROOT/src;unset GOROOT;unset GOARCH; unset GOOS; unset GOPATH;./all.bash > $INSTALL_ROOT/install.log 2>&1
+      hg clone -u release.r$2 https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVMROOT/download.log 2>&1
+      if [[ $? == 0 ]]; then
+        echo " * Compiling..."
+      else
+        echo "Failed to download version $2. See logs in $GVMROOT/download.log for details"
+      fi
+      cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
       if [[ $? == 0 ]]; then
         mkdir -p $GVM_ROOT/pkgs/go-$2
         exit 0
