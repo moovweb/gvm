@@ -1,0 +1,29 @@
+Version: 0.0.3
+State: Beta
+
+CHANGES:
+  * Go versions are now identified by the full tag name. Fuzzy matches of Go 
+    versions still works (ex. "60.3").
+  * Fixed bug with ~/.gvm/gos folder not being created by Mercurial
+  * Fixed error message in `gvm list` when no Go versions are installed
+  * Added `gvm listall` to list all available Go versions
+
+Version: 0.0.2
+State: Alpha
+
+CHANGES:
+  * Added prerequisite checks for packages needed to build Go
+	* Fixed error with version not displaying on new installs
+  * Better error handling for the cloning and building of Go (log files too!)
+  * Improved enviroment handling
+  * Better install handling for .bashrc and .profile
+  * Added ability to uninstall Go versions
+  * `gvm list` is now a parsed ls list and indicates the current version
+  * Switch to symbolic links to change Go versions
+
+Version: 0.0.1
+State: Experimental
+
+CHANGES:
+  * Hacky proof of concept implementation. Installs in subfolders and uses cp to
+    switch between versions.
