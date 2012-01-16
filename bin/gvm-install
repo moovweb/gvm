@@ -1,4 +1,5 @@
 #!/bin/bash
+mkdir -p $GVM_ROOT/gos
 INSTALL_ROOT=$GVM_ROOT/gos/go-$2
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
