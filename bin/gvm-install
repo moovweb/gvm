@@ -8,7 +8,7 @@ if [[ $1 == "install" ]]; then
       INSTALL_ROOT=$GVM_ROOT/gos/$REVISION
       echo "Installing version $REVISION"
       echo " * Downloading..."
-      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log > /dev/null 2>&1
+      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
       if [[ $? == 0 ]]; then
         echo " * Compiling..."
       else
