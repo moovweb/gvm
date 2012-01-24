@@ -43,7 +43,7 @@ done
 
 if [[ $# -gt 0 ]]
 then
-  eval sudo "${sudo_args[@]}" /usr/bin/env $(/usr/bin/env | grep -E '^gvm|^PATH' | sed 's/=\(.*\)$/="\1"/' ) "$@"
+  eval sudo "${sudo_args[@]}" /usr/bin/env $(/usr/bin/env | grep -E '^GVM|^PATH' | sed 's/=\(.*\)$/="\1"/' ) "$@"
 else
   printf "Usage:\n  $0 [--trace] [--verbose] [sudo-options] command [command-options]\n"
 fi
