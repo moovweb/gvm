@@ -7,7 +7,7 @@ if [[ $1 == "pkg" ]]; then
   else
     echo "= gvm pkg
 
-  * http://github.com/jbussdieker/gvm
+  * http://github.com/moovweb/gvm
 
   == DESCRIPTION:
 

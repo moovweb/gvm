@@ -7,7 +7,7 @@ if [[ $1 == "pkgset" ]]; then
   else
     echo "= gvm pkgset
 
-  * http://github.com/jbussdieker/gvm
+  * http://github.com/moovweb/gvm
 
   == DESCRIPTION:
 
@@ -21,6 +21,8 @@ if [[ $1 == "pkgset" ]]; then
 
     create     - create a new package set
     delete     - delete a package set
+    use        - select where gb and goinstall target and link
+    empty      - remove all code and compiled binaries from package set
     list       - list installed go packages"
   fi
 else
