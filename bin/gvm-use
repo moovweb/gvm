@@ -5,7 +5,7 @@ if [[ $1 == "use" ]]; then
       rm -f $GVM_ROOT/go
       ln -s $GVM_ROOT/gos/$2 $GVM_ROOT/go
       rm -f $GVM_ROOT/pkgs
-      ln -s $GVM_ROOT/pkgsets/$2 $GVM_ROOT/pkgs
+      ln -s $GVM_ROOT/pkgsets/$2/default $GVM_ROOT/pkgs
       echo "Now using version $2"
       exit 0
     else
