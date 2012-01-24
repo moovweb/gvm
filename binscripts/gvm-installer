@@ -1,9 +1,4 @@
 #!/bin/bash
-echo $0
-echo $1
-echo $2
-echo $3
-echo $4
 if [ "$(whoami)" != "root" ]; then
 	GVM_DEST=~
 	GVM_NAME=.gvm
@@ -20,6 +15,9 @@ if [ -d $GVM_DEST/$GVM_NAME ]; then
 else
   cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1
   rm -rf $GVM_DEST/$GVM_NAME/.git
+	if [ "$1" == "stable" ]; then
+		echo "Installing stable"
+	fi
 	if [ "$(whoami)" != "root" ]; then
 		if [ -e ~/.bashrc ]; then
 		  cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1

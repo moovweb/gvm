@@ -1,5 +1,10 @@
 Installing
 ==========
+
+To install the stable release run:
+    bash -s stable < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer)
+
+To install the development branch run:
     bash < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer )
 
 Installing Go
