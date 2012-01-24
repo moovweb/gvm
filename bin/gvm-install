@@ -1,5 +1,9 @@
 #!/bin/bash
-mkdir -p $GVM_ROOT/gos
+mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
+if [[ $? == 0 ]]; then
+  echo "ERROR: Permission Denied (Try running with gvmsudo)"
+  exit 1
+fi
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
     curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" > /dev/null 2>&1
