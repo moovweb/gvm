@@ -4,5 +4,6 @@ unset GOOS
 unset GOPATH
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
 export GOROOT=$GVM_ROOT/go
+export GOPATH=$GVM_ROOT/pkgs
 export PATH=$GVM_ROOT/bin:$GVM_ROOT/go/bin:$PATH
 

@@ -17,7 +17,7 @@ if [[ $1 == "install" ]]; then
       fi
       cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
       if [[ $? == 0 ]]; then
-        mkdir -p $GVM_ROOT/pkgs/$REVISION
+        mkdir -p $GVM_ROOT/pkgsets/$REVISION
         exit 0
       else
         echo "Failed to install version $REVISION. See logs in $INSTALL_ROOT/install.log for details"
