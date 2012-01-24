@@ -1,9 +1,14 @@
 #!/bin/bash
-UNINSTALL_ROOT=$GVM_ROOT/gos/go-$2
+UNINSTALL_ROOT=$GVM_ROOT/gos/$2
 if [[ $1 == "uninstall" ]]; then
   if [[ -n $2 ]]; then
-    rm -rf $UNINSTALL_ROOT
-    echo "Uninstalled version $2"
+    if [ -d $UNINSTALL_ROOT ]; then
+      rm -rf $UNINSTALL_ROOT
+      echo "Uninstalled version $2"
+    else
+      echo "Invalid version"
+      exit 1
+    fi
     exit 0
   else
     echo "ERROR: Please specifiy the version"

@@ -1,12 +1,17 @@
 #!/bin/bash
 if [[ $1 == "use" ]]; then
   if [[ -n $2 ]]; then
-    rm -f $GVM_ROOT/gos/default
-    ln -s $GVM_ROOT/gos/go-$2 $GVM_ROOT/gos/default
-    rm -f $GVM_ROOT/pkgs/default
-    ln -s $GVM_ROOT/pkgs/go-$2 $GVM_ROOT/pkgs/default
-    echo "Now using version $2"
-    exit 0
+    if [ -d $GVM_ROOT/gos/$2 ]; then
+      rm -f $GVM_ROOT/gos/default
+      ln -s $GVM_ROOT/gos/$2 $GVM_ROOT/gos/default
+      rm -f $GVM_ROOT/pkgs/default
+      ln -s $GVM_ROOT/pkgs/$2 $GVM_ROOT/pkgs/default
+      echo "Now using version $2"
+      exit 0
+    else
+      echo "Invalid version"
+      exit 1
+    fi
   else
     echo "ERROR: Please specifiy the version"
     exit 1
