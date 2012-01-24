@@ -13,6 +13,7 @@ if [[ $1 == "install" ]]; then
         echo " * Compiling..."
       else
         echo "Failed to download version $REVISION. See logs in $GVMROOT/download.log for details"
+        exit 1
       fi
       cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
       if [[ $? == 0 ]]; then
