@@ -1,3 +1,12 @@
+Version: 0.0.4
+State: Stable
+
+CHANGES:
+  * Lots more error handling
+  * Added stable option for install
+  * Added system install option
+  * Cleaned up enviroment handling
+
 Version: 0.0.3
 State: Beta
 
