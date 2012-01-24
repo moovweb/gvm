@@ -1,7 +1,7 @@
 #!/bin/bash
 BRANCH=$1
 if [ "$(whoami)" != "root" ]; then
-	GVM_DEST="~"
+	GVM_DEST=~
 	GVM_NAME=.gvm
 else
 	GVM_DEST=/usr/local
@@ -41,8 +41,10 @@ else
       echo "Maybe send me the file name and I'll look for it next time :)"
       echo
     fi
+    echo "export GVM_ROOT=~/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
+  else
+    echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
   fi
-  echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
   echo "source \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
   [[ -s "$GVM_DEST/$GVM_NAME/scripts/gvm" ]] && source "$GVM_DEST/$GVM_NAME/scripts/gvm"
   echo "Installed GVM v$GVM_VERSION"
