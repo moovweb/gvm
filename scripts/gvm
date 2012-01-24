@@ -1,9 +1,2 @@
-unset GOROOT
-unset GOARCH
-unset GOOS
-unset GOPATH
 export GVM_ROOT=~/.gvm
-export GVM_VERSION=`cat $GVM_ROOT/VERSION`
-export GOROOT=$GVM_ROOT/gos/default
-export PATH=$GVM_ROOT/bin:$GVM_ROOT/gos/default/bin:$PATH
-
+source $GVM_ROOT/scripts/gvm-default
