@@ -4,8 +4,8 @@ if [[ $1 == "list" ]]; then
 gvm gos
 "
   if [ -d $GVM_ROOT/gos ]; then
-    if [ -e $GVM_ROOT/gos/default ]; then
-      CUR_VER=`readlink $GVM_ROOT/gos/default | awk '{ n=split($1,path,"/"); print path[n] }'`
+    if [ -e $GVM_ROOT/go ]; then
+      CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
       ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$CUR_VER'/=> '$CUR_VER'/g'
     else
       ls -1 $GVM_ROOT/gos | sed 's/^/   /g'

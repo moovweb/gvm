@@ -1,4 +1,6 @@
 *~
+go
 gos/
 pkgs/
 *.log
+scripts/gvm
