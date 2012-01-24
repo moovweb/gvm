@@ -1,9 +1,5 @@
 #!/bin/bash
 mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
-if [[ $? == 0 ]]; then
-  echo "ERROR: Permission Denied (Try running with gvmsudo)"
-  exit 1
-fi
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
     curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" > /dev/null 2>&1
@@ -12,7 +8,7 @@ if [[ $1 == "install" ]]; then
       INSTALL_ROOT=$GVM_ROOT/gos/$REVISION
       echo "Installing version $REVISION"
       echo " * Downloading..."
-      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
+      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log > /dev/null 2>&1
       if [[ $? == 0 ]]; then
         echo " * Compiling..."
       else
