@@ -1,27 +1,36 @@
 #!/bin/bash
-GVM_DEST=~
+if [ "$(whoami)" != "root" ]; then
+	GVM_DEST=~
+	GVM_NAME=.gvm
+else
+	GVM_DEST=/usr/local
+	GVM_NAME=gvm
+fi
+
 ENV_FILE=~/.bashrc
 SRC_REPO=git://github.com/moovweb/gvm.git
 
-if [ -d $GVM_DEST/.gvm ]; then
+if [ -d $GVM_DEST/$GVM_NAME ]; then
   echo "Already installed!"
 else
-  cd $GVM_DEST && git clone $SRC_REPO .gvm > /dev/null 2>&1
-  rm -rf $GVM_DEST/.gvm/.git
-  if [ -e ~/.bashrc ]; then
-    cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-      echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
-    fi
-  else
-    echo 'This must be a Mac... put this line in you profile and source it!'
-    echo
-    echo ' [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"'
-    echo
-    echo "Maybe send me the file name and I'll look for it next time :)"
-    echo
-  fi
-  [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
+  cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1
+  rm -rf $GVM_DEST/$GVM_NAME/.git
+	if [ "$(whoami)" != "root" ]; then
+		if [ -e ~/.bashrc ]; then
+		  cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
+		  if [ $? -ne 0 ]; then
+		    echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
+		  fi
+		else
+		  echo 'This must be a Mac... put this line in you profile and source it!'
+		  echo
+		  echo ' [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"'
+		  echo
+		  echo "Maybe send me the file name and I'll look for it next time :)"
+		  echo
+		fi
+		[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
+	fi
   echo "Installed GVM v$GVM_VERSION"
   echo "Please restart your terminal session"
 fi
