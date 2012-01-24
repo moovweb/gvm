@@ -1,2 +1,0 @@
-export GVM_ROOT=~/.gvm
-source $GVM_ROOT/scripts/gvm-default
