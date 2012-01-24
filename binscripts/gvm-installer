@@ -20,7 +20,7 @@ else
     exit 1
   fi
   if [ "$BRANCH" == "stable" ]; then
-    cd $GVM_DEST && git checkout $BRANCH > /dev/null 2>&1
+    cd $GVM_DEST/$GVM_NAME && git checkout $BRANCH > /dev/null 2>&1
     if [ $? -ne 0 ]; then
       echo "Failed to checkout $BRANCH branch"
       exit 1
