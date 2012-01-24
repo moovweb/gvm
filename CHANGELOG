@@ -2,6 +2,7 @@ Version: 0.0.5
 State: Development
 
 CHANGES:
+  * Added `gvm get` for updating gvm source code
 
 Version: 0.0.4
 State: Stable

@@ -42,6 +42,7 @@ GVM is the Go Version Manager
 == Command
 
   version    - print the gvm version number
+  get        - gets the latest code (for debugging)
   use        - select a go version to use
   implode    - completely remove gvm
   install    - install go versions

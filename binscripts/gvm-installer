@@ -26,7 +26,7 @@ else
       exit 1
     fi
   fi
-  rm -rf $GVM_DEST/$GVM_NAME/.git
+  mv $GVM_DEST/$GVM_NAME/.git $GVM_DEST/$GVM_NAME/git.bak
   if [ "$(whoami)" != "root" ]; then
     if [ -e ~/.bashrc ]; then
       cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
@@ -48,3 +48,4 @@ else
   echo "Installed GVM v$GVM_VERSION"
   echo "Please restart your terminal session"
 fi
+
