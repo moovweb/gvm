@@ -3,6 +3,8 @@ State: Development
 
 CHANGES:
   * Added `gvm get` for updating gvm source code
+  * Added package sets which are containers for GOPATHs
+  * Major folder restructuring. MUST gvm implode to upgrade!
 
 Version: 0.0.4
 State: Stable
