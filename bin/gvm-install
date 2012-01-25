@@ -1,14 +1,14 @@
 #!/bin/bash
 function check_existing() {
-	if [ -e "$INSTALL_ROOT" ]; then
-		if [ -e "$INSTALL_ROOT/success.gvm" ]; then
-			echo "Already installed!"
-			exit 0
-		else
-			echo "Already installed but not verified"
-			exit 0
-		fi
-	fi
+  if [ -e "$1" ]; then
+    if [ -e "$1/success.gvm" ]; then
+      echo "Already installed!"
+      exit 0
+    else
+      echo "Already installed but not verified"
+      exit 0
+    fi
+  fi
 }
 
 mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
@@ -18,10 +18,7 @@ if [[ $1 == "install" ]]; then
     if [[ $? == 0 ]]; then
       REVISION=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{print $2;}' | grep "$2" | tail -n 1`
       INSTALL_ROOT=$GVM_ROOT/gos/$REVISION
-			check_existing $INSTALL_ROOT
-			if [[ $? == 0 ]]; then
-				echo "Error with existing install. Please remove manually."
-			fi
+      check_existing $INSTALL_ROOT
       echo "Installing version $REVISION"
       echo " * Downloading..."
       hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
