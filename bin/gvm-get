@@ -6,7 +6,7 @@ if [[ $1 == "get" ]]; then
     exit 1
   fi
   if [[ -n $2 ]]; then
-		cd $GVM_ROOT && git checkout $2
+		cd $GVM_ROOT && git checkout $2 -f
 		if [ $? -ne 0 ]; then
 		  echo "Failed to checkout $2 branch"
 		  exit 1
