@@ -1,5 +1,5 @@
 #!/bin/bash
-function check_exiting() {
+function check_existing() {
 	if [ -e "$INSTALL_ROOT" ]; then
 		if [ -e "$INSTALL_ROOT/sucess.gvm" ]; then
 			echo "Already installed!"
