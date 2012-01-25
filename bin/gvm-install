@@ -1,4 +1,16 @@
 #!/bin/bash
+function check_exiting() {
+	if [ -e "$INSTALL_ROOT" ]; then
+		if [ -e "$INSTALL_ROOT/sucess.gvm" ]; then
+			echo "Already installed!"
+			exit 0
+		else
+			echo "Already installed but not verified"
+			exit 0
+		fi
+	fi
+}
+
 mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
 if [[ $1 == "install" ]]; then
   if [[ -n $2 ]]; then
@@ -6,6 +18,10 @@ if [[ $1 == "install" ]]; then
     if [[ $? == 0 ]]; then
       REVISION=`curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" | tail -n 1 | awk '{print $2;exit(0);}'`
       INSTALL_ROOT=$GVM_ROOT/gos/$REVISION
+			check_existing $INSTALL_ROOT
+			if [[ $? == 0 ]]; then
+				echo "Error with existing install. Please remove manually."
+			fi
       echo "Installing version $REVISION"
       echo " * Downloading..."
       hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
@@ -23,6 +39,7 @@ if [[ $1 == "install" ]]; then
         echo "Failed to install version $REVISION. See logs in $INSTALL_ROOT/install.log for details"
         exit 1
       fi
+			touch $INSTALL_ROOT/sucess.gvm
     else
       echo "ERROR: Unknown go release version: '$2'"
     fi
