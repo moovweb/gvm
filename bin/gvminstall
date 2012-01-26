@@ -76,7 +76,7 @@ function build_package() {
 
 function install_package() {
 	mkdir -p $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER &&
-	cp $build_dir/* $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER -r &&
+	cp -r $build_dir/* $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER &&
 	rm -f $GVM_ROOT/pkgs/$package_name/current &&
 	ln -s $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER $GVM_ROOT/pkgs/$package_name/current &&
 	if [ $? -ne 0 ]; then
