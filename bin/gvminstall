@@ -1,0 +1,84 @@
+#!/bin/bash
+tmp_dir=/tmp/gvm/$1
+package_name=$1
+
+function download_package() {
+	#echo "Installing $package_name..."
+	if [ ! -d "$tmp_dir/src" ]; then
+		mkdir -p $tmp_dir/src
+		git clone git@github.com:moovweb/$1 $tmp_dir/src > /dev/null 2>&1
+		if [[ $? -ne 0 ]]; then
+			echo "Could not find $1 in any sources"
+			exit 1
+		fi
+	fi
+	if [ "$2" != "" ]; then
+		cd $tmp_dir/src &&
+		git checkout $2 > /dev/null 2>&1
+		if [[ $? -ne 0 ]]; then
+			echo "Invalid version $2"
+			exit 1
+		fi
+	fi
+}
+
+function check_deps() {
+	export GOPATH=$tmp_dir/build
+	if [ -f "Package.gvm" ]; then
+		for line in `cat Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
+			CUR_PKG=$GVM_ROOT/pkgs/$line/current
+			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
+				#echo "Using: $line (`cat $CUR_PKG/BUILD_VERSION`)";
+				foo="bar"
+			else
+				gvminstall $line
+				if [ $? -ne 0 ]; then
+					echo "Failed to install dependency $line"
+					exit 1
+				fi
+				#echo "ERROR: Couldnt find package: $line"
+				#exit 1
+			fi
+			export GOPATH=$GOPATH:$CUR_PKG
+		done
+	fi
+}
+
+function build_package() {
+	cd $tmp_dir/src
+	mkdir -p $tmp_dir/build
+	#if [[ -n $BUILD_NUMBER ]]; then
+	#  export BUILD_NUMBER="`cat VERSION`.$BUILD_NUMBER"
+	#else
+		export BUILD_NUMBER="`cat VERSION`.dev"
+	#fi
+
+	echo "$BUILD_NUMBER" > $tmp_dir/build/BUILD_VERSION
+
+	check_deps
+
+	echo "Installing $package_name..."
+	cd $tmp_dir/src && gvmake > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed to build"
+		exit 1
+	fi
+	
+	mkdir -p $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER &&
+	cp $tmp_dir/build/* $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER -r &&
+	rm -f $GVM_ROOT/pkgs/$package_name/current &&
+	ln -s $GVM_ROOT/pkgs/$package_name/$BUILD_NUMBER $GVM_ROOT/pkgs/$package_name/current &&
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed to install"
+		exit 1
+	fi
+
+	if [ -d $tmp_dir/build/bin ]; then
+		mkdir -p $GVM_ROOT/pkgs/bin &&
+		cp -f $tmp_dir/build/bin/* $GVM_ROOT/pkgs/bin/
+	fi
+}
+
+download_package $package_name $2
+build_package
+
