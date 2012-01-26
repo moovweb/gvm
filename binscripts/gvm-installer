@@ -43,7 +43,7 @@ else
     fi
   fi
   echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
-  echo "source \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
+  echo ". \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
   [[ -s "$GVM_DEST/$GVM_NAME/scripts/gvm" ]] && source "$GVM_DEST/$GVM_NAME/scripts/gvm"
   echo "Installed GVM v$GVM_VERSION"
   echo "Please restart your terminal session"
