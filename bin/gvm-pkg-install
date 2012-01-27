@@ -41,8 +41,7 @@ function check_deps() {
 		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
 			CUR_PKG=$GVM_ROOT/pkgs/pkg.gvm/$line/current
 			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
-				#echo "Using: $line (`cat $CUR_PKG/BUILD_VERSION`)";
-				foo="bar"
+				echo "Using: $line (`cat $CUR_PKG/BUILD_VERSION`)" >> $build_dir/manifest
 			else
 				gvm pkg install $line
 				if [ $? -ne 0 ]; then
