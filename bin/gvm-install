@@ -33,13 +33,8 @@ if [[ $1 == "install" ]]; then
         unset GOARCH &&
         unset GOOS &&
         unset GOPATH &&
-        export GOROOT=$INSTALL_ROOT &&
-        echo "Running install with GOROOT ($GOROOT)"  &&
-        echo "ENV =====" &&
-	env | grep ^GO &&
-	echo "END ENV ====" &&
-         ./all.bash > $INSTALL_ROOT/install.log 2>&1
-
+        unset GOBIN &&
+        ./all.bash > $INSTALL_ROOT/install.log 2>&1
       if [[ $? == 0 ]]; then
         mkdir -p $GVM_ROOT/pkgsets/$REVISION/default
         exit 0
