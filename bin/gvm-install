@@ -28,7 +28,15 @@ if [[ $1 == "install" ]]; then
         echo "Failed to download version $REVISION. See logs in $GVM_ROOT/download.log for details"
         exit 1
       fi
-      cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
+      cd $INSTALL_ROOT/src && 
+        unset GOROOT &&
+        unset GOARCH &&
+        unset GOOS &&
+        unset GOPATH &&
+        export GOROOT=$INSTALL_ROOT &&
+        echo "Running install with GOROOT ($GOROOT)"  &&
+         ./all.bash > $INSTALL_ROOT/install.log 2>&1
+
       if [[ $? == 0 ]]; then
         mkdir -p $GVM_ROOT/pkgsets/$REVISION/default
         exit 0
