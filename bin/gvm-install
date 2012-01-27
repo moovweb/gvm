@@ -35,6 +35,9 @@ if [[ $1 == "install" ]]; then
         unset GOPATH &&
         export GOROOT=$INSTALL_ROOT &&
         echo "Running install with GOROOT ($GOROOT)"  &&
+        echo "ENV =====" &&
+	env | grep ^GO &&
+	echo "END ENV ====" &&
          ./all.bash > $INSTALL_ROOT/install.log 2>&1
 
       if [[ $? == 0 ]]; then
