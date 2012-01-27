@@ -39,7 +39,7 @@ State: Alpha
 
 CHANGES:
   * Added prerequisite checks for packages needed to build Go
-	* Fixed error with version not displaying on new installs
+  * Fixed error with version not displaying on new installs
   * Better error handling for the cloning and building of Go (log files too!)
   * Improved enviroment handling
   * Better install handling for .bashrc and .profile
