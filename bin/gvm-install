@@ -33,12 +33,12 @@ download_revision() {
 
 # compile_go(source)
 compile_go() {
-  unset GOROOT
   unset GOARCH
   unset GOOS
   unset GOPATH
-  unset GOBIN
-  export PATH=$1/bin:$PATH
+  export GOBIN=$1/bin
+  export PATH=$GOBIN:$PATH
+  export GOROOT=$1
   cd $1/src && ./all.bash
   if [[ $? -ne 0 ]]; then
     return 1
@@ -110,9 +110,19 @@ create_default_pkgset() {
   fi
 }
 
+install_gb() {
+  echo " * Installing gb..."
+  goinstall github.com/skelterjohn/go-gb/gb  
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to install gb"
+    exit 1
+  fi
+}
+
 main() {
   setup_install_env
   compile
+  install_gb
   create_default_pkgset
 }
 
