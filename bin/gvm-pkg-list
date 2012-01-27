@@ -14,7 +14,7 @@ gvm packages $CUR_PKGSET@$CUR_VER"
 		first=true
 		for version in $package/*; do
 			version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
-			if [ $version != "current" ]; then
+			if [ "$version" != "current" ]; then
 				if [ $first == true ]; then
 					first=false
 				else
