@@ -5,29 +5,29 @@ if [[ $1 == "pkg" ]] && [[ $2 == "list" ]]; then
   echo "
 gvm packages $CUR_PKGSET@$CUR_VER"
   echo
-	for package in $GVM_ROOT/pkgs/*; do
-		if [ $package == "$GVM_ROOT/pkgs/*" ]; then
-			break
-		fi
-		package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
-		output=$package_name" ("
-		first=true
-		for version in $package/*; do
-			version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
-			if [ "$version" != "current" ]; then
-				if [ $first == true ]; then
-					first=false
-				else
-					output=$output", "
-				fi
-				version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
-				output=$output$version
-			fi
-		done
-		output=$output")"
+  for package in $GVM_ROOT/pkgs/pkg.gvm/*; do
+    if [ $package == "$GVM_ROOT/pkgs/pkg.gvm/*" ]; then
+      break
+    fi
+    package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
+    output=$package_name" ("
+    first=true
+    for version in $package/*; do
+      version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
+      if [ "$version" != "current" ]; then
+        if [ $first == true ]; then
+          first=false
+        else
+          output=$output", "
+        fi
+        version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
+        output=$output$version
+      fi
+    done
+    output=$output")"
 
-		echo $output
-	done
+    echo $output
+  done
   echo
 else
   echo "Please use gvm [action] to call this file"

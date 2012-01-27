@@ -112,10 +112,29 @@ create_default_pkgset() {
 
 install_gb() {
   echo " * Installing gb..."
-  goinstall github.com/skelterjohn/go-gb/gb  
+  goinstall github.com/skelterjohn/go-gb/gb
   if [[ $? -ne 0 ]]; then
     echo "Failed to install gb"
     exit 1
+  fi
+}
+
+install_goprotobuf() {
+  echo " * Installing goprotobuf..."
+  if [[ "$SOURCE_TAG" == "release.r60.3" ]]; then
+    goinstall goprotobuf.googlecode.com/hg/proto
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to install goprotobuf"
+      exit 1
+    fi
+    cd $GOROOT/src/pkg/goprotobuf.googlecode.com/hg/compiler
+    make install > $GVM_ROOT/logs/$SOURCE_TAG-pb-compiler.log 2>&1
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to install goprotobuf compiler"
+      exit 1
+    fi
+  else
+    echo "   Don't know how to install goprotobuf for $SOURCE_TAG"
   fi
 }
 
@@ -123,6 +142,7 @@ main() {
   setup_install_env
   compile
   install_gb
+  install_goprotobuf
   create_default_pkgset
 }
 

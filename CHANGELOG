@@ -2,6 +2,7 @@ Version: 0.0.6
 State: Development
 
 CHANGES:
+  * Added gvm pkg install to replace gvminstall
   * Added a log folder for Go download/install logs
   * Running install for the same Go version twice no longer rebuilds
   * Failed Go installs now get deleted.
