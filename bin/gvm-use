@@ -11,8 +11,6 @@ if [[ $1 == "use" ]]; then
       ln -s $GVM_ROOT/gos/$fuzzy_match $GVM_ROOT/go
       rm -f $GVM_ROOT/pkgs
       ln -s $GVM_ROOT/pkgsets/$fuzzy_match/default $GVM_ROOT/pkgs
-      echo "Now using version $fuzzy_match"
-      exit 0
     else
       echo "Invalid version $2"
       exit 1
@@ -21,6 +19,8 @@ if [[ $1 == "use" ]]; then
     echo "ERROR: Please specifiy the version"
     exit 1
   fi
+  echo "Now using version $fuzzy_match"
+  exit 0
 else
   echo "Please use gvm [action] to call this file"
   exit 1
