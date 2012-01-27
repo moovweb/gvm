@@ -30,15 +30,8 @@ function select_version() {
 
 function setup_build_env() {
 	rm -rf $build_dir && mkdir -p $build_dir
-	rm -rf $source_dir && mkdir -p $source_dir
-	cp -r $cache_dir/* $source_dir
-	#if [[ -n $BUILD_NUMBER ]]; then
-	#  export BUILD_NUMBER="`cat VERSION`.$BUILD_NUMBER"
-	#else
-		export BUILD_NUMBER="`cat $source_dir/VERSION`.dev"
-	#fi
-
-	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
+	rm -rf $source_dir
+	cp -r $cache_dir/ $source_dir/
 	select_version
 }
 
@@ -66,6 +59,12 @@ function check_deps() {
 
 function build_package() {
 	echo "Installing $package_name..."
+	if [[ -n $BUILD_NUMBER ]]; then
+	  export BUILD_NUMBER="`cat VERSION`.$BUILD_NUMBER"
+	else
+		export BUILD_NUMBER="`cat $source_dir/VERSION`.dev"
+	fi
+	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
 		echo "ERROR: Failed to build"
