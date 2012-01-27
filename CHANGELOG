@@ -2,6 +2,9 @@ Version: 0.0.6
 State: Development
 
 CHANGES:
+  * Allow gvm use shorthand (ex. gvm use 60.3)
+  * Fixed bug with gvm install when GOBIN is set
+  * Added gvminstall for version management installs
   * Added gvmake as a shortcut to running Makefile.gvm files
 
 Version: 0.0.5
