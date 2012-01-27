@@ -8,6 +8,7 @@ if [[ $1 == "uninstall" ]]; then
     fi
     if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
       rm -rf $GVM_ROOT/gos/$fuzzy_match
+      rm -rf $GVM_ROOT/pkgsets/$fuzzy_match
       echo "Uninstalled version $fuzzy_match"
     else
       echo "Invalid version"
