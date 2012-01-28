@@ -1,4 +1,11 @@
 #!/bin/bash
+if [ "$3" == "" ]; then
+  echo "Please specify package name"
+  exit 1
+fi
+
+cur_dir=`pwd`
+cur_dirname=`pwd | awk '{ n=split($1,path,"/"); print path[n] }'`
 cache_dir=$GVM_ROOT/archive/package/$3
 source_dir=$GVM_ROOT/tmp/$3/src
 build_dir=$GVM_ROOT/tmp/$3/build
@@ -93,7 +100,13 @@ function cleanup() {
 	rm -rf $source_dir
 }
 
-download_package
+if [ "$cur_dirname" == "$package_name" ]; then
+	cache_dir=$cur_dir
+	BUILD_NUMBER=src
+	echo "Using local source"
+else
+	download_package
+fi
 setup_build_env
 check_deps
 build_package
