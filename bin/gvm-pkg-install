@@ -1,41 +1,102 @@
 #!/bin/bash
-if [[ $1 == "pkg" ]] && [[ $2 == "install" ]]; then
-  if [[ -n $4 ]]; then
-    # If the package is already installed then remove it first
-    if [ -d $GVM_ROOT/pkgs/default/$3/$4 ]; then
-      rm -rf $GVM_ROOT/pkgs/default/$3/$4
-    fi
+cache_dir=$GVM_ROOT/archive/package/$3
+source_dir=$GVM_ROOT/tmp/$3/src
+build_dir=$GVM_ROOT/tmp/$3/build
+package_name=$3
+version=$4
 
-    echo "Installing $3 version $4"
-    echo " * Downloading..."
+function download_package() {
+	if [ ! -d "$cache_dir" ]; then
+		echo "Downloading $package_name..."
+		mkdir -p $cache_dir
+		git clone git@github.com:moovweb/$package_name $cache_dir > /dev/null 2>&1
+		if [[ $? -ne 0 ]]; then
+			echo "ERROR: Could not find $package_name in any sources"
+			exit 1
+		fi
+	fi
+}
 
-    # Clone the package source
-    git clone git@github.com:moovweb/$3 $GVM_ROOT/pkgs/default/$3/$4 > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-      echo "Could not find $3 in any sources"
-      exit 1
-    fi
+function select_version() {
+	if [ "$version" != "" ]; then
+		cd $source_dir && git pull &&
+		git checkout $version > /dev/null 2>&1
+		if [[ $? -ne 0 ]]; then
+			echo "Invalid version $version"
+			exit 1
+		fi
+	fi
+}
 
-    # Checkout the desired version
-    git checkout $4 > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-      echo "Could not find version $4 of $3 in any sources"
-      exit 1
-    fi
+function setup_build_env() {
+	rm -rf $build_dir && mkdir -p $build_dir
+	rm -rf $source_dir
+	cp -r $cache_dir/ $source_dir/
+	select_version
+}
 
-    # Compile package
-    echo " * Compiling..."
-    cd $GVM_ROOT/pkgs/default/$3/$4; make install > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-      echo "Build failed!"
-      exit 1
-    fi
-  else
-    echo "ERROR: Please specifiy the version"
-    exit 1
-  fi
-else
-  echo "Please use gvm [action] to call this file"
-  exit 1
-fi
+function check_deps() {
+	export GOPATH=$build_dir
+	if [ -f "$source_dir/Package.gvm" ]; then
+		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
+			CUR_PKG=$GVM_ROOT/pkgs/pkg.gvm/$line/current
+			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
+				echo "$line: `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
+			else
+				gvm pkg install $line
+				if [ $? -ne 0 ]; then
+					echo "Failed to install dependency $line"
+					exit 1
+				fi
+				#echo "ERROR: Couldnt find package: $line"
+				#exit 1
+			fi
+			export GOPATH=$GOPATH:$CUR_PKG
+		done
+	fi
+}
+
+function build_package() {
+	echo "Installing $package_name..."
+	if [[ -n $BUILD_NUMBER ]]; then
+	  export BUILD_NUMBER="`cat VERSION`.$BUILD_NUMBER"
+	else
+		export BUILD_NUMBER="`cat $source_dir/VERSION`.dev"
+	fi
+	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
+	cd $source_dir && gvmake > $build_dir/build.log 2>&1
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed to build"
+		cat "$build_dir/build.log"
+		exit 1
+	fi
+}
+
+function install_package() {
+	mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
+	cp -r $build_dir/* $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
+	rm -f $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
+	ln -s $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed to install"
+		exit 1
+	fi
+
+	if [ -d $build_dir/bin ]; then
+		mkdir -p $GVM_ROOT/pkgs/bin &&
+		cp -f $build_dir/bin/* $GVM_ROOT/pkgs/bin/
+	fi
+}
+
+function cleanup() {
+	rm -rf $build_dir
+	rm -rf $source_dir
+}
+
+download_package
+setup_build_env
+check_deps
+build_package
+install_package
+cleanup
 

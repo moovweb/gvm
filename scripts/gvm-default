@@ -2,6 +2,7 @@ unset GOROOT
 unset GOARCH
 unset GOOS
 unset GOPATH
+unset GOBIN
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
 export GOROOT=$GVM_ROOT/go
 export GOPATH=$GVM_ROOT/pkgs

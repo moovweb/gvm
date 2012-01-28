@@ -1,3 +1,18 @@
+Version: 0.0.6
+State: Development
+
+CHANGES:
+  * Added gvm pkg install to replace gvminstall
+  * Added a log folder for Go download/install logs
+  * Running install for the same Go version twice no longer rebuilds
+  * Failed Go installs now get deleted.
+  * Cache Go source.
+  * Added fuzzy match for gvm uninstall
+  * Allow gvm use shorthand (ex. gvm use 60.3)
+  * Fixed bug with gvm install when GOBIN is set
+  * Added gvminstall for version management installs
+  * Added gvmake as a shortcut to running Makefile.gvm files
+
 Version: 0.0.5
 State: Stable
 
@@ -30,7 +45,7 @@ State: Alpha
 
 CHANGES:
   * Added prerequisite checks for packages needed to build Go
-	* Fixed error with version not displaying on new installs
+  * Fixed error with version not displaying on new installs
   * Better error handling for the cloning and building of Go (log files too!)
   * Improved enviroment handling
   * Better install handling for .bashrc and .profile

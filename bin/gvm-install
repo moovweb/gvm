@@ -1,37 +1,150 @@
 #!/bin/bash
-mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
-if [[ $1 == "install" ]]; then
-  if [[ -n $2 ]]; then
-    curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" > /dev/null 2>&1
-    if [[ $? == 0 ]]; then
-      REVISION=`curl -s https://go.googlecode.com/hg/.hgtags | grep "$2" | tail -n 1 | awk '{print $2;exit(0);}'`
-      INSTALL_ROOT=$GVM_ROOT/gos/$REVISION
-      echo "Installing version $REVISION"
-      echo " * Downloading..."
-      hg clone -u $REVISION https://go.googlecode.com/hg/ $INSTALL_ROOT > $GVM_ROOT/download.log 2>&1
-      if [[ $? == 0 ]]; then
-        echo " * Compiling..."
-      else
-        echo "Failed to download version $REVISION. See logs in $GVMROOT/download.log for details"
-        exit 1
-      fi
-      cd $INSTALL_ROOT/src && unset GOROOT && unset GOARCH && unset GOOS && unset GOPATH && ./all.bash > $INSTALL_ROOT/install.log 2>&1
-      if [[ $? == 0 ]]; then
-        mkdir -p $GVM_ROOT/pkgsets/$REVISION/default
-        exit 0
-      else
-        echo "Failed to install version $REVISION. See logs in $INSTALL_ROOT/install.log for details"
-        exit 1
-      fi
-    else
-      echo "ERROR: Unknown go release version: '$2'"
-    fi
-  else
-    echo "ERROR: Please specifiy the version"
-    exit 1
-  fi
-else
+if [[ $1 != "install" ]]; then
   echo "Please use gvm [action] to call this file"
   exit 1
 fi
+if [[ "$2" == "" ]]; then
+  echo "ERROR: Please specifiy the version"
+  exit 1
+else
+  REVISION=$2
+fi
+
+################################################################################
+# Implementation
+################################################################################
+
+# find_revision(version)
+get_source_tag() {
+  curl -s https://go.googlecode.com/hg/.hgtags | awk '{print $2;}' | grep "$1" > /dev/null 2>&1
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+  SOURCE_TAG=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{print $2;}' | grep "$1" | tail -n 1`
+}
+
+# download_revision(revision, destination)
+download_revision() {
+  hg clone -u $1 https://go.googlecode.com/hg/ $2
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+}
+
+# compile_go(source)
+compile_go() {
+  unset GOARCH
+  unset GOOS
+  unset GOPATH
+  export GOBIN=$1/bin
+  export PATH=$GOBIN:$PATH
+  export GOROOT=$1
+  cd $1/src && ./all.bash
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+}
+
+################################################################################
+# Interface
+################################################################################
+
+download() {
+  echo " * Downloading..."
+  download_revision $SOURCE_TAG $SOURCE_ROOT > $GVM_ROOT/logs/$SOURCE_TAG-download.log 2>&1
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to download version $SOURCE_TAG. See logs in $GVM_ROOT/logs/$SOURCE_TAG-download.log for details"
+    exit 1
+  fi
+}
+
+copy_source() {
+  cp -r $SOURCE_ROOT $INSTALL_ROOT
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to copy from cache"
+    exit 1
+  fi
+}
+
+setup_install_env() {
+  get_source_tag $REVISION
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to find go release version: '$1'"
+    exit 1
+  fi
+
+  SOURCE_ROOT=$GVM_ROOT/archive/$SOURCE_TAG
+  INSTALL_ROOT=$GVM_ROOT/gos/$SOURCE_TAG
+
+  if [[ -d $INSTALL_ROOT ]]; then
+    echo "Already installed!"
+    exit 1
+  else
+    echo "Installing version $SOURCE_TAG"
+  fi
+
+  if [[ ! -d $SOURCE_ROOT ]]; then
+    download
+  fi
+
+  trap 'rm -rf $INSTALL_ROOT' INT
+  copy_source
+}
+
+compile() {
+  echo " * Compiling..."
+  compile_go $INSTALL_ROOT > $GVM_ROOT/logs/$SOURCE_TAG-compile.log 2>&1
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to install version $SOURCE_TAG. See logs in $GVM_ROOT/logs/$SOURCE_TAG-compile.log for details"
+    rm -rf $INSTALL_ROOT
+    exit 1
+  fi
+}
+
+create_default_pkgset() {
+  #gvm pkgset create default
+  mkdir -p $GVM_ROOT/pkgsets/$SOURCE_TAG/default
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to create default pkgset folder"
+    exit 1
+  fi
+}
+
+install_gb() {
+  echo " * Installing gb..."
+  goinstall github.com/skelterjohn/go-gb/gb
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to install gb"
+    exit 1
+  fi
+}
+
+install_goprotobuf() {
+  echo " * Installing goprotobuf..."
+  if [[ "$SOURCE_TAG" == "release.r60.3" ]]; then
+    goinstall goprotobuf.googlecode.com/hg/proto
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to install goprotobuf"
+      exit 1
+    fi
+    cd $GOROOT/src/pkg/goprotobuf.googlecode.com/hg/compiler
+    make install > $GVM_ROOT/logs/$SOURCE_TAG-pb-compiler.log 2>&1
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to install goprotobuf compiler"
+      exit 1
+    fi
+  else
+    echo "   Don't know how to install goprotobuf for $SOURCE_TAG"
+  fi
+}
+
+main() {
+  setup_install_env
+  compile
+  install_gb
+  install_goprotobuf
+  create_default_pkgset
+}
+
+main
 
