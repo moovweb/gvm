@@ -1,5 +1,5 @@
 Version: 0.0.6
-State: Development
+State: Stable
 
 CHANGES:
   * Added gvm pkg install to replace gvminstall
