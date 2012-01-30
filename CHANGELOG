@@ -1,5 +1,10 @@
-Version: 0.0.6
+Version: 0.0.7
 State: Development
+
+CHANGES:
+
+Version: 0.0.6
+State: Stable
 
 CHANGES:
   * Added gvm pkg install to replace gvminstall

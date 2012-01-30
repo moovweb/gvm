@@ -4,5 +4,6 @@ gos/
 pkgs
 pkgsets/
 archive/
+tmp/
 *.log
 scripts/gvm
