@@ -54,6 +54,7 @@ function check_deps() {
 			export GOPATH=$GOPATH:$CUR_PKG
 		done
 	fi
+	echo ":complete" >> $build_dir/manifest
 }
 
 function build_package() {
