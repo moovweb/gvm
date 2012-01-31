@@ -2,6 +2,9 @@ Version: 0.0.7
 State: Development
 
 CHANGES:
+  * Added gvm prompt for including Go version and/or package set info in the bash prompt
+  * Added ability to build from source when running `gvm pkg install <name>` in a folder
+    named <name>.
 
 Version: 0.0.6
 State: Stable
