@@ -5,14 +5,9 @@ function gvm_use() {
 		  echo "Invalid version $1"
 		  exit 1
 		fi
-		if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
-			. $GVM_ROOT/environments/$fuzzy_match
-			if [[ "$2" == "--default" ]]; then
-				cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
-			fi
-		else
-		  echo "Invalid version $1"
-		  return 1
+		. $GVM_ROOT/environments/$fuzzy_match
+		if [[ "$2" == "--default" ]]; then
+			cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
 		fi
 	else
 		echo "ERROR: Please specifiy the version"
