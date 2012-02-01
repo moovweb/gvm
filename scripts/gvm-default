@@ -6,6 +6,6 @@ unset GOBIN
 
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
 
-. $GVM_ROOT/environments/default
+[ -f $GVM_ROOT/environments/default ] && . $GVM_ROOT/environments/default
 . $GVM_ROOT/scripts/env/*
 

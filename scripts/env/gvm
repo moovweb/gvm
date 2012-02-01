@@ -6,6 +6,7 @@ function gvm() {
 	elif [ "$1" == "pkgset" ] && [ "$2" == "use" ]; then
 		. $GVM_ROOT/scripts/env/pkgset-use
 		shift
+		shift
 		gvm_pkgset_use $@
 	else
 		$GVM_ROOT/bin/gvm $@

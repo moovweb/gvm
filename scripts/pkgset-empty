@@ -1,15 +1,16 @@
 #!/bin/bash
-if [[ $gvm_go_name == "" ]]; then
-  echo "ERROR: No Go version selected"
-  exit 1
-elif [[ $gvm_pkgset_name == "" ]]; then
-  echo "ERROR: No Package set selected"
-  exit 1
-fi
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
 
-rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/*
-if [[ $? -ne 0 ]]; then
-  echo "ERROR: Could not delete package set files"
-  exit 1
-fi
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+[[ $gvm_pkgset_name != "" ]] || 
+	display_error "No Package set selected"
+rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/* ||
+  display_error "Could not delete package set files"
 

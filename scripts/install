@@ -97,15 +97,6 @@ compile() {
   fi
 }
 
-create_default_pkgset() {
-  #gvm pkgset create default
-  mkdir -p $GVM_ROOT/pkgsets/$SOURCE_TAG/default
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to create default pkgset folder"
-    exit 1
-  fi
-}
-
 install_gb() {
   echo " * Installing gb..."
   goinstall github.com/skelterjohn/go-gb/gb
@@ -139,7 +130,6 @@ main() {
   compile
   install_gb
   install_goprotobuf
-  create_default_pkgset
 }
 
 main
