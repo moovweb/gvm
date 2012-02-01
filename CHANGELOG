@@ -2,6 +2,7 @@ Version: 0.0.7
 State: Development
 
 CHANGES:
+  * Fixed error/state checking in `gvm pkg list` and `gvm pkgset list`
   * Removed all command's gvm- prefix
   * Revamped the folder structure for scripts so they don't show up in the path
   * Added gvm prompt for including Go version and/or package set info in the bash prompt
