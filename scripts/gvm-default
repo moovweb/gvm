@@ -5,7 +5,7 @@ unset GOPATH
 unset GOBIN
 
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
-
+export PATH=$GVM_ROOT:$PATH
 [ -f $GVM_ROOT/environments/default ] && . $GVM_ROOT/environments/default
 . $GVM_ROOT/scripts/env/*
 
