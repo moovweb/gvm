@@ -125,9 +125,20 @@ install_goprotobuf() {
   fi
 }
 
+create_env_file() {
+  gvm_go_name=$SOURCE_TAG
+  new_env_file=$GVM_ROOT/environments/$SOURCE_TAG
+  echo "export gvm_go_name; gvm_go_name=\"$gvm_go_name\"" > $new_env_file
+  echo "unset gvm_pkgset_name" >> $new_env_file
+  echo "export GOROOT; GOROOT=\"\$GVM_ROOT/go/$gvm_go_name\"" >> $new_env_file
+  echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgs/$gvm_go_name/default\"" >> $new_env_file
+  echo "export PATH; PATH=\"\$GVM_ROOT/pkgs/$gvm_go_name/default/bin:\$GVM_ROOT/gos/$gvm_go_name/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
+}
+
 main() {
   setup_install_env
   compile
+  create_env_file
   install_gb
   install_goprotobuf
 }
