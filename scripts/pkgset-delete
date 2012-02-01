@@ -5,6 +5,10 @@ if [[ -n $1 ]]; then
     echo "ERROR: No Go version selected"
     exit 1
   else
+    CUR_PKGSET=`readlink $GVM_ROOT/pkgs | awk '{ n=split($1,path,"/"); print path[n] }'`
+    if [[ "$CUR_PKGSET" == "$1" ]]; then
+      rm -rf $GVM_ROOT/pkgs
+    fi
     rm -rf $GVM_ROOT/pkgsets/$CUR_VER/$1
     if [[ $? -ne 0 ]]; then
       echo "ERROR: Could not delete package set"

@@ -6,6 +6,11 @@ if [[ -n $1 ]]; then
     exit 1
   fi
   if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
+    CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
+    if [[ "$CUR_VER" == "$fuzzy_match" ]]; then
+      rm -rf $GVM_ROOT/go
+      rm -rf $GVM_ROOT/pkgs
+    fi
     rm -rf $GVM_ROOT/gos/$fuzzy_match
     rm -rf $GVM_ROOT/pkgsets/$fuzzy_match
     echo "Uninstalled version $fuzzy_match"

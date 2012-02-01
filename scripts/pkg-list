@@ -1,4 +1,13 @@
 #!/bin/bash
+if [[ ! -f $GVM_ROOT/go ]]; then
+  echo "ERROR: No Go version selected"
+  exit 1
+fi
+if [[ ! -f $GVM_ROOT/pkgs ]]; then
+  echo "ERROR: No package set selected"
+  exit 1
+fi
+
 CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
 CUR_PKGSET=`readlink $GVM_ROOT/pkgs | awk '{ n=split($1,path,"/"); print path[n] }'`
 echo "
