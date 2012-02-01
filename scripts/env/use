@@ -1,0 +1,23 @@
+gvm_use() {
+	if [[ -n $1 ]]; then
+		fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"`
+		if [[ $? != 0 ]]; then
+		  echo "Invalid version $1"
+		  exit 1
+		fi
+		if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
+			
+		  ln -s $GVM_ROOT/gos/$fuzzy_match
+		  ln -s $GVM_ROOT/pkgsets/$fuzzy_match/default
+
+		else
+		  echo "Invalid version $1"
+		  return 1
+		fi
+	else
+		echo "ERROR: Please specifiy the version"
+		return 1
+	fi
+	echo "Now using version $fuzzy_match"
+}
+

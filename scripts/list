@@ -3,12 +3,7 @@ echo "
 gvm gos
 "
 if [ -d $GVM_ROOT/gos ]; then
-	if [ -e $GVM_ROOT/go ]; then
-		CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
-		ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$CUR_VER'/=> '$CUR_VER'/g'
-	else
-		ls -1 $GVM_ROOT/gos | sed 's/^/   /g'
-	fi
+	ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$gvm_go_name'/=> '$gvm_go_name'/g'
 fi
 echo
 
