@@ -1,13 +1,9 @@
 #!/bin/bash
-if [[ $1 != "install" ]]; then
-  echo "Please use gvm [action] to call this file"
-  exit 1
-fi
-if [[ "$2" == "" ]]; then
+if [[ "$1" == "" ]]; then
   echo "ERROR: Please specifiy the version"
   exit 1
 else
-  REVISION=$2
+  REVISION=$1
 fi
 
 ################################################################################

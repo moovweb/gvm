@@ -1,19 +1,13 @@
 #!/bin/bash
-if [[ $1 == "prompt" ]]; then
-	go_version=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
-	pkgset=`readlink $GVM_ROOT/pkgs | awk '{ n=split($1,path,"/"); print path[n] }'`
-  if [[ -n $2 ]]; then
-    if [[ "$2" == "g" ]]; then
-			echo $go_version
-		elif [[ "$2" == "ps" ]]; then
-      echo $pkgset
-    fi
-	else
-		echo $go_version@$pkgset
-  fi
-  exit 0
+go_version=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
+pkgset=`readlink $GVM_ROOT/pkgs | awk '{ n=split($1,path,"/"); print path[n] }'`
+if [[ -n $1 ]]; then
+	if [[ "$1" == "g" ]]; then
+		echo $go_version
+	elif [[ "$1" == "ps" ]]; then
+		echo $pkgset
+	fi
 else
-  echo "Please use gvm [action] to call this file"
-  exit 1
+	echo $go_version@$pkgset
 fi
 
