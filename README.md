@@ -18,8 +18,8 @@ This will keep libraries from accidentally installing into the main Go soure tre
 
 Installing Go
 =============
-    gvm install release.r60.3
-    gvm use release.r60.3
+    gvm install 60.3
+    gvm use 60.3
 Once this is done Go will be in the path and ready to use. $GOROOT is set automatically.
 
 List Go Versions
