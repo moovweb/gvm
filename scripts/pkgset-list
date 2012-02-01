@@ -5,7 +5,7 @@ if [[ $gvm_go_name == "" ]]; then
 fi
 
 echo "
-gvm go package sets ($CUR_VER)
+gvm go package sets ($gvm_go_name)
 "
 if [ -d $GVM_ROOT/pkgsets ]; then
 	if [[ $gvm_pkgset_name == "" ]]; then
