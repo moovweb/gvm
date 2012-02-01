@@ -17,8 +17,8 @@ else
 fi
 
 ENV_FILE=~/.bashrc
-#SRC_REPO=git://github.com/moovweb/gvm.git
-SRC_REPO=~/install.gvm
+SRC_REPO=git://github.com/moovweb/gvm.git
+#SRC_REPO=~/install.gvm
 
 [ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
 
@@ -33,12 +33,12 @@ fi
 mv $GVM_DEST/$GVM_NAME/.git $GVM_DEST/$GVM_NAME/git.bak
 
 if [ "$(whoami)" != "root" ]; then
-  if [ -e ~/.abashrc ]; then
+  if [ -e ~/.bashrc ]; then
     cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
       echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
     fi
-  elif [ -e ~/.aprofile ]; then
+  elif [ -e ~/.profile ]; then
     cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
       echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> $ENV_FILE
