@@ -1,0 +1,9 @@
+#!/bin/bash
+if [[ "$1" == "g" ]]; then
+	echo $gvm_go_name
+elif [[ "$1" == "ps" ]]; then
+	echo $gvm_pkgset_name
+else
+	echo $gvm_go_name@$gvm_pkgset_name
+fi
+

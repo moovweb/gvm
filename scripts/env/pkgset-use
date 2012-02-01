@@ -1,0 +1,18 @@
+function gvm_pkgset_use() {
+	if [[ -n $1 ]]; then
+		fuzzy_match=`ls $GVM_ROOT/pkgsets/$gvm_go_name | grep "$1"`
+		if [[ $? != 0 ]]; then
+		  echo "Invalid version $1"
+		  return 1
+		fi
+		. $GVM_ROOT/environments/$gvm_go_name@$fuzzy_match
+		if [[ "$2" == "--default" ]]; then
+			cp $GVM_ROOT/environments/$gvm_go_name@$fuzzy_match $GVM_ROOT/environments/default
+		fi
+	else
+		echo "ERROR: Please specifiy the version"
+		return 1
+	fi
+	echo "Now using version $fuzzy_match"
+}
+

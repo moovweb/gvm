@@ -1,13 +1,15 @@
 #!/bin/bash
-CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
-if [[ $CUR_VER == "" ]]; then
+if [[ $gvm_go_name == "" ]]; then
   echo "ERROR: No Go version selected"
   exit 1
-else
-  rm -rf $GVM_ROOT/pkgs/*
-  if [[ $? -ne 0 ]]; then
-    echo "ERROR: Could not delete package set files"
-    exit 1
-  fi
+elif [[ $gvm_pkgset_name == "" ]]; then
+  echo "ERROR: No Package set selected"
+  exit 1
+fi
+
+rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/*
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: Could not delete package set files"
+  exit 1
 fi
 

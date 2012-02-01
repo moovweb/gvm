@@ -1,4 +1,4 @@
-gvm_use() {
+function gvm_use() {
 	if [[ -n $1 ]]; then
 		fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"`
 		if [[ $? != 0 ]]; then
@@ -6,10 +6,10 @@ gvm_use() {
 		  exit 1
 		fi
 		if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
-			
-		  ln -s $GVM_ROOT/gos/$fuzzy_match
-		  ln -s $GVM_ROOT/pkgsets/$fuzzy_match/default
-
+			. $GVM_ROOT/environments/$fuzzy_match
+			if [[ "$2" == "--default" ]]; then
+				cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
+			fi
 		else
 		  echo "Invalid version $1"
 		  return 1
