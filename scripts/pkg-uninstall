@@ -1,0 +1,29 @@
+#!/bin/bash
+if [[ "$1" == "" ]]; then
+  echo "ERROR: Please specify the package name"
+  exit 1
+fi
+
+UNINSTALL_ROOT=$GVM_ROOT/pkgs/pkg.gvm/$1
+if [[ ! -d $UNINSTALL_ROOT ]]; then
+  echo "ERROR: Invalid package name"
+  exit 1
+fi
+
+if [[ "$2" != "" ]]; then
+  UNINSTALL_ROOT=$UNINSTALL_ROOT/$2
+fi
+
+if [[ -d $UNINSTALL_ROOT ]]; then
+  rm -rf $UNINSTALL_ROOT
+else
+  echo "ERROR: Invalid package version"
+  exit 1
+fi
+
+if [[ "$4" != "" ]]; then
+  echo "Uninstalled $1 version $2"
+else
+  echo "Uninstalled $1"
+fi
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+if [[ $gvm_go_name == "" ]]; then
+  echo "ERROR: No Go version selected"
+  exit 1
+fi
+
+echo "
+gvm go package sets ($gvm_go_name)
+"
+if [ -d $GVM_ROOT/pkgsets ]; then
+	if [[ $gvm_pkgset_name == "" ]]; then
+		ls -1 $GVM_ROOT/pkgsets/$gvm_go_name | sed 's/^/   /g'
+	else
+		ls -1 $GVM_ROOT/pkgsets/$gvm_go_name | sed 's/^/   /g' | sed 's/^   '$gvm_pkgset_name'/=> '$gvm_pkgset_name'/g'
+	fi
+fi
+echo
+

@@ -1,0 +1,29 @@
+#!/bin/bash
+command=$1
+if [ -f $GVM_ROOT/scripts/pkgset-$command ]; then
+	shift
+  $GVM_ROOT/scripts/pkgset-$command $@
+elif [[ -n $command ]]; then
+  echo "ERROR: Unrecognized command line argument: '$command'"
+else
+  echo "= gvm pkgset
+
+* http://github.com/moovweb/gvm
+
+== DESCRIPTION:
+
+GVM pkgset is used to manage various Go packages
+
+== Usage
+
+  gvm pkgset Command
+
+== Command
+
+  create     - create a new package set
+  delete     - delete a package set
+  use        - select where gb and goinstall target and link
+  empty      - remove all code and compiled binaries from package set
+  list       - list installed go packages"
+fi
+

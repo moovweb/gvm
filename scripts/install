@@ -1,13 +1,9 @@
 #!/bin/bash
-if [[ $1 != "install" ]]; then
-  echo "Please use gvm [action] to call this file"
-  exit 1
-fi
-if [[ "$2" == "" ]]; then
+if [[ "$1" == "" ]]; then
   echo "ERROR: Please specifiy the version"
   exit 1
 else
-  REVISION=$2
+  REVISION=$1
 fi
 
 ################################################################################
@@ -101,15 +97,6 @@ compile() {
   fi
 }
 
-create_default_pkgset() {
-  #gvm pkgset create default
-  mkdir -p $GVM_ROOT/pkgsets/$SOURCE_TAG/default
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to create default pkgset folder"
-    exit 1
-  fi
-}
-
 install_gb() {
   echo " * Installing gb..."
   goinstall github.com/skelterjohn/go-gb/gb
@@ -138,12 +125,24 @@ install_goprotobuf() {
   fi
 }
 
+create_env_file() {
+  gvm_go_name=$SOURCE_TAG
+  mkdir -p $GVM_ROOT/environments
+  mkdir -p $GVM_ROOT/pkgsets/$SOURCE_TAG/global
+  new_env_file=$GVM_ROOT/environments/$SOURCE_TAG
+  echo "export gvm_go_name; gvm_go_name=\"$gvm_go_name\"" > $new_env_file
+  echo "unset gvm_pkgset_name" >> $new_env_file
+  echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$gvm_go_name\"" >> $new_env_file
+  echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$gvm_go_name/global\"" >> $new_env_file
+  echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$gvm_go_name/global/bin:\$GVM_ROOT/gos/$gvm_go_name/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
+}
+
 main() {
   setup_install_env
   compile
+  create_env_file
   install_gb
   install_goprotobuf
-  create_default_pkgset
 }
 
 main

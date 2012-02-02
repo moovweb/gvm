@@ -1,0 +1,28 @@
+#!/bin/bash
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+
+[[ $1 != "" ]] || 
+	display_error "Please specifiy the name"
+
+[[ ! -f "$GVM_ROOT/enviroments/$gvm_go_name@$1" ]] || 
+	display_error "Packageset already exists!"
+
+mkdir -p $GVM_ROOT/pkgsets/$gvm_go_name/$1 ||
+	display_error "Could not create folder"
+cp $GVM_ROOT/environments/$gvm_go_name $GVM_ROOT/environments/$gvm_go_name@$1 ||
+	display_error "Could copy environment"
+echo "export gvm_pkgset_name=\"$1\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
+	display_error "Could not extend environment"
+echo "export GOPATH; GOPATH=\"$GVM_ROOT/pkgs/release.r60.3/$1:\$GOPATH\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
+	display_error "Could not extend environment"
+
+
