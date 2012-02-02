@@ -98,7 +98,7 @@ function setup_build_env() {
 }
 
 function install_dep() {
-	[[ "$strict" == "true" ]] && display_error "Missing dependancy and strict mode is set"
+	[[ "$strict" == "true" ]] && display_error "Missing dependancy ($1) and strict mode is set"
 	[[ "$source" == "." ]] && passthrough_options="--source=. "$passthrough_options
 	[[ "$all_deps" == "true" ]] && passthrough_options="--all "$passthrough_options
 
