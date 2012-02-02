@@ -13,6 +13,8 @@ if [[ -n $1 ]]; then
     fi
     rm -rf $GVM_ROOT/gos/$fuzzy_match
     rm -rf $GVM_ROOT/pkgsets/$fuzzy_match
+		rm -f $GVM_ROOT/environments/$fuzzy_match
+		rm -f "$GVM_ROOT/environments/$fuzzy_match@"*
     echo "Uninstalled version $fuzzy_match"
   else
     echo "Invalid version"

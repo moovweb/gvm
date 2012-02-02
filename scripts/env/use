@@ -1,18 +1,22 @@
+function display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	return 1
+}
+
 function gvm_use() {
-	if [[ -n $1 ]]; then
-		fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"`
-		if [[ $? != 0 ]]; then
-		  echo "Invalid version $1"
-		  exit 1
-		fi
-		. $GVM_ROOT/environments/$fuzzy_match
-		if [[ "$2" == "--default" ]]; then
-			cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
-		fi
-	else
-		echo "ERROR: Please specifiy the version"
-		return 1
+	[[ "$1" != "" ]] || 
+		display_error "Please specifiy the version" || return 1
+	fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"` ||
+		display_error "Invalid version $1" || return 1
+
+	. $GVM_ROOT/environments/$fuzzy_match
+	if [[ "$2" == "--default" ]]; then
+		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
 	fi
+
 	echo "Now using version $fuzzy_match"
 }
 
