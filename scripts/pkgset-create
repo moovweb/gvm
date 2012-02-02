@@ -7,9 +7,6 @@ display_error() {
 	exit 1
 }
 
-[[ $gvm_go_name != "" ]] || 
-	display_error "No Go version selected"
-
 [[ $1 != "" ]] || 
 	display_error "Please specifiy the name"
 

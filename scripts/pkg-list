@@ -7,11 +7,6 @@ display_error() {
 	exit 1
 }
 
-[[ $gvm_go_name != "" ]] || 
-	display_error "No Go version selected"
-[[ $gvm_pkgset_name != "" ]] || 
-	display_error "No package set selected"
-
 echo "
 gvm packages $gvm_go_name@$gvm_pkgset_name"
 echo

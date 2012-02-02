@@ -1,9 +1,4 @@
 #!/bin/bash
-if [[ $gvm_go_name == "" ]]; then
-  echo "ERROR: No Go version selected"
-  exit 1
-fi
-
 echo "
 gvm go package sets ($gvm_go_name)
 "

@@ -9,10 +9,6 @@ display_error() {
 
 [[ "$1" == "" ]] && 
 	display_error "Please specify package name"
-[[ $gvm_go_name != "" ]] || 
-	display_error "No Go version selected"
-[[ $gvm_pkgset_name != "" ]] || 
-	display_error "No package set selected"
 
 gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
 
