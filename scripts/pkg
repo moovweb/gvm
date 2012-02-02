@@ -1,10 +1,25 @@
 #!/bin/bash
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+[[ -d $GVM_ROOT/gos/$gvm_go_name ]] ||
+	display_error "Invalid or corrupt Go version"
+[[ -d $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name ]] ||
+	display_error "Missing package set folder"
+
 command=$1
 if [ -f $GVM_ROOT/scripts/pkg-$command ]; then
 	shift
   $GVM_ROOT/scripts/pkg-$command $@
 elif [[ -n $command ]]; then
-  echo "ERROR: Unrecognized command line argument: '$command'"
+  display_error "Unrecognized command line argument: '$command'"
 else
   echo "= gvm pkg
 
