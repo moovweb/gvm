@@ -22,7 +22,7 @@ function read_command_line() {
 
 	# Get package name
 	package_name=$1
-	source="git@github.com:moovweb"
+	source="git@github.com:moovweb/$1"
 	shift
 
 	for i in $*; do
@@ -52,34 +52,26 @@ function read_command_line() {
 	done
 
 	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
-	if [[ "$source" == "." ]]; then
-		cache_dir=`pwd`
-	else
-		cache_dir=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$package_name/src
-	fi
 	source_dir=$GVM_ROOT/tmp/$package_name/src
 	build_dir=$GVM_ROOT/tmp/$package_name/build
 }
 
 function download_package() {
+	rm -rf $source_dir && mkdir -p $source_dir
 	if [[ "$source" != "." ]]; then
-		if [ ! -d "$cache_dir/$package_name" ]; then
-			echo "Downloading $package_name..."
-			mkdir -p $cache_dir
-			git clone $source/$package_name $cache_dir/$package_name > /dev/null 2>&1
-			if [[ $? -ne 0 ]]; then
-				echo "ERROR: Could not find $package_name in any sources"
-				rm -rf $cache_dir/$package_name
-				exit 1
-			fi
-		else
-			cd $cache_dir/$package_name && git pull
+		echo "Downloading $package_name..."
+		git clone $source $source_dir > /dev/null 2>&1
+		if [[ $? -ne 0 ]]; then
+			echo "ERROR: Could not find $package_name in any sources"
+			rm -rf $source_dir
+			exit 1
 		fi
 	fi
 }
 
 function select_version() {
 	if [ "$version" != "" ]; then
+		echo "Checking out $version"
 		cd $source_dir > /dev/null 2>&1 ||
 			display_error "Source directory doesn't exist"
 		git pull > /dev/null 2>&1 ||
@@ -91,8 +83,6 @@ function select_version() {
 
 function setup_build_env() {
 	rm -rf $build_dir && mkdir -p $build_dir
-	rm -rf $source_dir
-	cp -r $cache_dir/$package_name $source_dir/
 	select_version
 	if [[ -f $source_dir/VERSION ]]; then
 		SOURCE_VERSION=`cat $source_dir/VERSION`
