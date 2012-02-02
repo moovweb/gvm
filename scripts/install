@@ -27,7 +27,7 @@ update_source() {
 }
 
 copy_source() {
-	cp -r $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
+	cp -R $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
 		display_error "Couldn't copy source to target folder"
 }
 
