@@ -74,8 +74,6 @@ function select_version() {
 		echo "Checking out $version"
 		cd $source_dir > /dev/null 2>&1 ||
 			display_error "Source directory doesn't exist"
-		git pull > /dev/null 2>&1 ||
-			display_error "Failed to update source"
 		git checkout $version > /dev/null 2>&1 || 
 			display_error "Invalid version $version"
 	fi
