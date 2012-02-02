@@ -22,7 +22,7 @@ cp $GVM_ROOT/environments/$gvm_go_name $GVM_ROOT/environments/$gvm_go_name@$1 ||
 	display_error "Could copy environment"
 echo "export gvm_pkgset_name=\"$1\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
 	display_error "Could not extend environment"
-echo "export GOPATH; GOPATH=\"$GVM_ROOT/pkgs/release.r60.3/$1:\$GOPATH\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
+echo "export GOPATH; GOPATH=\"$GVM_ROOT/pkgsets/release.r60.3/$1:\$GOPATH\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
 	display_error "Could not extend environment"
 
 
