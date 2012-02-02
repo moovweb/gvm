@@ -56,7 +56,7 @@ _gvm()
 		install)
 			[ ! -d $GVM_ROOT/archive/go ] && return 1
 			[[ $COMP_CWORD > 2 ]] && return 1
-			local version=$(for x in `hg tags -R $GVM_ROOT/archive/go | awk '{print $1}'`; do echo ${x} ; done )
+			local version=$(for x in `hg tags -R $GVM_ROOT/archive/go | awk '{print $1}' | grep -E "release|tip"`; do echo ${x} ; done )
 			COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
 			return 0
 		;;
