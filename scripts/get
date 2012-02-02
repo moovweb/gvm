@@ -7,7 +7,7 @@ display_error() {
 	exit 1
 }
 
-[[ ! -d $GVM_ROOT/.git ]] && mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||
+[[ -d $GVM_ROOT/.git ]] || mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||
 	display_error "Couldn't find git info"
 
 cd $GVM_ROOT && git checkout -f ||
