@@ -1,4 +1,10 @@
 function gvm() {
+	mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
+	mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
+	mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
+	mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
+	mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
+
 	if [ "$1" == "use" ]; then
 		. $GVM_ROOT/scripts/env/use
 		shift
