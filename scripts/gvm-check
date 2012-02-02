@@ -3,6 +3,7 @@ mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
 mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
 mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
 mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
+mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
 
 if [ -z `which hg` ]; then
   echo '* Could not find mercurial (try `sudo apt-get install mercurial`)'
