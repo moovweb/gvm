@@ -50,13 +50,13 @@ function check_deps() {
 			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
 				echo "$line: `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
 			else
-				gvm pkg install $line
-				if [ $? -ne 0 ]; then
-					echo "Failed to install dependency $line"
-					exit 1
-				fi
-				#echo "ERROR: Couldnt find package: $line"
-				#exit 1
+				#gvm pkg install $line
+				#if [ $? -ne 0 ]; then
+				#	echo "Failed to install dependency $line"
+				#	exit 1
+				#fi
+				echo "ERROR: Couldnt find package: $line"
+				exit 1
 			fi
 			export GOPATH=$GOPATH:$CUR_PKG
 		done
@@ -101,13 +101,13 @@ function cleanup() {
 	rm -rf $source_dir
 }
 
-if [ "$cur_dirname" == "$package_name" ]; then
-	cache_dir=$cur_dir
-	BUILD_NUMBER=src
-	echo "Using local source"
-else
+#if [ "$cur_dirname" == "$package_name" ]; then
+#	cache_dir=$cur_dir
+#	BUILD_NUMBER=src
+#	echo "Using local source"
+#else
 	download_package
-fi
+#fi
 setup_build_env
 check_deps
 build_package
