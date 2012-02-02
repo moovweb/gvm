@@ -4,6 +4,7 @@ source_dir=$GVM_ROOT/tmp/$3/src
 build_dir=$GVM_ROOT/tmp/$3/build
 package_name=$3
 version=$4
+mode=$5
 
 function download_package() {
 	if [ ! -d "$cache_dir" ]; then
@@ -43,13 +44,16 @@ function check_deps() {
 			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
 				echo "$line: `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
 			else
-				gvm pkg install $line
-				if [ $? -ne 0 ]; then
-					echo "Failed to install dependency $line"
+				if [[ "$mode" == "strict" ]]; then
+					echo "ERROR: Couldnt find package: $line please build it first"
 					exit 1
+				else
+					gvm pkg install $line
+					if [ $? -ne 0 ]; then
+						echo "Failed to install dependency $line"
+						exit 1
+					fi
 				fi
-				#echo "ERROR: Couldnt find package: $line"
-				#exit 1
 			fi
 			export GOPATH=$GOPATH:$CUR_PKG
 		done
