@@ -7,27 +7,65 @@ display_error() {
 	exit 1
 }
 
-[[ "$1" == "" ]] && 
-	display_error "Please specify package name"
+show_usage() {
+  echo "Usage: gvm pkg install Package [options]"
+  echo "    -v, --version=VERSION     Set the package version to install."
+  echo "    -s, --source=SORUCE       Specify the source for this package."
+  echo "    -a, --all                 Update all dependencies."
+  echo "    -h, --help                Display this message."
+}
 
-gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
-cur_dir=`pwd`
-cur_dirname=`pwd | awk '{ n=split($1,path,"/"); print path[n] }'`
-cache_dir=$GVM_ROOT/archive/package/$1
-source_dir=$GVM_ROOT/tmp/$1/src
-build_dir=$GVM_ROOT/tmp/$1/build
-package_name=$1
-version=$2
+function read_command_line() {
+	[[ "$1" == "" ]] && 
+		display_error "Please specify package name"
+
+	# Get package name
+	package_name=$1
+	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+	cur_dir=`pwd`
+	cur_dirname=`pwd | awk '{ n=split($1,path,"/"); print path[n] }'`
+	cache_dir=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$package_name/src
+	source_dir=$GVM_ROOT/tmp/$package_name/src
+	build_dir=$GVM_ROOT/tmp/$package_name/build
+	source="git@github.com:moovweb"
+	shift
+
+	for i in $*; do
+		case $i in
+		  -v=*|--version=*)
+		    version=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+		  ;;
+		  -s=*|--source=*)
+		    source=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+		  ;;
+		  -a|--all)
+		    all_deps="true"
+		  ;;
+		  -h|--help*)
+		    show_usage
+		    exit 0
+		  ;;
+		  *)
+		    echo "Invalid option $i"
+		    show_usage
+		    exit 65 # Bad arguments
+		  ;;
+		esac
+	done
+}
 
 function download_package() {
 	if [ ! -d "$cache_dir" ]; then
 		echo "Downloading $package_name..."
 		mkdir -p $cache_dir
-		git clone git@github.com:moovweb/$package_name $cache_dir > /dev/null 2>&1
+		git clone $source/$package_name $cache_dir > /dev/null 2>&1
 		if [[ $? -ne 0 ]]; then
 			echo "ERROR: Could not find $package_name in any sources"
+			rm -rf $cache_dir
 			exit 1
 		fi
+	else
+		cd $cache_dir && git pull
 	fi
 }
 
@@ -47,6 +85,17 @@ function setup_build_env() {
 	rm -rf $source_dir
 	cp -r $cache_dir/ $source_dir/
 	select_version
+	if [[ -f $source_dir/VERSION ]]; then
+		SOURCE_VERSION=`cat $source_dir/VERSION`
+	else
+		SOURCE_VERSION="0.0"
+	fi
+
+	if [[ -n $BUILD_NUMBER ]]; then
+	  BUILD_NUMBER="$SOURCE_VERSION.$BUILD_NUMBER"
+	else
+		BUILD_NUMBER="$SOURCE_VERSION.dev"
+	fi
 }
 
 function check_deps() {
@@ -71,13 +120,13 @@ function check_deps() {
 	echo ":complete" >> $build_dir/manifest
 }
 
+function copy_source() {
+	mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER
+	cp -rf $source_dir $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER/
+}
+
 function build_package() {
 	echo "Installing $package_name..."
-	if [[ -n $BUILD_NUMBER ]]; then
-	  export BUILD_NUMBER="`cat VERSION`.$BUILD_NUMBER"
-	else
-		export BUILD_NUMBER="`cat $source_dir/VERSION`.dev"
-	fi
 	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
@@ -108,6 +157,7 @@ function cleanup() {
 	rm -rf $source_dir
 }
 
+read_command_line $@
 #if [ "$cur_dirname" == "$package_name" ]; then
 #	cache_dir=$cur_dir
 #	BUILD_NUMBER=src
@@ -117,6 +167,7 @@ function cleanup() {
 #fi
 setup_build_env
 check_deps
+copy_source
 build_package
 install_package
 cleanup
