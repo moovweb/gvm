@@ -4,7 +4,22 @@ if [[ "$1" == "" ]]; then
   exit 1
 fi
 
-UNINSTALL_ROOT=$GVM_ROOT/pkgs/pkg.gvm/$1
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+[[ $gvm_pkgset_name != "" ]] || 
+	display_error "No package set selected"
+
+gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+
+UNINSTALL_ROOT=$gvm_go_path/pkg.gvm/$1
 if [[ ! -d $UNINSTALL_ROOT ]]; then
   echo "ERROR: Invalid package name"
   exit 1
