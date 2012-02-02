@@ -4,9 +4,10 @@ if [[ "$1" == "g" ]]; then
 elif [[ "$1" == "ps" ]]; then
 	echo $gvm_pkgset_name
 else
-	echo $gvm_go_name
 	if [[ $gvm_pkgset_name != "" ]]; then
-		echo "@$gvm_pkgset_name"
+		echo "$gvm_go_name@$gvm_pkgset_name"
+	else
+		echo $gvm_go_name
 	fi
 fi
 
