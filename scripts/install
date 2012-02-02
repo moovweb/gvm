@@ -96,7 +96,7 @@ install_goprotobuf() {
       echo "Failed to install goprotobuf"
       exit 1
     fi
-    cd $GOROOT/src/pkg/goprotobuf.googlecode.com/hg/compiler
+    cd $GVM_ROOT/pkgsets/$version/global/src/goprotobuf.googlecode.com/hg/compiler
     make install > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
     if [[ $? -ne 0 ]]; then
       echo "Failed to install goprotobuf compiler"
