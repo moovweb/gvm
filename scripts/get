@@ -1,29 +1,26 @@
 #!/bin/bash
-mv $GVM_ROOT/git.bak $GVM_ROOT/.git
-if [ $? -ne 0 ]; then
-  echo "Couldn't find git info"
-  exit 1
-fi
-cd $GVM_ROOT && git checkout -f
-if [ $? -ne 0 ]; then
-  echo "Failed to clean install"
-  exit 1
-fi
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ ! -d $GVM_ROOT/.git ]] && mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||
+	display_error "Couldn't find git info"
+
+cd $GVM_ROOT && git checkout -f ||
+	display_error "Failed to clean install"
+
 if [[ -n $1 ]]; then
-  cd $GVM_ROOT && git checkout $1 -f
-  if [ $? -ne 0 ]; then
-    echo "Failed to checkout $1 branch"
-    exit 1
-  fi
+  cd $GVM_ROOT && git checkout $1 -f ||
+		display_error "Failed to checkout $1 branch"
 fi
-cd $GVM_ROOT && git pull
-if [ $? -ne 0 ]; then
-  echo "Failed to update"
-  exit 1
-fi
-mv $GVM_ROOT/.git $GVM_ROOT/git.bak
-if [ $? -ne 0 ]; then
-  echo "Couldn't backup git info"
-  exit 1
-fi
+
+cd $GVM_ROOT && git pull ||
+	display_error "Failed to update"
+
+mv $GVM_ROOT/.git $GVM_ROOT/git.bak ||
+	display_error "Couldn't backup git info"
 
