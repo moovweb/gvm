@@ -69,6 +69,9 @@ install_go() {
 	# Create the target folder
 	mkdir -p $GO_INSTALL_ROOT &>> $GVM_ROOT/logs/go-$version-install.log || 
 		display_error "Couldn't create target folder"
+	# Create the global package set folder
+	mkdir -p $GVM_ROOT/pkgsets/$version &>> $GVM_ROOT/logs/go-$version-install.log || 
+		display_error "Couldn't create global package set folder"
 
 	# Copy the source and checkout the version
 	copy_source

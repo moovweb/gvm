@@ -4,6 +4,12 @@ unset GOOS
 unset GOPATH
 unset GOBIN
 
+mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
+mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
+mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
+mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
+mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
+
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
 export PATH=$GVM_ROOT/bin:$PATH
 [ -f $GVM_ROOT/environments/default ] && . $GVM_ROOT/environments/default
