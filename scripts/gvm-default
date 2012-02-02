@@ -4,6 +4,9 @@ unset GOOS
 unset GOPATH
 unset GOBIN
 
+unset gvm_go_name
+unset gvm_pkgset_name
+
 mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
 mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
 mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
