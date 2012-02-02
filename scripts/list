@@ -3,7 +3,11 @@ echo "
 gvm gos
 "
 if [ -d $GVM_ROOT/gos ]; then
-	ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$gvm_go_name'/=> '$gvm_go_name'/g'
+	if [[ "$gvm_go_name" != "" ]]; then
+		ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$gvm_go_name'/=> '$gvm_go_name'/g'
+	else
+		ls -1 $GVM_ROOT/gos | sed 's/^/   /g'
+	fi
 fi
 echo
 

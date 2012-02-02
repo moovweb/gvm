@@ -127,6 +127,7 @@ install_goprotobuf() {
 
 create_env_file() {
   gvm_go_name=$SOURCE_TAG
+  mkdir -p $GVM_ROOT/environments
   new_env_file=$GVM_ROOT/environments/$SOURCE_TAG
   echo "export gvm_go_name; gvm_go_name=\"$gvm_go_name\"" > $new_env_file
   echo "unset gvm_pkgset_name" >> $new_env_file
