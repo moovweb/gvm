@@ -1,100 +1,82 @@
 #!/bin/bash
-if [[ "$1" == "" ]]; then
-  echo "ERROR: Please specifiy the version"
-  exit 1
-else
-  REVISION=$1
-fi
-
-################################################################################
-# Implementation
-################################################################################
-
-# find_revision(version)
-get_source_tag() {
-  curl -s https://go.googlecode.com/hg/.hgtags | awk '{print $2;}' | grep "$1" > /dev/null 2>&1
-  if [[ $? -ne 0 ]]; then
-    return 1
-  fi
-  SOURCE_TAG=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{print $2;}' | grep "$1" | tail -n 1`
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
 }
 
-# download_revision(revision, destination)
-download_revision() {
-  hg clone -u $1 https://go.googlecode.com/hg/ $2
-  if [[ $? -ne 0 ]]; then
-    return 1
-  fi
+download_source() {
+	GO_CACHE_PATH=$GVM_ROOT/archive/go
+	GO_SOURCE_URL=https://go.googlecode.com/hg/
+	[ -d $GO_CACHE_PATH ] && return
+	echo "Downloading Go source..."
+	hg clone $GO_SOURCE_URL $GO_CACHE_PATH &>> $GVM_ROOT/logs/go-download.log ||
+		display_error "Couldn't download Go source"
 }
 
-# compile_go(source)
-compile_go() {
-  unset GOARCH
-  unset GOOS
-  unset GOPATH
-  export GOBIN=$1/bin
-  export PATH=$GOBIN:$PATH
-  export GOROOT=$1
-  cd $1/src && ./all.bash
-  if [[ $? -ne 0 ]]; then
-    return 1
-  fi
+check_tag() {
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | grep $VERSION | head -n 1 | grep $VERSION`
 }
 
-################################################################################
-# Interface
-################################################################################
-
-download() {
-  echo " * Downloading..."
-  download_revision $SOURCE_TAG $SOURCE_ROOT > $GVM_ROOT/logs/$SOURCE_TAG-download.log 2>&1
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to download version $SOURCE_TAG. See logs in $GVM_ROOT/logs/$SOURCE_TAG-download.log for details"
-    exit 1
-  fi
+update_source() {
+	echo "Updating Go source..."
+	hg pull -R $GO_CACHE_PATH &>> $GVM_ROOT/logs/go-download.log || 
+		display_error "Couldn't get latest Go version info"
 }
 
 copy_source() {
-  cp -r $SOURCE_ROOT $INSTALL_ROOT
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to copy from cache"
-    exit 1
-  fi
+	cp -r -T $GO_CACHE_PATH $GO_INSTALL_ROOT &>> $GVM_ROOT/logs/go-$version-install.log || 
+		display_error "Couldn't copy source to target folder"
 }
 
-setup_install_env() {
-  get_source_tag $REVISION
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to find go release version: '$1'"
-    exit 1
-  fi
 
-  SOURCE_ROOT=$GVM_ROOT/archive/$SOURCE_TAG
-  INSTALL_ROOT=$GVM_ROOT/gos/$SOURCE_TAG
-
-  if [[ -d $INSTALL_ROOT ]]; then
-    echo "Already installed!"
-    exit 1
-  else
-    echo "Installing version $SOURCE_TAG"
-  fi
-
-  if [[ ! -d $SOURCE_ROOT ]]; then
-    download
-  fi
-
-  trap 'rm -rf $INSTALL_ROOT' INT
-  copy_source
+compile_go() {
+	echo " * Compiling..."
+	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
+	export GOBIN=$GO_INSTALL_ROOT/bin && 
+	export PATH=$GOBIN:$PATH && 
+	export GOROOT=$GO_INSTALL_ROOT &&
+	cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$version-compile.log || 
+		(rm -rf $GO_INSTALL_ROOT && display_error "Failed to compile")
 }
 
-compile() {
-  echo " * Compiling..."
-  compile_go $INSTALL_ROOT > $GVM_ROOT/logs/$SOURCE_TAG-compile.log 2>&1
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to install version $SOURCE_TAG. See logs in $GVM_ROOT/logs/$SOURCE_TAG-compile.log for details"
-    rm -rf $INSTALL_ROOT
-    exit 1
-  fi
+create_enviroment() {
+  new_env_file=$GVM_ROOT/environments/$version
+  echo "export gvm_go_name; gvm_go_name=\"$version\"" > $new_env_file
+  echo "unset gvm_pkgset_name" >> $new_env_file
+  echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$version\"" >> $new_env_file
+  echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$version/global\"" >> $new_env_file
+  echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$version/global/bin:\$GVM_ROOT/gos/$version/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
+	. $GVM_ROOT/scripts/env/use
+	gvm_use $version
+	gvm pkgset create global
+	. $GVM_ROOT/scripts/env/pkgset-use
+	gvm_pkgset_use global
+}
+
+install_go() {
+	GO_INSTALL_ROOT=$GVM_ROOT/gos/$version
+	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
+
+	# Check for existing install
+	[ -d $GO_INSTALL_ROOT ] && 
+		display_error "Already installed!"
+
+	echo "Installing $version..."
+
+	# Create the target folder
+	mkdir -p $GO_INSTALL_ROOT &>> $GVM_ROOT/logs/go-$version-install.log || 
+		display_error "Couldn't create target folder"
+
+	# Copy the source and checkout the version
+	copy_source
+	hg checkout $version -R $GO_INSTALL_ROOT &>> $GVM_ROOT/logs/go-$version-install.log || 
+		(rm -rf $GO_INSTALL_ROOT && display_error "Couldn't checkout version")
+
+	compile_go
+	create_enviroment
 }
 
 install_gb() {
@@ -108,42 +90,36 @@ install_gb() {
 
 install_goprotobuf() {
   echo " * Installing goprotobuf..."
-  if [[ "$SOURCE_TAG" == "release.r60.3" ]]; then
+  if [[ "$version" == "release.r60.3" ]]; then
     goinstall goprotobuf.googlecode.com/hg/proto
     if [[ $? -ne 0 ]]; then
       echo "Failed to install goprotobuf"
       exit 1
     fi
     cd $GOROOT/src/pkg/goprotobuf.googlecode.com/hg/compiler
-    make install > $GVM_ROOT/logs/$SOURCE_TAG-pb-compiler.log 2>&1
+    make install > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
     if [[ $? -ne 0 ]]; then
       echo "Failed to install goprotobuf compiler"
       exit 1
     fi
   else
-    echo "   Don't know how to install goprotobuf for $SOURCE_TAG"
+    echo "   Don't know how to install goprotobuf for $version"
   fi
 }
 
-create_env_file() {
-  gvm_go_name=$SOURCE_TAG
-  mkdir -p $GVM_ROOT/environments
-  mkdir -p $GVM_ROOT/pkgsets/$SOURCE_TAG/global
-  new_env_file=$GVM_ROOT/environments/$SOURCE_TAG
-  echo "export gvm_go_name; gvm_go_name=\"$gvm_go_name\"" > $new_env_file
-  echo "unset gvm_pkgset_name" >> $new_env_file
-  echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$gvm_go_name\"" >> $new_env_file
-  echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$gvm_go_name/global\"" >> $new_env_file
-  echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$gvm_go_name/global/bin:\$GVM_ROOT/gos/$gvm_go_name/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
-}
-
 main() {
-  setup_install_env
-  compile
-  create_env_file
+	VERSION=$1
+	trap 'display_error "Canceled!"' INT
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	[ -z $VERSION ] && display_error "No version specified"
+	download_source
+	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
+	install_go
   install_gb
   install_goprotobuf
 }
 
-main
+main $@
 
