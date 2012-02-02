@@ -1,0 +1,13 @@
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ "$1" == "" ]] && 
+	display_error "Please specify package name"
+
+gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+

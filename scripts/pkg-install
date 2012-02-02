@@ -11,6 +11,7 @@ show_usage() {
   echo "Usage: gvm pkg install Package [options]"
   echo "    -v, --version=VERSION     Set the package version to install."
   echo "    -s, --source=SORUCE       Specify the source for this package."
+  echo "    --strict                  Only use installed packages."
   echo "    -a, --all                 Update all dependencies."
   echo "    -h, --help                Display this message."
 }
@@ -21,12 +22,6 @@ function read_command_line() {
 
 	# Get package name
 	package_name=$1
-	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
-	cur_dir=`pwd`
-	cur_dirname=`pwd | awk '{ n=split($1,path,"/"); print path[n] }'`
-	cache_dir=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$package_name/src
-	source_dir=$GVM_ROOT/tmp/$package_name/src
-	build_dir=$GVM_ROOT/tmp/$package_name/build
 	source="git@github.com:moovweb"
 	shift
 
@@ -45,6 +40,9 @@ function read_command_line() {
 		    show_usage
 		    exit 0
 		  ;;
+		  --strict)
+		    strict="true"
+		  ;;
 		  *)
 		    echo "Invalid option $i"
 		    show_usage
@@ -52,38 +50,49 @@ function read_command_line() {
 		  ;;
 		esac
 	done
+
+	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+	if [[ "$source" == "." ]]; then
+		cache_dir=`pwd`
+	else
+		cache_dir=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$package_name/src
+	fi
+	source_dir=$GVM_ROOT/tmp/$package_name/src
+	build_dir=$GVM_ROOT/tmp/$package_name/build
 }
 
 function download_package() {
-	if [ ! -d "$cache_dir" ]; then
-		echo "Downloading $package_name..."
-		mkdir -p $cache_dir
-		git clone $source/$package_name $cache_dir > /dev/null 2>&1
-		if [[ $? -ne 0 ]]; then
-			echo "ERROR: Could not find $package_name in any sources"
-			rm -rf $cache_dir
-			exit 1
+	if [[ "$source" != "." ]]; then
+		if [ ! -d "$cache_dir/$package_name" ]; then
+			echo "Downloading $package_name..."
+			mkdir -p $cache_dir
+			git clone $source/$package_name $cache_dir/$package_name > /dev/null 2>&1
+			if [[ $? -ne 0 ]]; then
+				echo "ERROR: Could not find $package_name in any sources"
+				rm -rf $cache_dir/$package_name
+				exit 1
+			fi
+		else
+			cd $cache_dir/$package_name && git pull
 		fi
-	else
-		cd $cache_dir && git pull
 	fi
 }
 
 function select_version() {
 	if [ "$version" != "" ]; then
-		cd $source_dir && git pull &&
-		git checkout $version > /dev/null 2>&1
-		if [[ $? -ne 0 ]]; then
-			echo "Invalid version $version"
-			exit 1
-		fi
+		cd $source_dir > /dev/null 2>&1 ||
+			display_error "Source directory doesn't exist"
+		git pull > /dev/null 2>&1 ||
+			display_error "Failed to update source"
+		git checkout $version > /dev/null 2>&1 || 
+			display_error "Invalid version $version"
 	fi
 }
 
 function setup_build_env() {
 	rm -rf $build_dir && mkdir -p $build_dir
 	rm -rf $source_dir
-	cp -r $cache_dir/ $source_dir/
+	cp -r $cache_dir/$package_name $source_dir/
 	select_version
 	if [[ -f $source_dir/VERSION ]]; then
 		SOURCE_VERSION=`cat $source_dir/VERSION`
@@ -98,23 +107,35 @@ function setup_build_env() {
 	fi
 }
 
+function install_dep() {
+	[[ "$strict" == "true" ]] && display_error "Missing dependancy and strict mode is set"
+	[[ "$source" == "." ]] && passthrough_options="--source=. "$passthrough_options
+	[[ "$all_deps" == "true" ]] && passthrough_options="--all "$passthrough_options
+
+	gvm pkg install $1 $passthrough_options ||
+		display_error "Failed to install dependency $1"
+}
+
+function load_dep() {
+	if [[ "$all_deps" == "true" ]]; then
+		install_dep $1
+	fi
+
+	CUR_PKG=$gvm_go_path/pkg.gvm/$1/current
+	if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
+		echo "pkg $1 `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
+	else
+		install_dep $1
+	fi
+	export GOPATH=$GOPATH:$CUR_PKG
+}
+
 function check_deps() {
 	export GOPATH=$build_dir
+	echo ":source $source" >> $build_dir/manifest
 	if [ -f "$source_dir/Package.gvm" ]; then
 		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
-			CUR_PKG=$gvm_go_path/pkg.gvm/$line/current
-			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
-				echo "$line: `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
-			else
-				gvm pkg install $line
-				if [ $? -ne 0 ]; then
-					echo "Failed to install dependency $line"
-					exit 1
-				fi
-				#echo "ERROR: Couldnt find package: $line"
-				#exit 1
-			fi
-			export GOPATH=$GOPATH:$CUR_PKG
+			load_dep $line
 		done
 	fi
 	echo ":complete" >> $build_dir/manifest
@@ -147,6 +168,7 @@ function install_package() {
 	fi
 
 	if [ -d $build_dir/bin ]; then
+		echo " * Installing binaries"
 		mkdir -p $gvm_go_path/bin &&
 		cp -f $build_dir/bin/* $gvm_go_path/bin/
 	fi
@@ -158,13 +180,7 @@ function cleanup() {
 }
 
 read_command_line $@
-#if [ "$cur_dirname" == "$package_name" ]; then
-#	cache_dir=$cur_dir
-#	BUILD_NUMBER=src
-#	echo "Using local source"
-#else
-	download_package
-#fi
+download_package
 setup_build_env
 check_deps
 copy_source
