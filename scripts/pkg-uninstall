@@ -1,9 +1,4 @@
 #!/bin/bash
-if [[ "$1" == "" ]]; then
-  echo "ERROR: Please specify the package name"
-  exit 1
-fi
-
 display_error() {
 	tput sgr0
 	tput setaf 1
@@ -12,6 +7,8 @@ display_error() {
 	exit 1
 }
 
+[[ "$1" == "" ]] && 
+	display_error "Please specify package name"
 [[ $gvm_go_name != "" ]] || 
 	display_error "No Go version selected"
 [[ $gvm_pkgset_name != "" ]] || 
