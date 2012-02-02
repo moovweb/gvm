@@ -44,8 +44,8 @@ compile_go() {
 
 create_enviroment() {
   new_env_file=$GVM_ROOT/environments/$version
-  echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" >> $new_env_file
-  echo "export gvm_go_name; gvm_go_name=\"$version\"" > $new_env_file
+  echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > $new_env_file
+  echo "export gvm_go_name; gvm_go_name=\"$version\"" >> $new_env_file
   echo "unset gvm_pkgset_name" >> $new_env_file
   echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$version\"" >> $new_env_file
   echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$version/global\"" >> $new_env_file
