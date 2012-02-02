@@ -1,25 +1,21 @@
 #!/bin/bash
-if [ -z `which hg` ]; then
-  echo '* Could not find mercurial (try `sudo apt-get install mercurial`)'
-  exit 1
-fi
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
 
-if [ -z `which ar` ]; then
-  echo '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
-  exit 1
-fi
+[ -z `which hg` ] &&
+  display_error '* Could not find mercurial (try `sudo apt-get install mercurial`)'
+[ -z `which ar` ] &&
+  display_error '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
+[ -z `which bison` ] &&
+  display_error '* Could not find bison (try `sudo apt-get install bison`)'
+[ -z `which gcc` ] &&
+  display_error '* Could not find gcc (try `sudo apt-get install gcc`)'
+[ -z `which make` ] &&
+  display_error '* Could not find make (try `sudo apt-get install make`)'
 
-if [ -z `which bison` ]; then
-  echo '* Could not find bison (try `sudo apt-get install bison`)'
-  exit 1
-fi
-
-if [ -z `which gcc` ]; then
-  echo '* Could not find gcc (try `sudo apt-get install gcc`)'
-  exit 1
-fi
-
-if [ -z `which make` ]; then
-  echo '* Could not find make (try `sudo apt-get install make`)'
-  exit 1
-fi
+exit 0
