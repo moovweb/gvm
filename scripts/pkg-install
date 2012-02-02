@@ -4,13 +4,27 @@ if [ "$1" == "" ]; then
   exit 1
 fi
 
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+[[ $gvm_pkgset_name != "" ]] || 
+	display_error "No package set selected"
+
+gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
 cur_dir=`pwd`
 cur_dirname=`pwd | awk '{ n=split($1,path,"/"); print path[n] }'`
 cache_dir=$GVM_ROOT/archive/package/$1
 source_dir=$GVM_ROOT/tmp/$1/src
 build_dir=$GVM_ROOT/tmp/$1/build
-package_name=$3
-version=$4
+package_name=$1
+version=$2
 
 function download_package() {
 	if [ ! -d "$cache_dir" ]; then
@@ -46,17 +60,17 @@ function check_deps() {
 	export GOPATH=$build_dir
 	if [ -f "$source_dir/Package.gvm" ]; then
 		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
-			CUR_PKG=$GVM_ROOT/pkgs/pkg.gvm/$line/current
+			CUR_PKG=$gvm_go_path/pkg.gvm/$line/current
 			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
 				echo "$line: `cat $CUR_PKG/BUILD_VERSION`" >> $build_dir/manifest
 			else
-				#gvm pkg install $line
-				#if [ $? -ne 0 ]; then
-				#	echo "Failed to install dependency $line"
-				#	exit 1
-				#fi
-				echo "ERROR: Couldnt find package: $line"
-				exit 1
+				gvm pkg install $line
+				if [ $? -ne 0 ]; then
+					echo "Failed to install dependency $line"
+					exit 1
+				fi
+				#echo "ERROR: Couldnt find package: $line"
+				#exit 1
 			fi
 			export GOPATH=$GOPATH:$CUR_PKG
 		done
@@ -81,18 +95,18 @@ function build_package() {
 }
 
 function install_package() {
-	mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
-	cp -r $build_dir/* $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
-	rm -f $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
-	ln -s $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
+	mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER &&
+	cp -r $build_dir/* $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER &&
+	rm -f $gvm_go_path/pkg.gvm/$package_name/current &&
+	ln -s $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER $gvm_go_path/pkg.gvm/$package_name/current &&
 	if [ $? -ne 0 ]; then
 		echo "ERROR: Failed to install"
 		exit 1
 	fi
 
 	if [ -d $build_dir/bin ]; then
-		mkdir -p $GVM_ROOT/pkgs/bin &&
-		cp -f $build_dir/bin/* $GVM_ROOT/pkgs/bin/
+		mkdir -p $gvm_go_path/bin &&
+		cp -f $build_dir/bin/* $gvm_go_path/bin/
 	fi
 }
 

@@ -1,20 +1,22 @@
 #!/bin/bash
-if [[ ! -f $GVM_ROOT/go ]]; then
-  echo "ERROR: No Go version selected"
-  exit 1
-fi
-if [[ ! -f $GVM_ROOT/pkgs ]]; then
-  echo "ERROR: No package set selected"
-  exit 1
-fi
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
 
-CUR_VER=`readlink $GVM_ROOT/go | awk '{ n=split($1,path,"/"); print path[n] }'`
-CUR_PKGSET=`readlink $GVM_ROOT/pkgs | awk '{ n=split($1,path,"/"); print path[n] }'`
+[[ $gvm_go_name != "" ]] || 
+	display_error "No Go version selected"
+[[ $gvm_pkgset_name != "" ]] || 
+	display_error "No package set selected"
+
 echo "
-gvm packages $CUR_PKGSET@$CUR_VER"
+gvm packages $gvm_go_name@$gvm_pkgset_name"
 echo
-for package in $GVM_ROOT/pkgs/pkg.gvm/*; do
-  if [ $package == "$GVM_ROOT/pkgs/pkg.gvm/*" ]; then
+for package in $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/*; do
+  if [ $package == "$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/*" ]; then
     break
   fi
   package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
