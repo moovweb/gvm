@@ -38,7 +38,10 @@ function setup_build_env() {
 
 function check_deps() {
 	export GOPATH=$build_dir
+	echo "build package in ${build_dir}"
 	if [ -f "$source_dir/Package.gvm" ]; then
+		mkdir -p $build_dir/deps
+		echo "loading dependent packages into ${build_dir}/deps"
 		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
 			CUR_PKG=$GVM_ROOT/pkgs/pkg.gvm/$line/current
 			if [ -e "$CUR_PKG/BUILD_VERSION" ]; then
@@ -55,8 +58,11 @@ function check_deps() {
 					fi
 				fi
 			fi
-			export GOPATH=$GOPATH:$CUR_PKG
+			#go linker complains and quits building when GOPATH has more than 14 paths
+			#export GOPATH=$GOPATH:$CUR_PKG
+			cp -rf ${CUR_PKG}/pkg ${build_dir}/deps
 		done
+		export GOPATH=$GOPATH:${build_dir}/deps
 	fi
 	echo ":complete" >> $build_dir/manifest
 }
@@ -79,6 +85,9 @@ function build_package() {
 
 function install_package() {
 	mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
+	if [ -f "$source_dir/Package.gvm" ]; then
+		rm -rf $build_dir/deps
+	fi
 	cp -r $build_dir/* $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER &&
 	rm -f $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
 	ln -s $GVM_ROOT/pkgs/pkg.gvm/$package_name/$BUILD_NUMBER $GVM_ROOT/pkgs/pkg.gvm/$package_name/current &&
