@@ -120,6 +120,7 @@ main() {
 	install_go
 	install_gb
 	install_goprotobuf
+	tput sgr0
 }
 
 main $@
