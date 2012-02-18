@@ -1,11 +1,5 @@
 #!/bin/bash
-display_error() {
-	tput sgr0
-	tput setaf 1
-	echo "ERROR: $1" >&2
-	tput sgr0
-	exit 1
-}
+. $GVM_ROOT/scripts/display_error
 
 echo "
 gvm gos (available)
