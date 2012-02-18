@@ -51,10 +51,10 @@ create_enviroment() {
 	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$version/global\"" >> $new_env_file
 	echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$version/global/bin:\$GVM_ROOT/gos/$version/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
 	. $GVM_ROOT/scripts/env/use
-	gvm_use $version
+	gvm_use $version &> /dev/null
 	gvm pkgset create global
 	. $GVM_ROOT/scripts/env/pkgset-use
-	gvm_pkgset_use global
+	gvm_pkgset_use global &> /dev/null
 }
 
 install_go() {
