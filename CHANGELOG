@@ -1,7 +1,8 @@
 Version: 0.0.7
-State: Development
+State: Stable
 
 CHANGES:
+  * Fixed remaining error handling. Error now output to stderr.
   * Fixed error/state checking in `gvm pkg list` and `gvm pkgset list`
   * Removed all command's gvm- prefix
   * Revamped the folder structure for scripts so they don't show up in the path
