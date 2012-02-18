@@ -69,10 +69,10 @@ _gvm()
 		;;
 		*)
 			[[ $COMP_CWORD > 1 ]] && return 1
-			opts="get install list listall uninstall use"
-			[[ "$gvm_go_name" != "" ]] && opts="get install list listall pkgset uninstall use"
-			[[ "$gvm_pkgset_name" != "" ]] && opts="get install list listall pkg pkgset uninstall use"
-			COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
+			opts="get install list listall uninstall use version"
+			[[ "$gvm_go_name" != "" ]] && opts="get install list listall pkgset uninstall use version"
+			[[ "$gvm_pkgset_name" != "" ]] && opts="get install list listall pkg pkgset uninstall use version"
+			COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
 			return 0
 		;;
 	esac
