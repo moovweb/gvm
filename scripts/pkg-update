@@ -1,7 +1,7 @@
 display_error() {
 	tput sgr0
 	tput setaf 1
-	echo "ERROR: $1"
+	echo "ERROR: $1" >&2
 	tput sgr0
 	exit 1
 }
