@@ -1,23 +1,25 @@
 #!/bin/bash
-if [[ -n $1 ]]; then
-  fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"`
-  if [[ $? != 0 ]]; then
-    echo "Invalid version $1"
-    exit 1
-  fi
-  if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
-    rm -rf $GVM_ROOT/gos/$fuzzy_match
-    rm -rf $GVM_ROOT/pkgsets/$fuzzy_match
-		rm -f $GVM_ROOT/environments/$fuzzy_match
-		rm -f "$GVM_ROOT/environments/$fuzzy_match@"*
-    echo "Uninstalled version $fuzzy_match"
-  else
-    echo "Invalid version"
-    exit 1
-  fi
-  exit 0
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
+[[ "$1" == "" ]] && 
+	display_error "Please specifiy the version"
+
+fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"` ||
+	display_error "Invalid version $1"
+
+if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
+  rm -rf $GVM_ROOT/gos/$fuzzy_match
+  rm -rf $GVM_ROOT/pkgsets/$fuzzy_match
+	rm -f $GVM_ROOT/environments/$fuzzy_match
+	rm -f "$GVM_ROOT/environments/$fuzzy_match@"*
+  echo "Uninstalled version $fuzzy_match"
 else
-  echo "ERROR: Please specifiy the version"
-  exit 1
+  display_error "Invalid version"
 fi
 
