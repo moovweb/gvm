@@ -1,11 +1,18 @@
 #!/bin/bash
+display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1"
+	tput sgr0
+	exit 1
+}
+
 echo "
 gvm gos (available)
 "
 curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }'
 if [[ $? -ne 0 ]]; then
-	echo "Failed to get list from Google"
-	exit 1
+	display_error "Failed to get version list from Google"
 fi
 echo
 
