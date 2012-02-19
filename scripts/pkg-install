@@ -108,7 +108,7 @@ function load_dep() {
 	else
 		install_dep $1
 	fi
-	export GOPATH=$GOPATH:$CUR_PKG
+	cp -rf $CUR_PKG/pkg $build_dir
 }
 
 function check_deps() {
