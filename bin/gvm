@@ -1,12 +1,17 @@
 #!/bin/bash
 if [ -z "$GVM_ROOT" ]; then
-  echo 'ERROR: $GVM_ROOT is not set! Please update your .bashrc or .profile to $
+	tput sgr0
+	tput setaf 1
+  echo 'ERROR: $GVM_ROOT is not set! Please add the following line to your .bashrc or .profile
 
   [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
-
-  '
+  ' >&2
+	tput sgr0
   exit 1
 fi
+
+. $GVM_ROOT/scripts/display_error
+
 command=$1
 if [[ $command == "implode" ]]; then
   rm -rf $GVM_ROOT
@@ -15,8 +20,7 @@ fi
 
 $GVM_ROOT/scripts/gvm-check
 if [[ "$?" != "0" ]]; then
-  echo "ERROR: Missing requirements. Please see messages above"
-  exit 1
+  display_error "Missing requirements. Please see messages above"
 fi
 
 if [[ $command == "version" ]]; then
@@ -26,7 +30,7 @@ else
 		shift
     $GVM_ROOT/scripts/$command $@
   elif [[ -n $command ]]; then
-    echo "ERROR: Unrecognized command line argument: '$command'"
+    display_error "Unrecognized command line argument: '$command'"
   else
     echo "= gvm
 
