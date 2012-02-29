@@ -1,10 +1,9 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
-
-echo "
-gvm gos (available)
-"
 curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }'
+echo
+display_message "gvm gos (available)"
+echo
 if [[ $? -ne 0 ]]; then
 	display_error "Failed to get version list from Google"
 fi
