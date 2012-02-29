@@ -4,8 +4,10 @@
 echo "
 gvm packages $gvm_go_name@$gvm_pkgset_name"
 echo
-for package in $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/*; do
-  if [ $package == "$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/*" ]; then
+
+package_folder=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+for package in $package_folder/pkg.gvm/*; do
+  if [ $package == "$package_folder/pkg.gvm/*" ]; then
     break
   fi
   package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
@@ -27,5 +29,11 @@ for package in $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/*; do
 
   echo $output
 done
+if [ -f $package_folder/goinstall.log ]; then
+	echo
+	echo "Installing via goinstall"
+	echo
+	cat $package_folder/goinstall.log
+fi
 echo
 
