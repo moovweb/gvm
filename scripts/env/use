@@ -6,6 +6,14 @@ function display_error() {
 	return 1
 }
 
+display_message() {
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	echo "$1"
+	tput sgr0
+}
+
 function gvm_use() {
 	[[ "$1" != "" ]] || 
 		display_error "Please specifiy the version" || return 1
@@ -17,6 +25,6 @@ function gvm_use() {
 		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
 	fi
 
-	echo "Now using version $fuzzy_match"
+	display_message "Now using version $fuzzy_match"
 }
 
