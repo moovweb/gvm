@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/display_error
+. $GVM_ROOT/scripts/functions
 
 echo "
 gvm packages $gvm_go_name@$gvm_pkgset_name"

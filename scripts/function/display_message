@@ -1,0 +1,7 @@
+display_message() {
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	echo "$1"
+	tput sgr0
+}

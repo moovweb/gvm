@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/display_error
+. $GVM_ROOT/scripts/functions
 
 show_usage() {
   echo "Usage: gvm pkg install Package [options]"

@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/display_error
+. $GVM_ROOT/scripts/functions
 
 [[ $gvm_pkgset_name != "" ]] || 
 	display_error "No Package set selected"

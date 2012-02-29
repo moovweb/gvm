@@ -1,4 +1,5 @@
-. $GVM_ROOT/scripts/display_error
+#!/bin/bash
+. $GVM_ROOT/scripts/functions
 
 [[ "$1" == "" ]] && 
 	display_error "Please specify package name"

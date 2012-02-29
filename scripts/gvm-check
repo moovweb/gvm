@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/display_error
+. $GVM_ROOT/scripts/functions
 
 [ -z `which hg` ] &&
   display_error '* Could not find mercurial (try `sudo apt-get install mercurial`)'

@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/display_error
+. $GVM_ROOT/scripts/functions
 
 [[ -d $GVM_ROOT/.git ]] || mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||
 	display_error "Couldn't find git info"
