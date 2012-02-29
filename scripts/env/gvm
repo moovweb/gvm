@@ -1,4 +1,22 @@
+#!/bin/bash
+function display_error() {
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1" >&2
+	tput sgr0
+	return 1
+}
+
 function gvm() {
+	if [[ "$GVM_ROOT" == "" ]]; then
+		display_error "GVM_ROOT not set. Please source GVM_ROOT/scripts/gvm"
+		return $?
+	fi
+	if [[ ! -d $GVM_ROOT ]]; then
+		display_error "GVM_ROOT does not exist. Please reinstall GVM"
+		return $?
+	fi
+
 	mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
 	mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
 	mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
@@ -9,6 +27,8 @@ function gvm() {
 		. $GVM_ROOT/scripts/env/use
 		shift
 		gvm_use $@
+	elif [ "$1" == "implode" ]; then
+		rm -rf $GVM_ROOT
 	elif [ "$1" == "pkgset" ] && [ "$2" == "use" ]; then
 		. $GVM_ROOT/scripts/env/pkgset-use
 		shift
