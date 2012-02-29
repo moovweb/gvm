@@ -2,37 +2,37 @@
 if [ -z "$GVM_ROOT" ]; then
 	tput sgr0
 	tput setaf 1
-  echo 'ERROR: $GVM_ROOT is not set! Please add the following line to your .bashrc or .profile
+	echo 'ERROR: $GVM_ROOT is not set! Please add the following line to your .bashrc or .profile
 
-  [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
-  ' >&2
+	[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
+' >&2
 	tput sgr0
-  exit 1
+	exit 1
 fi
 
 . $GVM_ROOT/scripts/functions
 
 command=$1
 if [[ $command == "implode" ]]; then
-  rm -rf $GVM_ROOT
-  exit 0
+	rm -rf $GVM_ROOT
+	exit 0
 fi
 
 $GVM_ROOT/scripts/gvm-check
 if [[ "$?" != "0" ]]; then
-  display_error "Missing requirements. Please see messages above"
+	display_error "Missing requirements. Please see messages above"
 fi
 
 if [[ $command == "version" ]]; then
-  echo "Go Version Manager v$GVM_VERSION"
+	echo "Go Version Manager v$GVM_VERSION"
 else
-  if [ -f $GVM_ROOT/scripts/$command ]; then
+	if [ -f $GVM_ROOT/scripts/$command ]; then
 		shift
-    $GVM_ROOT/scripts/$command $@
-  elif [[ -n $command ]]; then
-    display_error "Unrecognized command line argument: '$command'"
-  else
-    echo "= gvm
+		$GVM_ROOT/scripts/$command $@
+	elif [[ -n $command ]]; then
+		display_error "Unrecognized command line argument: '$command'"
+	else
+		echo "= gvm
 
 * http://github.com/moovweb/gvm
 
@@ -55,5 +55,5 @@ GVM is the Go Version Manager
   list       - list installed go versions
   pkgset     - manage go packages sets
   pkg        - manage go packages"
-  fi
+	fi
 fi
