@@ -1,0 +1,27 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/display_error
+
+version=$1
+
+if [ "$version" != "" ]; then
+	foldername=$gvm_path/gos/$version
+else
+	if [ "$GOROOT" != "" ]; then
+		foldername=$GOROOT
+	else
+		display_error "No version selected"
+	fi
+fi
+
+if [ -d $foldername ]; then
+	cd $foldername
+	find > /tmp/manifest.test
+	diff manifest /tmp/manifest.test
+	if [ "$?" == "0" ]; then
+		echo "Clean Install $foldername"
+	else
+		echo "*Dirty*"
+	fi
+else
+	display_error "Invalid version"
+fi
