@@ -18,9 +18,9 @@ if [ -d $foldername ]; then
 	find . > /tmp/manifest.test
 	diff manifest /tmp/manifest.test
 	if [ "$?" == "0" ]; then
-		echo "Clean Install $foldername"
+		display_message "Clean $foldername"
 	else
-		echo "*Dirty*"
+		display_message "*Dirty* $foldername"
 	fi
 else
 	display_error "Invalid version"
