@@ -53,7 +53,7 @@ function read_command_line() {
 function download_package() {
 	rm -rf $source_dir && mkdir -p $source_dir
 	if [[ "$source" != "." ]]; then
-		echo "Downloading $package_name..."
+		#echo "Downloading $package_name..."
 		git clone $source $source_dir > /dev/null 2>&1
 		if [[ $? -ne 0 ]]; then
 			rm -rf $source_dir
@@ -63,12 +63,21 @@ function download_package() {
 }
 
 function select_version() {
+	cd $source_dir > /dev/null 2>&1 ||
+		display_error "Source directory doesn't exist"
 	if [ "$version" != "" ]; then
 		echo "Checking out $version"
-		cd $source_dir > /dev/null 2>&1 ||
-			display_error "Source directory doesn't exist"
 		git checkout $version > /dev/null 2>&1 || 
 			display_error "Invalid version $version"
+	else
+		git describe --exact-match > /dev/null 2>&1
+		if [ "$?" == "0" ]; then
+			git_tag=`git describe --exact-match`
+			git_version=`echo $git_tag | awk '{ n=split($1,path,"_"); print path[n] }'`
+			if [ "$BUILD_NUMBER" == "" ]; then
+				BUILD_NUMBER=$git_version
+			fi
+		fi
 	fi
 }
 
@@ -128,7 +137,7 @@ function copy_source() {
 }
 
 function build_package() {
-	echo "Installing $package_name..."
+	echo "Installing $package_name-$BUILD_NUMBER..."
 	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
