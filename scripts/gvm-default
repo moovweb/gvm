@@ -16,5 +16,5 @@ mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
 export PATH=$GVM_ROOT/bin:$PATH
 [ -f $GVM_ROOT/environments/default ] && . $GVM_ROOT/environments/default
-. $GVM_ROOT/scripts/env/*
+. $GVM_ROOT/scripts/env/gvm
 
