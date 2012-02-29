@@ -179,8 +179,7 @@ function install_package() {
 }
 
 function cleanup() {
-	echo "NO"
-	#rm -rf $tmp_dir
+	rm -rf $tmp_dir
 }
 
 read_command_line $@
