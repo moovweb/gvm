@@ -1,0 +1,6 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/functions
+
+display_message "*** CURRENT SOURCES ***"
+echo
+cat $GVM_ROOT/config/sources
