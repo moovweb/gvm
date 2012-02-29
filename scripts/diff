@@ -4,10 +4,10 @@
 version=$1
 
 if [ "$version" != "" ]; then
-	foldername=$gvm_path/gos/$version
+	foldername=$GVM_ROOT/gos/$version
 else
-	if [ "$GOROOT" != "" ]; then
-		foldername=$GOROOT
+	if [ "$gvm_go_name" != "" ]; then
+		foldername=$GVM_ROOT/gos/$gvm_go_name
 	else
 		display_error "No version selected"
 	fi
