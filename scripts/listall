@@ -1,9 +1,38 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
+
+function show_usage() {
+	echo "Usage: gvm listall [options]"
+	echo "    -a, --all                 List all tags."
+	echo "    -h, --help                Display this message."
+}
+
+function read_command_line() {
+	tag_filter="release"
+	for i in $*; do
+		case $i in
+			-a|--all)
+				tag_filter=""
+			;;
+			-h|--help*)
+				show_usage
+				exit 0
+			;;
+			*)
+				echo "Invalid option $i"
+				show_usage
+				exit 65 # Bad arguments
+			;;
+		esac
+	done
+}
+
+read_command_line $@
+
 echo
 display_message "gvm gos (available)"
 echo
-versions=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | grep "release" | sort`
+versions=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | grep "$tag_filter" | sort`
 if [[ $? -ne 0 ]]; then
 	display_error "Failed to get version list from Google"
 fi
