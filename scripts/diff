@@ -15,7 +15,7 @@ fi
 
 if [ -d $foldername ]; then
 	cd $foldername
-	find > /tmp/manifest.test
+	find . > /tmp/manifest.test
 	diff manifest /tmp/manifest.test
 	if [ "$?" == "0" ]; then
 		echo "Clean Install $foldername"

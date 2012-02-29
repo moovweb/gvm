@@ -111,7 +111,7 @@ main() {
 	install_go
 	install_gb
 	install_goprotobuf
-	cd $GO_INSTALL_ROOT && find > manifest
+	cd $GO_INSTALL_ROOT && find . > manifest
 
 	tput sgr0
 }
