@@ -21,7 +21,7 @@ update_source() {
 }
 
 copy_source() {
-	cp -R $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
+	hg clone -u $version $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 ||
 		display_error "Couldn't copy source to target folder"
 }
 
@@ -65,11 +65,7 @@ install_go() {
 	mkdir -p $GVM_ROOT/pkgsets/$version >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
 		display_error "Couldn't create global package set folder"
 
-	# Copy the source and checkout the version
 	copy_source
-	hg checkout $version -R $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
-		(rm -rf $GO_INSTALL_ROOT && display_error "Couldn't checkout version")
-
 	compile_go
 	create_enviroment
 }
@@ -114,6 +110,8 @@ main() {
 	install_go
 	install_gb
 	install_goprotobuf
+	cd $GO_INSTALL_ROOT && find > manifest
+
 	tput sgr0
 }
 
