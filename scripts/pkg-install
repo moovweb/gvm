@@ -100,14 +100,16 @@ function setup_build_env() {
 	fi
 	if [[ -f $source_dir/VERSION ]]; then
 		SOURCE_VERSION=`cat $source_dir/VERSION`
-	else
-		SOURCE_VERSION="0.0"
 	fi
 
 	if [[ -n $BUILD_NUMBER ]]; then
 		BUILD_NUMBER="$SOURCE_VERSION.$BUILD_NUMBER"
 	else
-		BUILD_NUMBER="$SOURCE_VERSION.dev"
+		if [[ "$SOURCE_VERSION" != "" ]]; then
+			BUILD_NUMBER="$SOURCE_VERSION.src"
+		else
+			BUILD_NUMBER="src"
+		fi
 	fi
 }
 
