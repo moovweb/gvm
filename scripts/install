@@ -40,7 +40,7 @@ create_enviroment() {
 	new_env_file=$GVM_ROOT/environments/$version
 	echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > $new_env_file
 	echo "export gvm_go_name; gvm_go_name=\"$version\"" >> $new_env_file
-	echo "unset gvm_pkgset_name" >> $new_env_file
+	echo "export gvm_pkgset_name; gvm_pkgset_name=\"global\"" >> $new_env_file
 	echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$version\"" >> $new_env_file
 	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$version/global\"" >> $new_env_file
 	echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$version/global/bin:\$GVM_ROOT/gos/$version/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
@@ -49,6 +49,7 @@ create_enviroment() {
 	gvm pkgset create global
 	. $GVM_ROOT/scripts/env/pkgset-use
 	gvm_pkgset_use global &> /dev/null
+	unset GOPATH
 }
 
 install_go() {
@@ -87,7 +88,7 @@ install_goprotobuf() {
 			echo "Failed to install goprotobuf"
 			exit 1
 		fi
-		cd $GVM_ROOT/pkgsets/$version/global/src/goprotobuf.googlecode.com/hg/compiler
+		cd $GVM_ROOT/gos/$version/src/pkg/goprotobuf.googlecode.com/hg/compiler
 		make install > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to install goprotobuf compiler"
