@@ -7,6 +7,9 @@ Version: 0.0.7
 State: Stable
 
 CHANGES:
+  * Fixed issue with gvm use where multiple versions matched.
+  * Added gvm diff for checking the state of a GOROOT.
+  * Install now uses hg clone to copy source.
   * Fixed remaining error handling. Error now output to stderr.
   * Fixed error/state checking in `gvm pkg list` and `gvm pkgset list`
   * Removed all command's gvm- prefix
