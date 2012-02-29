@@ -9,7 +9,7 @@ function display_error() {
 function gvm_use() {
 	[[ "$1" != "" ]] || 
 		display_error "Please specifiy the version" || return 1
-	fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"` ||
+	fuzzy_match=`ls $GVM_ROOT/gos | grep "$1" | head -n 1` ||
 		display_error "Invalid version $1" || return 1
 
 	. $GVM_ROOT/environments/$fuzzy_match
