@@ -82,7 +82,7 @@ function setup_build_env() {
 	fi
 
 	if [[ -n $BUILD_NUMBER ]]; then
-	  BUILD_NUMBER="$SOURCE_VERSION.$BUILD_NUMBER"
+		BUILD_NUMBER="$SOURCE_VERSION.$BUILD_NUMBER"
 	else
 		BUILD_NUMBER="$SOURCE_VERSION.dev"
 	fi
