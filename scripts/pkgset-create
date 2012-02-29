@@ -4,7 +4,7 @@
 [[ $1 != "" ]] || 
 	display_error "Please specifiy the name"
 
-[[ ! -f "$GVM_ROOT/enviroments/$gvm_go_name@$1" ]] || 
+[[ ! -f "$GVM_ROOT/environments/$gvm_go_name@$1" ]] || 
 	display_error "Packageset already exists!"
 
 mkdir -p $GVM_ROOT/pkgsets/$gvm_go_name/$1 ||

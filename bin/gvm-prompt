@@ -1,13 +1,18 @@
 #!/bin/bash
-if [[ "$1" == "g" ]]; then
-	echo $gvm_go_name
-elif [[ "$1" == "ps" ]]; then
-	echo $gvm_pkgset_name
-else
-	if [[ $gvm_pkgset_name != "" ]]; then
-		echo "$gvm_go_name@$gvm_pkgset_name"
+function gvm_prompt() {
+	if [[ "$1" == "g" ]]; then
+		echo $gvm_go_name
+	elif [[ "$1" == "ps" ]]; then
+		echo $gvm_pkgset_name
 	else
+		if [[ $gvm_pkgset_name != "" ]]; then
+			if [[ $gvm_pkgset_name != "global" ]]; then
+				echo "$gvm_go_name@$gvm_pkgset_name"
+				return 0
+			fi
+		fi
 		echo $gvm_go_name
 	fi
-fi
+}
 
+gvm_prompt $@
