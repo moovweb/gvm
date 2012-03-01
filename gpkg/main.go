@@ -1,6 +1,7 @@
 package main
 
 import "os"
+import "github.com/moovweb/gvm/gpkg/pkg"
 import "github.com/moovweb/gvm/gpkg/pkgs"
 import "github.com/moovweb/gvm/gpkg/gopkgs"
 
@@ -20,6 +21,8 @@ func main() {
 			println()
 			pkgs.List(gvm_root)
 			gopkgs.List(gvm_root)
+		} else if os.Args[1] == "install" {
+			pkg.Install()
 		} else {
 			showUsage()
 		}
