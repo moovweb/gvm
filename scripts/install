@@ -71,6 +71,15 @@ install_go() {
 	create_enviroment
 }
 
+install_gpkg() {
+	echo " * Installing gpkg..."
+	goinstall github.com/moovweb/gvm/gpkg > /dev/null 2>&1
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to install gpkg"
+		return 1
+	fi
+}
+
 install_gb() {
 	if [[ "$version" == "release.r60.3" ]]; then
 		echo " * Installing gb..."
@@ -109,6 +118,7 @@ main() {
 	download_source
 	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
 	install_go
+	install_gpkg
 	install_gb
 	install_goprotobuf
 	cd $GO_INSTALL_ROOT && find . > manifest
