@@ -2,6 +2,7 @@ package main
 
 import "os"
 import "github.com/moovweb/gvm/gpkg/pkgs"
+import "github.com/moovweb/gvm/gpkg/gopkgs"
 
 func showUsage() {
 	println("usage: gpkg list")
@@ -16,7 +17,9 @@ func main() {
 
 	if len(os.Args) > 1 {
 		if os.Args[1] == "list" {
+			println()
 			pkgs.List(gvm_root)
+			gopkgs.List(gvm_root)
 		} else {
 			showUsage()
 		}
