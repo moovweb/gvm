@@ -4,7 +4,10 @@
 version=$1
 
 if [ "$version" != "" ]; then
-	foldername=$GVM_ROOT/gos/$version
+	fuzzy_match=`ls $GVM_ROOT/gos | sort | grep "$version" | head -n 1 | grep "$version"` ||
+		display_error "Invalid version $version"
+
+	foldername=$GVM_ROOT/gos/$fuzzy_match
 else
 	if [ "$gvm_go_name" != "" ]; then
 		foldername=$GVM_ROOT/gos/$gvm_go_name

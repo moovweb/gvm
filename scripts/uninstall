@@ -4,7 +4,7 @@
 [[ "$1" == "" ]] && 
 	display_error "Please specifiy the version"
 
-fuzzy_match=`ls $GVM_ROOT/gos | grep "$1"` ||
+fuzzy_match=`ls $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
 	display_error "Invalid version $1"
 
 if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then

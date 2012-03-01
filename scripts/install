@@ -11,7 +11,7 @@ download_source() {
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | grep $VERSION | head -n 1 | grep $VERSION`
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep $VERSION | head -n 1 | grep $VERSION`
 }
 
 update_source() {
