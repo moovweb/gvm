@@ -1,8 +1,8 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
 
-echo "
-gvm packages $gvm_go_name@$gvm_pkgset_name"
+echo
+display_message "gvm packages $gvm_go_name@$gvm_pkgset_name"
 echo
 
 package_folder=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
@@ -31,7 +31,7 @@ for package in $package_folder/pkg.gvm/*; do
 done
 if [ -f $package_folder/goinstall.log ]; then
 	echo
-	echo "Installing via goinstall"
+	display_message "Installing via goinstall"
 	echo
 	cat $package_folder/goinstall.log
 fi
