@@ -29,7 +29,9 @@ func List(gvm_root string) {
 	println("Installed go packages")
 	println()
 	data, err := ioutil.ReadFile(filepath.Join(gvm_root, "pkgsets", gvm_go_name, gvm_pkgset_name, "goinstall.log"))
-	checkError(err, "ERROR: Failed to open goinstall.log")
+	if err != nil {
+		return
+	}
 
 	buf_str := string(data)
 	pkgs := strings.Split(buf_str, "\n")

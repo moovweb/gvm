@@ -28,7 +28,9 @@ func List(gvm_root string) {
 	println()
 
 	pkgfolder, err := os.Open(filepath.Join(gvm_root, "pkgsets", gvm_go_name, gvm_pkgset_name, "pkg.gvm"))
-	checkError(err, "ERROR: Failed to open folder")
+	if err != nil {
+		return
+	}
 
 	pkgfolderlist, err := pkgfolder.Readdir(0)
 	checkError(err, "ERROR: Failed to read folder")
