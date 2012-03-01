@@ -1,7 +1,6 @@
 *~
 go
 gos/
-pkgs
 pkgsets/
 archive/
 environments/
