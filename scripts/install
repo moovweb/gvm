@@ -1,11 +1,16 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
+if [ "$1" == "--test" ]; then
+	test=true
+fi
 
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
-	GO_SOURCE_URL=https://go.googlecode.com/hg/
+	if [ "$test" != "true" ]; then
+		GO_SOURCE_URL=https://go.googlecode.com/hg/
+	fi
 	[ -d $GO_CACHE_PATH ] && return
-	echo "Downloading Go source..."
+	echo "Downloading Go source... $GO_SOURCE_URL"
 	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
 		display_error "Couldn't download Go source"
 }
