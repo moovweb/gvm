@@ -32,7 +32,7 @@ read_command_line() {
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[ -d $GO_CACHE_PATH ] && return
-	echo "Downloading Go source... $GO_SOURCE_URL"
+	echo "Downloading Go source..."
 	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
 		display_error "Couldn't download Go source"
 }
