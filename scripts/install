@@ -1,6 +1,34 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
 
+function show_usage() {
+	echo "Usage: gvm install [version] [options]"
+	echo "    -s, --source=SOURCE       Install Go from specified source."
+	echo "    -h, --help                Display this message."
+}
+
+read_command_line() {
+	VERSION=$1
+	shift
+	GO_SOURCE_URL=https://go.googlecode.com/hg/
+	for i in $*; do
+		case $i in
+			-s=*|--source=*)
+				GO_SOURCE_URL=$i
+			;;
+			-h|--help*)
+				show_usage
+				exit 0
+			;;
+			*)
+				echo "Invalid option $i"
+				show_usage
+				exit 65 # Bad arguments
+			;;
+		esac
+	done
+}
+
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[ -d $GO_CACHE_PATH ] && return
@@ -72,7 +100,7 @@ install_go() {
 
 install_gpkg() {
 	echo " * Installing gpkg..."
-	goinstall github.com/moovweb/gpkg > /dev/null 2>&1
+	$GVM_GOINSTALL github.com/moovweb/gpkg > /dev/null 2>&1
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to install gpkg"
 		return 1
@@ -82,7 +110,7 @@ install_gpkg() {
 install_gb() {
 	if [[ "$version" == "release.r60.3" ]]; then
 		echo " * Installing gb..."
-		goinstall github.com/skelterjohn/go-gb/gb > /dev/null 2>&1
+		$GVM_GOINSTALL github.com/skelterjohn/go-gb/gb > /dev/null 2>&1
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to install gb"
 			return 1
@@ -93,7 +121,7 @@ install_gb() {
 install_goprotobuf() {
 	if [[ "$version" == "release.r60.3" ]]; then
 		echo " * Installing goprotobuf..."
-		goinstall goprotobuf.googlecode.com/hg/proto > /dev/null 2>&1
+		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > /dev/null 2>&1
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to install goprotobuf"
 			return 1
@@ -108,13 +136,8 @@ install_goprotobuf() {
 }
 
 main() {
-	VERSION=$1
-	if [ "$2" != "" ]; then
-		GO_SOURCE_URL=$2
-	else
-		GO_SOURCE_URL=https://go.googlecode.com/hg/
-	fi
 	trap 'display_error "Canceled!"' INT
+	read_command_line $@
 	# GREEN!
 	tput sgr0
 	tput setaf 2
@@ -122,6 +145,9 @@ main() {
 	download_source
 	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
 	install_go
+	GVM_GOINSTALL="goinstall"
+	which goinstall &> /dev/null ||
+		GVM_GOINSTALL="go install"
 	install_gpkg
 	install_gb
 	install_goprotobuf
