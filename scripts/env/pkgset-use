@@ -13,10 +13,10 @@ function gvm_pkgset_use() {
 	[[ "$gvm_go_name" != "" ]] || 
 		display_error "No Go version selected" || return 1
 
-	fuzzy_match=`ls $GVM_ROOT/environments | sort | grep "$gvm_go_name@" | head -n 1 | grep "$1"` ||
+	fuzzy_match=`ls $GVM_ROOT/environments | sort | grep "$gvm_go_name@" | grep "$1" | head -n 1` ||
 		display_error "Invalid package set" || return 1
 
-	. "$GVM_ROOT/environments/$gvm_go_name@$1" ||
+	. "$GVM_ROOT/environments/$fuzzy_match" ||
 		display_error "Failed to source the package set environment" || return 1
 
 	echo "Now using version $fuzzy_match"
