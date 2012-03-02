@@ -1,5 +1,4 @@
-#!/bin/bash -e -x
-. ~/.gvm/scripts/gvm
+#!/bin/bash -ex
 TEST_OUTPUT=`gvm version`
 [ "$TEST_OUTPUT" != "" ]
 echo "Success!"
