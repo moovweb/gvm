@@ -1,14 +1,8 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
-if [ "$1" == "--test" ]; then
-	test=true
-fi
 
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
-	if [ "$test" != "true" ]; then
-		GO_SOURCE_URL=https://go.googlecode.com/hg/
-	fi
 	[ -d $GO_CACHE_PATH ] && return
 	echo "Downloading Go source... $GO_SOURCE_URL"
 	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
@@ -115,6 +109,11 @@ install_goprotobuf() {
 
 main() {
 	VERSION=$1
+	if [ "$2" != "" ]; then
+		GO_SOURCE_URL=$2
+	else
+		GO_SOURCE_URL=https://go.googlecode.com/hg/
+	fi
 	trap 'display_error "Canceled!"' INT
 	# GREEN!
 	tput sgr0
