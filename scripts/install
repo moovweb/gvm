@@ -73,7 +73,7 @@ install_go() {
 
 install_gpkg() {
 	echo " * Installing gpkg..."
-	goinstall github.com/moovweb/gvm/gpkg > /dev/null 2>&1
+	goinstall github.com/moovweb/gpkg > /dev/null 2>&1
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to install gpkg"
 		return 1
