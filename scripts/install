@@ -73,10 +73,9 @@ create_enviroment() {
 	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$version/global\"" >> $new_env_file
 	echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$version/global/bin:\$GVM_ROOT/gos/$version/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
 	. $GVM_ROOT/scripts/env/use
-	gvm_use $version &> /dev/null
+	gvm_use $version &> /dev/null ||
+		display_error "Failed to use installed version"
 	gvm pkgset create global
-	. $GVM_ROOT/scripts/env/pkgset-use
-	gvm_pkgset_use global &> /dev/null
 	unset GOPATH
 }
 
@@ -101,7 +100,7 @@ install_go() {
 
 install_gpkg() {
 	echo " * Installing gpkg..."
-	$GVM_GOINSTALL github.com/moovweb/gpkg > /dev/null 2>&1
+	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$version-gpkg.log 2>&1
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to install gpkg"
 		return 1
@@ -109,31 +108,29 @@ install_gpkg() {
 }
 
 install_gb() {
-	if [[ "$version" == "release.r60.3" ]]; then
-		echo " * Installing gb..."
-		$GVM_GOINSTALL github.com/skelterjohn/go-gb/gb > /dev/null 2>&1
-		if [[ $? -ne 0 ]]; then
-			echo "Failed to install gb"
-			return 1
-		fi
+	echo " * Installing gb..."
+	$GVM_GOINSTALL github.com/skelterjohn/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to install gb"
+		return 1
 	fi
 }
 
 install_goprotobuf() {
-	if [[ "$version" == "release.r60.3" ]]; then
-		echo " * Installing goprotobuf..."
-		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > /dev/null 2>&1
-		if [[ $? -ne 0 ]]; then
-			echo "Failed to install goprotobuf"
-			return 1
-		fi
+	echo " * Installing goprotobuf..."
+	$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to install goprotobuf"
+		return 1
+	fi
+	#if [[ $version == "release.r60.3" ]]; then
 		cd $GVM_ROOT/gos/$version/src/pkg/goprotobuf.googlecode.com/hg/compiler
-		make install > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
+		make install >> $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to install goprotobuf compiler"
 			return 1
 		fi
-	fi
+	#fi
 }
 
 main() {
@@ -148,10 +145,13 @@ main() {
 	install_go
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
-		GVM_GOINSTALL="go install"
-	install_gpkg
-	install_gb
-	install_goprotobuf
+		GVM_GOINSTALL="go get"
+	x="`hg tags -R ~/.gvm/archive/go`"; echo ${x#*b0819469a6df} | grep "$version " &> /dev/null
+	if [[ "$?" == "1" ]]; then
+		install_gpkg
+		install_gb
+		install_goprotobuf
+	fi
 	cd $GO_INSTALL_ROOT && find . > manifest
 	tput sgr0
 }
