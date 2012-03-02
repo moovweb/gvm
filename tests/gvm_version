@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -e -x
 . ~/.gvm/scripts/gvm
 TEST_OUTPUT=`gvm version`
 [ "$TEST_OUTPUT" != "" ]
