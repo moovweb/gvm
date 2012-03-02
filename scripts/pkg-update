@@ -1,0 +1,20 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/functions
+
+[[ "$1" == "" ]] && 
+	display_error "Please specify package name"
+
+[[ ! -d $GVM_ROOT/archive/package/$1 ]] &&
+	display_error "Invalid package"
+
+cd $GVM_ROOT/archive/package/$1
+git pull &> /dev/null
+if [ "$?" == "1" ]; then
+	echo "Changes!"
+else
+	echo "No changes"
+fi
+
+#cd git pull
+#gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
+

@@ -1,37 +1,37 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
 
-echo "
-gvm packages $gvm_go_name@$gvm_pkgset_name"
+echo
+display_message "gvm packages $gvm_go_name@$gvm_pkgset_name"
 echo
 
 package_folder=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
 for package in $package_folder/pkg.gvm/*; do
-  if [ $package == "$package_folder/pkg.gvm/*" ]; then
-    break
-  fi
-  package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
-  output=$package_name" ("
-  first=true
-  for version in $package/*; do
-    version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
-    if [ "$version" != "current" ]; then
-      if [ $first == true ]; then
-        first=false
-      else
-        output=$output", "
-      fi
-      version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
-      output=$output$version
-    fi
-  done
-  output=$output")"
+	if [ $package == "$package_folder/pkg.gvm/*" ]; then
+		break
+	fi
+	package_name=`echo $package | awk '{ n=split($1,path,"/"); print path[n] }'`
+	output=$package_name" ("
+	first=true
+	for version in $package/*; do
+		version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
+		if [ "$version" != "current" ]; then
+			if [ $first == true ]; then
+				first=false
+			else
+				output=$output", "
+			fi
+			version=`echo $version | awk '{ n=split($1,path,"/"); print path[n] }'`
+			output=$output$version
+		fi
+	done
+	output=$output")"
 
-  echo $output
+	echo $output
 done
 if [ -f $package_folder/goinstall.log ]; then
 	echo
-	echo "Installing via goinstall"
+	display_message "Installing via goinstall"
 	echo
 	cat $package_folder/goinstall.log
 fi

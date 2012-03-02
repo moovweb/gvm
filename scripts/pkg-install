@@ -16,7 +16,7 @@ function read_command_line() {
 
 	# Get package name
 	package_name=$1
-	source="git@github.com:moovweb/$1"
+	sources=`cat $GVM_ROOT/config/sources`
 	shift
 
 	for i in $*; do
@@ -25,7 +25,7 @@ function read_command_line() {
 		    version=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 		  ;;
 		  -s=*|--source=*)
-		    source=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+		    sources=`echo $i | sed 's/[-a-zA-Z0-9]*=//' && echo $sources`
 		  ;;
 		  -a|--all)
 		    all_deps="true"
@@ -46,45 +46,70 @@ function read_command_line() {
 	done
 
 	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
-	source_dir=$GVM_ROOT/tmp/$package_name/src
-	build_dir=$GVM_ROOT/tmp/$package_name/build
+	cache_dir=$GVM_ROOT/archive/package/$package_name
+	tmp_dir=$GVM_ROOT/tmp/$$
+	source_dir=$tmp_dir/$package_name/src/$package_name
+	build_dir=$tmp_dir/$package_name/build
 }
 
 function download_package() {
-	rm -rf $source_dir && mkdir -p $source_dir
-	if [[ "$source" != "." ]]; then
-		echo "Downloading $package_name..."
-		git clone $source $source_dir > /dev/null 2>&1
-		if [[ $? -ne 0 ]]; then
-			rm -rf $source_dir
-			display_error "Could not find $package_name in any sources"
+	[ -d $cache_dir ] && return
+	#echo "Downloading $package_name..."
+	for source in $sources; do
+		git clone $source/$package_name $cache_dir > /dev/null 2>&1
+		if [ "$?" == "0" ]; then
+			echo $source > $cache_dir/GVM_SOURCE
+			return
 		fi
-	fi
+	done
+	display_error "Could not find $package_name in any sources"
 }
 
-function select_version() {
+function update_package_cache() {
+	cd $cache_dir && git pull > /dev/null 2>&1 ||
+		display_error "Failed to update source"
+}
+
+function copy_tmp_source() {
+	rm -rf $source_dir
 	if [ "$version" != "" ]; then
-		echo "Checking out $version"
-		cd $source_dir > /dev/null 2>&1 ||
-			display_error "Source directory doesn't exist"
-		git checkout $version > /dev/null 2>&1 || 
-			display_error "Invalid version $version"
-	fi
+		git clone $cache_dir $source_dir > /dev/null 2>&1
+		cd $source_dir && git checkout $version > /dev/null 2>&1 ||
+			return 1
+	else
+		git clone $cache_dir $source_dir > /dev/null 2>&1
+		cd $source_dir
+		git describe --exact-match > /dev/null 2>&1
+		if [ "$?" == "0" ]; then
+			git_tag=`git describe --exact-match`
+			git_version=`echo $git_tag | awk '{ n=split($1,path,"_"); print path[n] }'`
+			if [ "$BUILD_NUMBER" == "" ]; then
+				BUILD_NUMBER=$git_version
+			fi
+		fi
+	fi	
 }
 
 function setup_build_env() {
 	rm -rf $build_dir && mkdir -p $build_dir
-	select_version
+	copy_tmp_source
+	if [ "$?" != "0" ]; then
+		update_package_cache
+		copy_tmp_source ||
+			display_error "Invalid version"	
+	fi
 	if [[ -f $source_dir/VERSION ]]; then
 		SOURCE_VERSION=`cat $source_dir/VERSION`
-	else
-		SOURCE_VERSION="0.0"
 	fi
 
 	if [[ -n $BUILD_NUMBER ]]; then
 		BUILD_NUMBER="$SOURCE_VERSION.$BUILD_NUMBER"
 	else
-		BUILD_NUMBER="$SOURCE_VERSION.dev"
+		if [[ "$SOURCE_VERSION" != "" ]]; then
+			BUILD_NUMBER="$SOURCE_VERSION.src"
+		else
+			BUILD_NUMBER="src"
+		fi
 	fi
 }
 
@@ -113,7 +138,7 @@ function load_dep() {
 
 function check_deps() {
 	export GOPATH=$build_dir
-	echo ":source $source" >> $build_dir/manifest
+	echo ":source `cat $cache_dir/GVM_SOURCE`" >> $build_dir/manifest
 	if [ -f "$source_dir/Package.gvm" ]; then
 		for line in `cat $source_dir/Package.gvm | grep ^pkg | awk '{ print $2 }'`; do
 			load_dep $line
@@ -128,7 +153,7 @@ function copy_source() {
 }
 
 function build_package() {
-	echo "Installing $package_name..."
+	echo "Installing $package_name-$BUILD_NUMBER..."
 	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
@@ -156,8 +181,7 @@ function install_package() {
 }
 
 function cleanup() {
-	rm -rf $build_dir
-	rm -rf $source_dir
+	rm -rf $tmp_dir
 }
 
 read_command_line $@
