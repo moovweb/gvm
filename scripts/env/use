@@ -20,6 +20,7 @@ function gvm_use() {
 	fuzzy_match=`ls $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
 		display_error "Invalid version $1" || return 1
 
+	export PATH=$GVM_PATH_BACKUP
 	. $GVM_ROOT/environments/$fuzzy_match
 	if [[ "$2" == "--default" ]]; then
 		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
