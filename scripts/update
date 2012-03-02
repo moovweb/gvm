@@ -1,0 +1,9 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/functions
+
+cd $GVM_ROOT/archive/go ||
+	display_error "Failed to find local Go source"
+
+cd $GVM_ROOT/archive/go && hg pull ||
+	display_error "Failed to update"
+
