@@ -20,8 +20,8 @@ function download_package() {
 
 function select_version() {
 	if [ "$version" != "" ]; then
-		cd $source_dir && git pull &&
-		git checkout $version > /dev/null 2>&1
+		cd $source_dir && git pull &> /dev/null &&
+		git checkout $version &> /dev/null
 		if [[ $? -ne 0 ]]; then
 			echo "Invalid version $version"
 			exit 1
@@ -78,6 +78,13 @@ function build_package() {
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
 		echo "ERROR: Failed to build"
+		cat "$build_dir/build.log"
+		exit 1
+	fi
+	echo "Running tests..."
+	cd $source_dir && gvmake test >> $build_dir/build.log 2>&1
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed tests"
 		cat "$build_dir/build.log"
 		exit 1
 	fi
