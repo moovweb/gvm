@@ -83,16 +83,17 @@ function copy_tmp_source() {
 			return 1
 	else
 		git clone $cache_dir $source_dir > /dev/null 2>&1
-		cd $source_dir
-		git describe --exact-match > /dev/null 2>&1
-		if [ "$?" == "0" ]; then
-			git_tag=`git describe --exact-match`
-			git_version=`echo $git_tag | awk '{ n=split($1,path,"_"); print path[n] }'`
-			if [ "$BUILD_NUMBER" == "" ]; then
-				BUILD_NUMBER=$git_version
-			fi
-		fi
 	fi	
+
+	cd $source_dir
+	git describe --exact-match > /dev/null 2>&1
+	if [ "$?" == "0" ]; then
+		git_tag=`git describe --exact-match`
+		git_version=`echo $git_tag | awk '{ n=split($1,path,"_"); print path[n] }'`
+		if [ "$BUILD_NUMBER" == "" ]; then
+			BUILD_NUMBER=$git_version
+		fi
+	fi
 }
 
 function setup_build_env() {
@@ -161,6 +162,7 @@ function copy_source() {
 function build_package() {
 	echo "Installing $package_name-$BUILD_NUMBER..."
 	echo "$BUILD_NUMBER" > $build_dir/BUILD_VERSION
+	export BUILD_NUMBER
 	cd $source_dir && gvmake > $build_dir/build.log 2>&1
 	if [ $? -ne 0 ]; then
 		echo "ERROR: Failed to build"
@@ -170,24 +172,39 @@ function build_package() {
 }
 
 function install_package() {
-	mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER &&
-	cp -r $build_dir/* $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER &&
-	rm -f $gvm_go_path/pkg.gvm/$package_name/current &&
-	ln -s $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER $gvm_go_path/pkg.gvm/$package_name/current &&
-	if [ $? -ne 0 ]; then
-		echo "ERROR: Failed to install"
-		exit 1
-	fi
+	mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER ||
+		display_error "Failed to create $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER"
+	cp -r $build_dir/* $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER ||
+		display_error "Failed to copy from build folder to install destination"
+	rm -f $gvm_go_path/pkg.gvm/$package_name/current ||
+		display_error "Failed to remove symlink to 'current' before recreating it"
+	ln -s $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER $gvm_go_path/pkg.gvm/$package_name/current ||
+		display_error "Failed to create new symlink to 'current'"
 
 	if [ -d $build_dir/bin ]; then
 		echo " * Installing binaries"
-		mkdir -p $gvm_go_path/bin &&
-		cp -f $build_dir/bin/* $gvm_go_path/bin/
+		mkdir -p $gvm_go_path/bin ||
+			display_error "Failed to create $gvm_go_path/bin"
+		for binary in $build_dir/bin/*; do
+			binary_name=`echo "$binary" | awk '{ n=split($1,path,"/"); print path[n] }'`
+			rm -f $gvm_go_path/bin/$binary_name ||
+				display_error "Failed to remove old binary"
+
+			IFS=$'\n'
+			lines=`cat $GVM_ROOT/scripts/templates/binary`
+			for line in $lines; do
+				echo "$line" | sed 's/{{package_name}}/'$package_name'/g' | sed 's/{{binary_name}}/'$binary_name'/g' >> $gvm_go_path/bin/$binary_name
+			done
+
+			chmod +x $gvm_go_path/bin/$binary_name ||
+				display_error "Failed to mark binary executable"
+		done
 	fi
 }
 
 function cleanup() {
-	rm -rf $tmp_dir
+	rm -rf $tmp_dir ||
+		display_error "Failed to remove $tmp_dir in cleanup()"
 }
 
 read_command_line $@
