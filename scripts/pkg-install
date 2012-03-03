@@ -25,6 +25,7 @@ function read_command_line() {
 		    version=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 		  ;;
 		  -s=*|--source=*)
+                    source=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 		    sources=`echo $i | sed 's/[-a-zA-Z0-9]*=//' && echo $sources`
 		  ;;
 		  -a|--all)
@@ -53,9 +54,13 @@ function read_command_line() {
 }
 
 function download_package() {
-	[ -d $cache_dir ] && return
+	if [ -d $cache_dir ]; then
+		cd $cache_dir && git pull &> /dev/null
+		return
+	fi
 	#echo "Downloading $package_name..."
 	for source in $sources; do
+		#echo "Trying $source"
 		git clone $source/$package_name $cache_dir > /dev/null 2>&1
 		if [ "$?" == "0" ]; then
 			echo $source > $cache_dir/GVM_SOURCE
@@ -115,9 +120,9 @@ function setup_build_env() {
 
 function install_dep() {
 	[[ "$strict" == "true" ]] && display_error "Missing dependancy ($1) and strict mode is set"
-	[[ "$source" == "." ]] && passthrough_options="--source=. "$passthrough_options
+	passthrough_options=""
+	[[ "$source" != "" ]] && passthrough_options="--source=$source "$passthrough_options
 	[[ "$all_deps" == "true" ]] && passthrough_options="--all "$passthrough_options
-
 	gvm pkg install $1 $passthrough_options ||
 		display_error "Failed to install dependency $1"
 }
@@ -148,8 +153,9 @@ function check_deps() {
 }
 
 function copy_source() {
-	mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER
-	cp -rf $source_dir $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER/
+	git clone $source_dir $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER/ &> /dev/null
+	#mkdir -p $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER
+	#cp -rf $source_dir $gvm_go_path/pkg.gvm/$package_name/$BUILD_NUMBER/
 }
 
 function build_package() {
