@@ -146,6 +146,13 @@ function build_package() {
 		cat "$build_dir/build.log"
 		exit 1
 	fi
+        echo "Running tests..."
+        cd $source_dir && gvmake test >> $build_dir/build.log 2>&1
+        if [ $? -ne 0 ]; then
+                echo "ERROR: Failed tests"
+                cat "$build_dir/build.log"
+                exit 1
+        fi
 }
 
 function install_package() {
