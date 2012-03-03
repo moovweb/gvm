@@ -18,39 +18,15 @@ function read_command_line() {
 	package_name=$1
 	sources=`cat $GVM_ROOT/config/sources`
 	shift
-
-	for i in $*; do
-		case $i in
-		  -v=*|--version=*)
-		    version=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-		  ;;
-		  -s=*|--source=*)
-                    source=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-		    sources=`echo $i | sed 's/[-a-zA-Z0-9]*=//' && echo $sources`
-		  ;;
-		  -a|--all)
-		    all_deps="true"
-		  ;;
-		  -h|--help*)
-		    show_usage
-		    exit 0
-		  ;;
-		  --strict)
-		    strict="true"
-		  ;;
-		  *)
-		    echo "Invalid option $i"
-		    show_usage
-		    exit 65 # Bad arguments
-		  ;;
-		esac
-	done
-
+	version=$1
+	strict="true"
 	gvm_go_path=$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name
 	cache_dir=$GVM_ROOT/archive/package/$package_name
 	tmp_dir=$GVM_ROOT/tmp/$$
 	source_dir=$tmp_dir/$package_name/src/$package_name
 	build_dir=$tmp_dir/$package_name/build
+	# TODO: Remove hack after change to gvm_build
+	mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$package_name/current
 }
 
 function download_package() {
@@ -58,9 +34,9 @@ function download_package() {
 		cd $cache_dir && git pull &> /dev/null
 		return
 	fi
-	#echo "Downloading $package_name..."
+	echo "Downloading $package_name..."
 	for source in $sources; do
-		#echo "Trying $source"
+		echo "Trying $source"
 		git clone $source/$package_name $cache_dir > /dev/null 2>&1
 		if [ "$?" == "0" ]; then
 			echo $source > $cache_dir/GVM_SOURCE
@@ -78,12 +54,13 @@ function update_package_cache() {
 function copy_tmp_source() {
 	rm -rf $source_dir
 	if [ "$version" != "" ]; then
+		echo "Checking out $version"
 		git clone $cache_dir $source_dir > /dev/null 2>&1
 		cd $source_dir && git checkout $version > /dev/null 2>&1 ||
 			return 1
 	else
 		git clone $cache_dir $source_dir > /dev/null 2>&1
-	fi	
+	fi
 
 	cd $source_dir
 	git describe --exact-match > /dev/null 2>&1
@@ -214,5 +191,12 @@ check_deps
 copy_source
 build_package
 install_package
+if [ "$GPKG_PUSH_TAG" == "true" ]; then
+	echo "Pushing tag $BUILD_NUMBER"
+	cd $WORKSPACE && git tag $BUILD_NUMBER && git push origin $BUILD_NUMBER ||
+		display_error "Failed to push version tag"
+fi
+# TODO: Remove after change to gvm_build
+cp $build_dir/manifest $GVM_ROOT/pkgs/pkg.gvm/$package_name/current
 cleanup
 
