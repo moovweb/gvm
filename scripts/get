@@ -8,7 +8,7 @@ cd $GVM_ROOT && git checkout -f ||
 	display_error "Failed to clean install"
 
 if [[ -n $1 ]]; then
-  cd $GVM_ROOT && git checkout $1 -f ||
+	cd $GVM_ROOT && git checkout $1 -f ||
 		display_error "Failed to checkout $1 branch"
 fi
 

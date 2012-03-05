@@ -1,9 +1,17 @@
-display_error() {
+function display_error() {
 	tput sgr0
 	tput setaf 1
 	echo "ERROR: $1" >&2
 	tput sgr0
 	return 1
+}
+
+function display_message() {
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	echo "$1"
+	tput sgr0
 }
 
 function gvm_pkgset_use() {
@@ -18,6 +26,10 @@ function gvm_pkgset_use() {
 
 	. "$GVM_ROOT/environments/$fuzzy_match" ||
 		display_error "Failed to source the package set environment" || return 1
+
+	if [[ "$2" == "--default" ]]; then
+		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
+	fi
 
 	echo "Now using version $fuzzy_match"
 }

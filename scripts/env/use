@@ -6,7 +6,7 @@ function display_error() {
 	return 1
 }
 
-display_message() {
+function display_message() {
 	# GREEN!
 	tput sgr0
 	tput setaf 2

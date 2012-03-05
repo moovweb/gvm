@@ -2,14 +2,14 @@
 . $GVM_ROOT/scripts/functions
 
 [ -z `which hg` ] &&
-  display_error '* Could not find mercurial (try `sudo apt-get install mercurial`)'
+	display_error '* Could not find mercurial (try `sudo apt-get install mercurial`)'
 [ -z `which ar` ] &&
-  display_error '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
+	display_error '* Could not find binutils (try `sudo apt-get install binutils (or binutils-multiarch)`)'
 [ -z `which bison` ] &&
-  display_error '* Could not find bison (try `sudo apt-get install bison`)'
+	display_error '* Could not find bison (try `sudo apt-get install bison`)'
 [ -z `which gcc` ] &&
-  display_error '* Could not find gcc (try `sudo apt-get install gcc`)'
+	display_error '* Could not find gcc (try `sudo apt-get install gcc`)'
 [ -z `which make` ] &&
-  display_error '* Could not find make (try `sudo apt-get install make`)'
+	display_error '* Could not find make (try `sudo apt-get install make`)'
 
 exit 0
