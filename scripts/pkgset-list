@@ -1,7 +1,10 @@
 #!/bin/bash
-echo "
-gvm go package sets ($gvm_go_name)
-"
+. $GVM_ROOT/scripts/functions
+
+echo
+display_message "gvm go package sets ($gvm_go_name)"
+echo
+
 if [ -d $GVM_ROOT/pkgsets ]; then
 	if [[ $gvm_pkgset_name == "" ]]; then
 		ls -1 $GVM_ROOT/pkgsets/$gvm_go_name | sed 's/^/   /g'
