@@ -26,6 +26,8 @@ Installing Go
     gvm use 60.3
 Once this is done Go will be in the path and ready to use. $GOROOT is set automatically.
 
+You are now ready to create packages using gpkg. Instructions can be found at http://github.com/moovweb/gpkg
+
 List Go Versions
 ================
 To list all installed Go versions (The current version is prefixed with "=>"):
