@@ -1,0 +1,7 @@
+display_warning() {
+	# YELLOW!
+	tput sgr0
+	tput setaf 3
+	echo "$1"
+	tput sgr0
+}
