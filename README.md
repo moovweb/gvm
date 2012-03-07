@@ -13,18 +13,13 @@ To install the development branch (NOT USUALLY RECOMMENDED!) run:
 
     bash < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer)
 
-Protect Your GO!
-================
-
-    sudo chown -R root:root ~/.gvm/gos/
-
-This will keep libraries from accidentally installing into the main Go soure tree
-
 Installing Go
 =============
     gvm install 60.3
     gvm use 60.3
 Once this is done Go will be in the path and ready to use. $GOROOT is set automatically.
+
+You are now ready to create packages using gpkg. Instructions can be found at http://github.com/moovweb/gpkg
 
 List Go Versions
 ================
