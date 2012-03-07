@@ -16,9 +16,7 @@ else
 	GVM_NAME=gvm
 fi
 
-ENV_FILE=~/.bashrc
 SRC_REPO=git://github.com/moovweb/gvm.git
-#SRC_REPO=~/install.gvm
 
 [ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
 
@@ -33,25 +31,25 @@ fi
 mv $GVM_DEST/$GVM_NAME/.git $GVM_DEST/$GVM_NAME/git.bak
 
 if [ "$(whoami)" != "root" ]; then
-	if [ -e ~/.bashrc ]; then
+	if [ -e ~/.profile ]; then
+		cat ~/.profile | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> ~/.profile
+		fi
+	elif [ -e ~/.bashrc ]; then
 		cat ~/.bashrc | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
 			echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> ~/.bashrc
 		fi
-		elif [ -e ~/.profile ]; then
-			cat ~/.profile | grep "\[\[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\"" > /dev/null 2>&1
-			if [ $? -ne 0 ]; then
-				echo '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"' >> ~/.profile
-			fi
-		else
-			echo 'Unable to location profile settings file'
-			echo
-			echo " You will have to manually add the following line:"
-			echo " [[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\""
-			echo
-			echo "To get started right away run \`source ~/.gvm/scripts/gvm\`"
-			echo
-		fi
+	else
+		echo 'Unable to location profile settings file'
+		echo
+		echo " You will have to manually add the following line:"
+		echo " [[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\""
+		echo
+		echo "To get started right away run \`source ~/.gvm/scripts/gvm\`"
+		echo
+	fi
 fi
 echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
 echo ". \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
