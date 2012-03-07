@@ -1,12 +1,12 @@
 #!/bin/bash
 gpkg build $1 || exit 1
 VERSION=`cat VERSION`
-if [ "$VERSION" == ""]; then
+if [ "$VERSION" == "" ]; then
 	VERSION=0.0
 fi
 BUILD=$VERSION.$BUILD_NUMBER
-mkdir -p $GVM_ROOT/pkgs/$1/current
-cp $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/$1/$BUILD/manifest $GVM_ROOT/pkgs/$1/current/manifest
+mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$1/current
+cp $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$1/$BUILD/manifest $GVM_ROOT/pkgs/pkg.gvm/$1/current/manifest
 exit 0
 
 . $GVM_ROOT/scripts/functions
