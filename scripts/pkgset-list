@@ -5,12 +5,16 @@ echo
 display_message "gvm go package sets ($gvm_go_name)"
 echo
 
-if [ -d $GVM_ROOT/pkgsets ]; then
-	if [[ $gvm_pkgset_name == "" ]]; then
-		ls -1 $GVM_ROOT/pkgsets/$gvm_go_name | sed 's/^/   /g'
-	else
-		ls -1 $GVM_ROOT/pkgsets/$gvm_go_name | sed 's/^/   /g' | sed 's/^   '$gvm_pkgset_name'/=> '$gvm_pkgset_name'/g'
-	fi
+if [ -d $GVM_ROOT/pkgsets/$gvm_go_name ]; then
+	for cur_dir in $GVM_ROOT/pkgsets/$gvm_go_name/*; do
+		[[ "$cur_dir" == "$GVM_ROOT/pkgsets/$gvm_go_name/*" ]] && exit
+		pkgset=`basename $cur_dir`
+		if [[ "$gvm_pkgset_name" == "$pkgset" ]]; then
+			echo "=> $pkgset"
+		else
+			echo "   $pkgset"
+		fi
+	done
 fi
 echo
 
