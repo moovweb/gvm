@@ -6,7 +6,7 @@ if [ "$VERSION" == "" ]; then
 fi
 BUILD=$VERSION.$BUILD_NUMBER
 mkdir -p $GVM_ROOT/pkgs/pkg.gvm/$1/current
-cp $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$1/$BUILD/manifest $GVM_ROOT/pkgs/pkg.gvm/$1/current/manifest
+cp $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/$1/$BUILD/src/$1/manifest $GVM_ROOT/pkgs/pkg.gvm/$1/current/manifest
 exit 0
 
 . $GVM_ROOT/scripts/functions
