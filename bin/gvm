@@ -49,11 +49,12 @@ GVM is the Go Version Manager
   version    - print the gvm version number
   get        - gets the latest code (for debugging)
   use        - select a go version to use
+  diff       - view changes to Go root
   implode    - completely remove gvm
   install    - install go versions
   uninstall  - uninstall go versions
   list       - list installed go versions
-  pkgset     - manage go packages sets
-  pkg        - manage go packages"
+  listall    - list available versions
+  pkgset     - manage go packages sets"
 	fi
 fi

@@ -1,6 +1,0 @@
-if [[ -f Makefile.gvm ]]; then
-	make -f Makefile.gvm $@
-else
-	gb -bi
-fi
-
