@@ -19,11 +19,7 @@ After nuking my entire GOROOT several times and rebuilding I decided to come up 
 Installing
 ==========
 
-To install the stable release run:
-
-    bash -s stable < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer)
-
-To install the development branch (NOT USUALLY RECOMMENDED!) run:
+To install:
 
     bash < <(curl -s https://raw.github.com/moovweb/gvm/master/binscripts/gvm-installer)
 
