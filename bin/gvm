@@ -24,7 +24,7 @@ if [[ "$?" != "0" ]]; then
 fi
 
 if [[ $command == "version" ]]; then
-	display_message "Go Version Manager v$GVM_VERSION"
+	display_message "Go Version Manager v$GVM_VERSION installed at $GVM_ROOT"
 else
 	if [ -f $GVM_ROOT/scripts/$command ]; then
 		shift
