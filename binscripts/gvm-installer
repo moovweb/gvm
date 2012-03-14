@@ -23,7 +23,7 @@ SRC_REPO=git://github.com/moovweb/gvm.git
 cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1 || 
 	display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
 
-if [ "$BRANCH" == "stable" ]; then
+if [ "$BRANCH" != "" ]; then
 	cd $GVM_DEST/$GVM_NAME && git checkout $BRANCH > /dev/null 2>&1 ||
 		display_error "Failed to checkout $BRANCH branch"
 fi
