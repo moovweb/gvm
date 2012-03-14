@@ -2,6 +2,20 @@
 
 GVM provides an interface to manage Go versions.
 
+Features
+========
+* Install/Uninstall Go versions with `gvm install [tag]` where tag is "60.3", "weekly.2011-11-08", or "tip"
+* List added/removed files in GOROOT with `gvm diff`
+* Manage GOPATHs with `gvm pkgset [create/use/delete] [name]`
+* List latest release tags with `gvm listall`. Use `--all` to list weekly as well.
+* Cache a clean copy of the latest Go source for multiple version installs.
+
+Background
+==========
+When we started developing in Go mismatched dependencies and API changes plauged our build process and made it extremely difficult to merge with other peoples changes.
+
+After nuking my entire GOROOT several times and rebuilding I decided to come up with a tool to oversee the process. It eventually evolved into what gvm is today.
+
 Installing
 ==========
 
