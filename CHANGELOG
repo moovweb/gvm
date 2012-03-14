@@ -1,3 +1,9 @@
+Version: 1.0.x
+State: LTR
+
+CHANGES:
+  * Minor bug fixes and cleanup. 1.0.x will always be a safe upgrade path.
+
 Version: 0.0.8
 State: Stable
 
