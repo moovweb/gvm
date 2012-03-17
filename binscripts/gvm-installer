@@ -25,7 +25,7 @@ else
 	GVM_NAME="gvm"
 fi
 
-SRC_REPO=git://github.com/moovweb/gvm.git
+SRC_REPO=https://github.com/moovweb/gvm.git
 
 [ "$GVM_DEST" == "" ] && display_error "No destination specified!"
 [ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
