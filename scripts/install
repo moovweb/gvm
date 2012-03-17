@@ -113,7 +113,7 @@ install_gpkg() {
 
 install_gb() {
 	display_message " * Installing gb..."
-	$GVM_GOINSTALL github.com/skelterjohn/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
+	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to install gb"
 		return 1
