@@ -24,6 +24,7 @@ function gvm_pkgset_use() {
 	fuzzy_match=`ls $GVM_ROOT/environments | sort | grep "$gvm_go_name@" | grep "$1" | head -n 1` ||
 		display_error "Invalid package set" || return 1
 
+	export PATH=$GVM_PATH_BACKUP
 	. "$GVM_ROOT/environments/$fuzzy_match" ||
 		display_error "Failed to source the package set environment" || return 1
 
