@@ -13,7 +13,7 @@ read_command_line() {
 	if [ "${VERSION:0:1}" != "-" ]; then
 		shift
 	else
-		echo "Invalid version: $1"
+		display_warning "Invalid version: $1"
 		show_usage
 		exit 1
 	fi
@@ -31,7 +31,7 @@ read_command_line() {
 				exit 0
 			;;
 			*)
-				echo "Invalid option $i"
+				display_warning "Invalid option $i"
 				show_usage
 				exit 65 # Bad arguments
 			;;
@@ -116,7 +116,7 @@ install_gpkg() {
 	display_message " * Installing gpkg..."
 	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$version-gpkg.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install gpkg"
+		display_warning "Failed to install gpkg"
 		return 1
 	fi
 }
@@ -125,7 +125,7 @@ install_gb() {
 	display_message " * Installing gb..."
 	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install gb"
+		display_warning "Failed to install gb"
 		return 1
 	fi
 }
@@ -134,14 +134,14 @@ install_goprotobuf() {
 	display_message " * Installing goprotobuf..."
 	$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install goprotobuf"
+		display_warning "Failed to install goprotobuf"
 		return 1
 	fi
 	#if [[ $version == "release.r60.3" ]]; then
 		cd $GVM_ROOT/gos/$version/src/pkg/goprotobuf.googlecode.com/hg/compiler
 		make install >> $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 		if [[ $? -ne 0 ]]; then
-			echo "Failed to install goprotobuf compiler"
+			display_warning "Failed to install goprotobuf compiler"
 			return 1
 		fi
 	#fi
