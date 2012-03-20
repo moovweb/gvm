@@ -50,6 +50,7 @@ SRC_REPO=https://github.com/moovweb/gvm.git
 [ "$GVM_DEST" == "" ] && display_error "No destination specified!"
 [ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
 [ -d $GVM_DEST ] || mkdir -p $GVM_DEST > /dev/null 2>&1 || display_error "Failed to create $GVM_DEST"
+[ -z `which git` ] && display_error '* Could not find git (try `sudo apt-get install git`)'
 
 cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1 || 
 	display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
