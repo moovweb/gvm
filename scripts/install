@@ -3,20 +3,30 @@
 
 function show_usage() {
 	echo "Usage: gvm install [version] [options]"
-	echo "    -s, --source=SOURCE       Install Go from specified source."
-	echo "    -h, --help                Display this message."
+	echo "    -s,  --source=SOURCE      Install Go from specified source."
+	echo "    -pb, --with-protobuf      Install Go protocol buffers."
+	echo "    -h,  --help               Display this message."
 }
 
 read_command_line() {
 	VERSION=$1
-	shift
+	if [ "${VERSION:0:1}" != "-" ]; then
+		shift
+	else
+		echo "Invalid version: $1"
+		show_usage
+		exit 1
+	fi
 	GO_SOURCE_URL=https://go.googlecode.com/hg/
 	for i in $*; do
 		case $i in
 			-s=*|--source=*)
 				GO_SOURCE_URL=$i
 			;;
-			-h|--help*)
+			-pb|--with-protobuf)
+				INSTALL_PB=true
+			;;
+			-h|--help)
 				show_usage
 				exit 0
 			;;
@@ -81,7 +91,7 @@ create_enviroment() {
 
 install_go() {
 	GO_INSTALL_ROOT=$GVM_ROOT/gos/$version
-	#trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
+	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
 
 	# Check for existing install
 	if [ -d $GO_INSTALL_ROOT ]; then
@@ -151,7 +161,9 @@ main() {
 	if [[ "$?" == "1" ]]; then
 		install_gpkg
 		install_gb
-		install_goprotobuf
+		if [ $INSTALL_PB == "true" ]; then
+			install_goprotobuf
+		fi
 	fi
 	cd $GO_INSTALL_ROOT && find . > manifest
 }
