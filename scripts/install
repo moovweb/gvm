@@ -114,6 +114,7 @@ install_go() {
 
 install_gpkg() {
 	display_message " * Installing gpkg..."
+	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$version-gpkg.log 2>&1 || return 1
 }
 
 install_gb() {
