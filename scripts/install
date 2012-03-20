@@ -24,7 +24,7 @@ read_command_line() {
 				GO_SOURCE_URL=$i
 			;;
 			-pb|--with-protobuf)
-				INSTALL_PB=true
+				INSTALL_PB="true"
 			;;
 			-h|--help)
 				show_usage
@@ -162,7 +162,7 @@ main() {
 	if [[ "$?" == "1" ]]; then
 		install_gpkg
 		install_gb
-		if [ $INSTALL_PB == "true" ]; then
+		if [ "$INSTALL_PB" == "true" ]; then
 			install_goprotobuf
 		fi
 	fi
