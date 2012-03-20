@@ -114,20 +114,11 @@ install_go() {
 
 install_gpkg() {
 	display_message " * Installing gpkg..."
-	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$version-gpkg.log 2>&1
-	if [[ $? -ne 0 ]]; then
-		display_warning "Failed to install gpkg"
-		return 1
-	fi
 }
 
 install_gb() {
 	display_message " * Installing gb..."
-	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
-	if [[ $? -ne 0 ]]; then
-		display_warning "Failed to install gb"
-		return 1
-	fi
+	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1 || return 1
 }
 
 install_goprotobuf() {
@@ -160,8 +151,8 @@ main() {
 		GVM_GOINSTALL="go get"
 	x="`hg tags -R ~/.gvm/archive/go`"; echo ${x#*b0819469a6df} | grep "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
-		install_gpkg
-		install_gb
+		install_gb || display_warning "Failed to install gb"
+		install_gpkg || display_warning "Failed to install gpkg"
 		if [ "$INSTALL_PB" == "true" ]; then
 			install_goprotobuf
 		fi
