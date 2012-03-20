@@ -32,20 +32,12 @@ else
 	elif [[ -n $command ]]; then
 		display_error "Unrecognized command line argument: '$command'"
 	else
-		echo "= gvm
+		echo "Usage: gvm [command]
 
-* http://github.com/moovweb/gvm
+Description:
+  GVM is the Go Version Manager
 
-== DESCRIPTION:
-
-GVM is the Go Version Manager
-
-== Usage
-
-  gvm Command
-
-== Command
-
+Commands:
   version    - print the gvm version number
   get        - gets the latest code (for debugging)
   use        - select a go version to use
@@ -55,6 +47,7 @@ GVM is the Go Version Manager
   uninstall  - uninstall go versions
   list       - list installed go versions
   listall    - list available versions
-  pkgset     - manage go packages sets"
+  pkgset     - manage go packages sets
+"
 	fi
 fi
