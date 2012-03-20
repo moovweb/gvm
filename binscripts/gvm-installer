@@ -16,6 +16,26 @@ update_profile() {
 	fi
 }
 
+check_existing_go() {
+	if [ "$GOROOT" == "" ]; then
+		echo "No existing Go versions detected"
+		return
+	fi
+	echo "Created profile for existing install of Go at $GOROOT"
+	mkdir -p $GVM_DEST/$GVM_NAME/environments &> /dev/null || display_error "Failed to create environment directory"
+	mkdir -p $GVM_DEST/$GVM_NAME/pkgsets/system/global &> /dev/null || display_error "Failed to create new package set"
+	mkdir -p $GVM_DEST/$GVM_NAME/gos/system &> /dev/null || display_error "Failed to create new Go folder"
+	cat << EOF > $GVM_DEST/$GVM_NAME/environments/system
+# Automatically generated file. DO NOT EDIT!
+export GVM_ROOT; GVM_ROOT="$GVM_DEST/$GVM_NAME"
+export gvm_go_name; gvm_go_name="system"
+export gvm_pkgset_name; gvm_pkgset_name="global"
+export GOROOT; GOROOT="$GOROOT"
+export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global"
+export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
+EOF
+}
+
 BRANCH=$1
 GVM_DEST=$2
 if [ "$GVM_DEST" == "" ]; then
@@ -65,6 +85,7 @@ if [ "$?" != "0" ]; then
 fi
 echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
 echo ". \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
+check_existing_go
 [[ -s "$GVM_DEST/$GVM_NAME/scripts/gvm" ]] && source "$GVM_DEST/$GVM_NAME/scripts/gvm"
 echo "Installed GVM v${GVM_VERSION}"
 echo

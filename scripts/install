@@ -3,25 +3,35 @@
 
 function show_usage() {
 	echo "Usage: gvm install [version] [options]"
-	echo "    -s, --source=SOURCE       Install Go from specified source."
-	echo "    -h, --help                Display this message."
+	echo "    -s,  --source=SOURCE      Install Go from specified source."
+	echo "    -pb, --with-protobuf      Install Go protocol buffers."
+	echo "    -h,  --help               Display this message."
 }
 
 read_command_line() {
 	VERSION=$1
-	shift
+	if [ "${VERSION:0:1}" != "-" ]; then
+		shift
+	else
+		display_warning "Invalid version: $1"
+		show_usage
+		exit 1
+	fi
 	GO_SOURCE_URL=https://go.googlecode.com/hg/
 	for i in $*; do
 		case $i in
 			-s=*|--source=*)
 				GO_SOURCE_URL=$i
 			;;
-			-h|--help*)
+			-pb|--with-protobuf)
+				INSTALL_PB="true"
+			;;
+			-h|--help)
 				show_usage
 				exit 0
 			;;
 			*)
-				echo "Invalid option $i"
+				display_warning "Invalid option $i"
 				show_usage
 				exit 65 # Bad arguments
 			;;
@@ -38,7 +48,7 @@ download_source() {
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep $VERSION | head -n 1 | grep $VERSION`
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep "$VERSION" | head -n 1 | grep "$VERSION"`
 }
 
 update_source() {
@@ -81,11 +91,11 @@ create_enviroment() {
 
 install_go() {
 	GO_INSTALL_ROOT=$GVM_ROOT/gos/$version
-	#trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
+	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
 
 	# Check for existing install
-	if [ -d $GO_INSTALL_ROOT ]; then
-		[ -f $GO_INSTALL_ROOT/manifest ] &&
+	if [ -d "$GO_INSTALL_ROOT" ]; then
+		[ -f "$GO_INSTALL_ROOT/manifest" ] &&
 			display_error "Already installed!"
 		display_warning "Removing corrupt install..."
 		gvm uninstall $version
@@ -106,7 +116,7 @@ install_gpkg() {
 	display_message " * Installing gpkg..."
 	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$version-gpkg.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install gpkg"
+		display_warning "Failed to install gpkg"
 		return 1
 	fi
 }
@@ -115,7 +125,7 @@ install_gb() {
 	display_message " * Installing gb..."
 	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$version-gb.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install gb"
+		display_warning "Failed to install gb"
 		return 1
 	fi
 }
@@ -124,14 +134,14 @@ install_goprotobuf() {
 	display_message " * Installing goprotobuf..."
 	$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 	if [[ $? -ne 0 ]]; then
-		echo "Failed to install goprotobuf"
+		display_warning "Failed to install goprotobuf"
 		return 1
 	fi
 	#if [[ $version == "release.r60.3" ]]; then
 		cd $GVM_ROOT/gos/$version/src/pkg/goprotobuf.googlecode.com/hg/compiler
 		make install >> $GVM_ROOT/logs/$version-pb-compiler.log 2>&1
 		if [[ $? -ne 0 ]]; then
-			echo "Failed to install goprotobuf compiler"
+			display_warning "Failed to install goprotobuf compiler"
 			return 1
 		fi
 	#fi
@@ -140,10 +150,11 @@ install_goprotobuf() {
 main() {
 	trap 'display_error "Canceled!"' INT
 	read_command_line $@
-	[ -z $VERSION ] && display_error "No version specified"
+	[ "$VERSION" == "" ] && display_error "No version specified"
 	download_source
 	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
 	install_go
+
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
@@ -151,7 +162,9 @@ main() {
 	if [[ "$?" == "1" ]]; then
 		install_gpkg
 		install_gb
-		install_goprotobuf
+		if [ "$INSTALL_PB" == "true" ]; then
+			install_goprotobuf
+		fi
 	fi
 	cd $GO_INSTALL_ROOT && find . > manifest
 }
