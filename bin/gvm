@@ -20,7 +20,7 @@ fi
 
 $GVM_ROOT/scripts/gvm-check
 if [[ "$?" != "0" ]]; then
-	display_error "Missing requirements. Please see messages above"
+	display_error "Missing requirements."
 fi
 
 if [[ $command == "version" ]]; then
