@@ -48,7 +48,7 @@ download_source() {
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep $VERSION | head -n 1 | grep $VERSION`
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep "$VERSION" | head -n 1 | grep "$VERSION"`
 }
 
 update_source() {
@@ -94,8 +94,8 @@ install_go() {
 	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
 
 	# Check for existing install
-	if [ -d $GO_INSTALL_ROOT ]; then
-		[ -f $GO_INSTALL_ROOT/manifest ] &&
+	if [ -d "$GO_INSTALL_ROOT" ]; then
+		[ -f "$GO_INSTALL_ROOT/manifest" ] &&
 			display_error "Already installed!"
 		display_warning "Removing corrupt install..."
 		gvm uninstall $version
@@ -150,10 +150,11 @@ install_goprotobuf() {
 main() {
 	trap 'display_error "Canceled!"' INT
 	read_command_line $@
-	[ -z $VERSION ] && display_error "No version specified"
+	[ "$VERSION" == "" ] && display_error "No version specified"
 	download_source
 	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
 	install_go
+
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
