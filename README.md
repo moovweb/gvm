@@ -1,4 +1,5 @@
 # gvm
+by Josh Bussdieker (jbuss, jaja, jbussdieker)
 
 GVM provides an interface to manage Go versions.
 
