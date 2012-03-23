@@ -1,5 +1,7 @@
 _gvm() 
 {
+	LS_PATH=`which ls` || return 1
+
 	local cur prev opts base
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
@@ -13,7 +15,7 @@ _gvm()
 				use|delete|empty)
 					[[ "$gvm_go_name" == "" ]] && return 1
 					[[ $COMP_CWORD > 3 ]] && return 1
-					local version=$(for x in `ls $GVM_ROOT/pkgsets/$gvm_go_name`; do echo ${x} ; done )
+					local version=$(for x in `$LS_PATH $GVM_ROOT/pkgsets/$gvm_go_name`; do echo ${x} ; done )
 					COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
 					return 0
 				;;
@@ -33,11 +35,11 @@ _gvm()
 					[[ "$gvm_go_name" == "" ]] && return 1
 					[[ "$gvm_pkgset_name" == "" ]] && return 1
 					if [[ "$COMP_CWORD" == "3" ]]; then
-						local version=$(for x in `ls $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm`; do echo ${x} ; done )
+						local version=$(for x in `$LS_PATH $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm`; do echo ${x} ; done )
 						COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
 						return 0
 					elif [[ "$COMP_CWORD" == "4" ]]; then
-						local version=$(for x in `ls $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/${COMP_WORDS[3]}`; do echo ${x} ; done )
+						local version=$(for x in `$LS_PATH $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/${COMP_WORDS[3]}`; do echo ${x} ; done )
 						COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
 						return 0
 					fi
@@ -63,7 +65,7 @@ _gvm()
 		use|uninstall)
 			[ ! -d $GVM_ROOT/gos ] && return 1
 			[[ $COMP_CWORD > 2 ]] && return 1
-			local installed_versions=$(for x in `ls $GVM_ROOT/gos`; do echo ${x} ; done )
+			local installed_versions=$(for x in `$LS_PATH $GVM_ROOT/gos`; do echo ${x} ; done )
 			COMPREPLY=( $(compgen -W "${installed_versions}" -- ${cur}) )
 			return 0
 		;;

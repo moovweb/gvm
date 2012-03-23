@@ -1,14 +1,15 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
+LS_PATH=`which ls` || display_error "$LS_ERROR" || return 1
 
 echo
 display_message "gvm gos (installed)"
 echo
 if [[ -d $GVM_ROOT/gos ]]; then
 	if [[ "$gvm_go_name" != "" ]]; then
-		ls -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$gvm_go_name'/=> '$gvm_go_name'/g'
+		$LS_PATH -1 $GVM_ROOT/gos | sed 's/^/   /g' | sed 's/^   '$gvm_go_name'/=> '$gvm_go_name'/g'
 	else
-		ls -1 $GVM_ROOT/gos | sed 's/^/   /g'
+		$LS_PATH -1 $GVM_ROOT/gos | sed 's/^/   /g'
 	fi
 fi
 echo
