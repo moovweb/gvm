@@ -27,13 +27,13 @@ function gvm() {
 	mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
 	mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
 
-	if [ "$1" == "use" ]; then
+	if [[ "$1" == "use" ]]; then
 		. $GVM_ROOT/scripts/env/use
 		shift
 		gvm_use $@
-	elif [ "$1" == "implode" ]; then
+	elif [[ "$1" == "implode" ]]; then
 		rm -rf $GVM_ROOT
-	elif [ "$1" == "pkgset" ] && [ "$2" == "use" ]; then
+	elif [[ "$1" == "pkgset" ]] && [[ "$2" == "use" ]]; then
 		. $GVM_ROOT/scripts/env/pkgset-use
 		shift
 		shift

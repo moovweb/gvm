@@ -7,7 +7,7 @@
 fuzzy_match=`ls $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
 	display_error "Invalid version $1"
 
-if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
+if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
 	rm -rf $GVM_ROOT/pkgsets/$fuzzy_match &> /dev/null ||
 		display_error "Couldn't remove pkgsets"
 	rm -f $GVM_ROOT/environments/$fuzzy_match &> /dev/null ||

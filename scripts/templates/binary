@@ -1,8 +1,8 @@
 #!/bin/bash
 echo $1 | sed -n -e '/_.*_/ p' | grep "_" &> /dev/null
-if [ "$?" == "0" ]; then
+if [[ "$?" == "0" ]]; then
 	version=`echo $1 | sed 's/_\(.*\)_/\1/'`
-	if [ ! -f $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/{{package_name}}/$version/bin/{{binary_name}} ]; then
+	if [[ ! -f $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/{{package_name}}/$version/bin/{{binary_name}} ]]; then
 		echo "GVM: Invalid version"
 		exit 1
 	fi
