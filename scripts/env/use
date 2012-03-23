@@ -1,3 +1,6 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/function/errors
+
 function display_error() {
 	tput sgr0
 	tput setaf 1
@@ -15,15 +18,17 @@ function display_message() {
 }
 
 function gvm_use() {
+	LS_PATH=`which ls` || display_error "$LS_ERROR" || return 1
+
 	[[ "$1" != "" ]] || 
 		display_error "Please specifiy the version" || return 1
-	fuzzy_match=`ls $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
+	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
 		display_error "Invalid version $1" || return 1
 
 	export PATH=$GVM_PATH_BACKUP
-	. $GVM_ROOT/environments/$fuzzy_match
+	. $GVM_ROOT/environments/$fuzzy_match &> /dev/null || display_error "Couldn't source environment" || return 1
 	if [[ "$2" == "--default" ]]; then
-		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
+		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default || display_error "Couldn't make $fuzzy_match default"
 	fi
 
 	display_message "Now using version $fuzzy_match"
