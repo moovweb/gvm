@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/function/errors
+. $GVM_ROOT/scripts/function/tools
 
 function display_error() {
 	tput sgr0
@@ -18,11 +18,9 @@ function display_message() {
 }
 
 function gvm_use() {
-	LS_PATH=`which ls` || display_error "$LS_ERROR" || return 1
-
 	[[ "$1" != "" ]] || 
 		display_error "Please specifiy the version" || return 1
-	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
+	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||
 		display_error "Invalid version $1" || return 1
 
 	export PATH=$GVM_PATH_BACKUP

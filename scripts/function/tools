@@ -1,0 +1,11 @@
+#!/bin/bash
+LS_ERROR="Couldn't find ls"
+GREP_ERROR="Couldn't find grep"
+SORT_ERROR="Couldn't find sort"
+HEAD_ERROR="Couldn't find head"
+
+LS_PATH=`unalias ls &> /dev/null; which ls` || display_error "$LS_ERROR" || return 1
+GREP_PATH=`unalias grep &> /dev/null; which grep` || display_error "$GREP_ERROR" || return 1
+SORT_PATH=`unalias sort &> /dev/null; which sort` || display_error "$SORT_ERROR" || return 1
+HEAD_PATH=`unalias head &> /dev/null; which head` || display_error "$HEAD_ERROR" || return 1
+

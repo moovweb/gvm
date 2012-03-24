@@ -32,7 +32,7 @@ read_command_line $@
 echo
 display_message "gvm gos (available)"
 echo
-versions=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | grep "$tag_filter" | sort`
+versions=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | $GREP_PATH "$tag_filter" | $SORT_PATH`
 if [[ $? -ne 0 ]]; then
 	display_error "Failed to get version list from Google"
 fi

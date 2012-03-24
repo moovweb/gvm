@@ -1,6 +1,5 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
-LS_PATH=`which ls` || display_error "$LS_ERROR" || return 1
 
 echo
 display_message "gvm gos (installed)"

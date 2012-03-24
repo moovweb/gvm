@@ -48,7 +48,7 @@ download_source() {
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | sort | grep "$VERSION" | head -n 1 | grep "$VERSION"`
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION"`
 }
 
 update_source() {
@@ -150,7 +150,7 @@ main() {
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
-	x="`hg tags -R ~/.gvm/archive/go`"; echo ${x#*b0819469a6df} | grep "$version " &> /dev/null
+	x="`hg tags -R ~/.gvm/archive/go`"; echo ${x#*b0819469a6df} | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		install_gb || display_warning "Failed to install gb"
 		install_gpkg || display_warning "Failed to install gpkg"

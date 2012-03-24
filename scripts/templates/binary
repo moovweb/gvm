@@ -1,5 +1,6 @@
 #!/bin/bash
-echo $1 | sed -n -e '/_.*_/ p' | grep "_" &> /dev/null
+. $GVM_ROOT/scripts/functions/tools
+echo $1 | sed -n -e '/_.*_/ p' | $GREP_PATH "_" &> /dev/null
 if [ "$?" == "0" ]; then
 	version=`echo $1 | sed 's/_\(.*\)_/\1/'`
 	if [ ! -f $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/{{package_name}}/$version/bin/{{binary_name}} ]; then

@@ -1,11 +1,10 @@
 #!/bin/bash
 . $GVM_ROOT/scripts/functions
-LS_PATH=`which ls` || display_error "$LS_ERROR" || return 1
 
 [[ "$1" == "" ]] && 
 	display_error "Please specifiy the version"
 
-fuzzy_match=`$LS_PATH $GVM_ROOT/gos | sort | grep "$1" | head -n 1 | grep "$1"` ||
+fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||
 	display_error "Invalid version $1"
 
 if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
