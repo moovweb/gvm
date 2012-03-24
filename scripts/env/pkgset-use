@@ -1,5 +1,5 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/function/errors
+. $GVM_ROOT/scripts/function/tools
 
 function display_error() {
 	tput sgr0
