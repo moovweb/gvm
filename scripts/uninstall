@@ -7,7 +7,7 @@
 fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||
 	display_error "Invalid version $1"
 
-if [ -d $GVM_ROOT/gos/$fuzzy_match ]; then
+if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
 	rm -rf $GVM_ROOT/pkgsets/$fuzzy_match &> /dev/null ||
 		display_error "Couldn't remove pkgsets"
 	rm -f $GVM_ROOT/environments/$fuzzy_match &> /dev/null ||

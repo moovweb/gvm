@@ -9,18 +9,18 @@ if [ "$version" != "" ]; then
 
 	foldername=$GVM_ROOT/gos/$fuzzy_match
 else
-	if [ "$gvm_go_name" != "" ]; then
+	if [[ "$gvm_go_name" != "" ]]; then
 		foldername=$GVM_ROOT/gos/$gvm_go_name
 	else
 		display_error "No version selected"
 	fi
 fi
 
-if [ -d $foldername ]; then
+if [[ -d $foldername ]]; then
 	cd $foldername
 	find . > /tmp/manifest.test
 	diff manifest /tmp/manifest.test
-	if [ "$?" == "0" ]; then
+	if [[ "$?" == "0" ]]; then
 		display_message "Clean $foldername"
 	else
 		display_message "*Dirty* $foldername"

@@ -10,7 +10,7 @@ function show_usage() {
 
 read_command_line() {
 	VERSION=$1
-	if [ "${VERSION:0:1}" != "-" ]; then
+	if [[ "${VERSION:0:1}" != "-" ]]; then
 		shift
 	else
 		display_warning "Invalid version: $1"
@@ -41,7 +41,7 @@ read_command_line() {
 
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
-	[ -d $GO_CACHE_PATH ] && return
+	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
 	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
 		display_error "Couldn't download Go source"
@@ -94,8 +94,8 @@ install_go() {
 	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
 
 	# Check for existing install
-	if [ -d "$GO_INSTALL_ROOT" ]; then
-		[ -f "$GO_INSTALL_ROOT/manifest" ] &&
+	if [[ -d "$GO_INSTALL_ROOT" ]]; then
+		[[ -f "$GO_INSTALL_ROOT/manifest" ]] &&
 			display_error "Already installed!"
 		display_warning "Removing corrupt install..."
 		gvm uninstall $version
@@ -142,7 +142,7 @@ install_goprotobuf() {
 main() {
 	trap 'display_error "Canceled!"' INT
 	read_command_line $@
-	[ "$VERSION" == "" ] && display_error "No version specified"
+	[[ "$VERSION" == "" ]] && display_error "No version specified"
 	download_source
 	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
 	install_go
@@ -154,7 +154,7 @@ main() {
 	if [[ "$?" == "1" ]]; then
 		install_gb || display_warning "Failed to install gb"
 		install_gpkg || display_warning "Failed to install gpkg"
-		if [ "$INSTALL_PB" == "true" ]; then
+		if [[ "$INSTALL_PB" == "true" ]]; then
 			install_goprotobuf
 		fi
 	fi
