@@ -1,12 +1,16 @@
 #!/bin/bash
 if [ -z "$GVM_ROOT" ]; then
-	tput sgr0
-	tput setaf 1
+	if [ command -v tput >/dev/null 2>&1 ]; then
+		tput sgr0
+		tput setaf 1
+	fi
 	echo 'ERROR: $GVM_ROOT is not set! Please add the following line to your .bashrc or .profile
 
 	[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
 ' >&2
-	tput sgr0
+	if [ command -v tput >/dev/null 2>&1 ]; then
+		tput sgr0
+	fi
 	exit 1
 fi
 
