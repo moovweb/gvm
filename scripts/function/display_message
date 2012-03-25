@@ -1,11 +1,7 @@
 display_message() {
-	if [ command -v tput >/dev/null 2>&1 ]; then
-		# GREEN!
-		tput sgr0
-		tput setaf 2
-		echo "$1"
-		tput sgr0
-	else
-		echo "$1"
-	fi
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	echo "$1"
+	tput sgr0
 }

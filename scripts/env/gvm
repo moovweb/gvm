@@ -1,13 +1,9 @@
 #!/bin/bash
 function display_error() {
-	if [ command -v tput >/dev/null 2>&1 ]; then
-		tput sgr0
-		tput setaf 1
-		echo "ERROR: $1" >&2
-		tput sgr0
-	else
-		echo "ERROR: $1" >&2
-	fi
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1" >&2
+	tput sgr0
 	return 1
 }
 

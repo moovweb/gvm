@@ -2,27 +2,19 @@
 . $GVM_ROOT/scripts/function/tools
 
 function display_error() {
-	if [ command -v tput >/dev/null 2>&1 ]; then
-		tput sgr0
-		tput setaf 1
-		echo "ERROR: $1" >&2
-		tput sgr0
-	else
-		echo "ERROR: $1" >&2
-	fi
+	tput sgr0
+	tput setaf 1
+	echo "ERROR: $1" >&2
+	tput sgr0
 	return 1
 }
 
 function display_message() {
-	if [ command -v tput >/dev/null 2>&1 ]; then
-		# GREEN!
-		tput sgr0
-		tput setaf 2
-		echo "$1"
-		tput sgr0
-	else
-		echo "$1"
-	fi
+	# GREEN!
+	tput sgr0
+	tput setaf 2
+	echo "$1"
+	tput sgr0
 }
 
 function gvm_pkgset_use() {

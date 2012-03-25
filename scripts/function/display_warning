@@ -1,11 +1,7 @@
 display_warning() {
-	if [ command -v tput >/dev/null 2>&1 ]; then
-		# YELLOW!
-		tput sgr0
-		tput setaf 3
-		echo "$1"
-		tput sgr0
-	else
-		echo "WARNING: $1"
-	fi
+	# YELLOW!
+	tput sgr0
+	tput setaf 3
+	echo "$1"
+	tput sgr0
 }
