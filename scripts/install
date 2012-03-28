@@ -44,7 +44,7 @@ download_source() {
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
 	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
-		display_error "Couldn't download Go source"
+		display_fatal "Couldn't download Go source"
 }
 
 check_tag() {
@@ -54,12 +54,12 @@ check_tag() {
 update_source() {
 	display_message "Updating Go source..."
 	hg pull -R $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log 2>&1 || 
-		display_error "Couldn't get latest Go version info"
+		display_fatal "Couldn't get latest Go version info"
 }
 
 copy_source() {
 	hg clone -u $version $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$version-install.log 2>&1 ||
-		display_error "Couldn't copy source to target folder"
+		display_fatal "Couldn't copy source to target folder"
 }
 
 
@@ -71,7 +71,7 @@ compile_go() {
 	export GOROOT=$GO_INSTALL_ROOT &&
 	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$version-compile.log || 
 	cd $GO_INSTALL_ROOT/src && ./make.bash &> $GVM_ROOT/logs/go-$version-compile.log || 
-		(rm -rf $GO_INSTALL_ROOT && display_error "Failed to compile")
+		(rm -rf $GO_INSTALL_ROOT && display_fatal "Failed to compile")
 }
 
 create_enviroment() {
@@ -84,19 +84,19 @@ create_enviroment() {
 	echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$version/global/bin:\$GVM_ROOT/gos/$version/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
 	. $GVM_ROOT/scripts/env/use
 	gvm_use $version &> /dev/null ||
-		display_error "Failed to use installed version"
+		display_fatal "Failed to use installed version"
 	gvm pkgset create global
 	unset GOPATH
 }
 
 install_go() {
 	GO_INSTALL_ROOT=$GVM_ROOT/gos/$version
-	trap 'rm -rf $GO_INSTALL_ROOT; display_error "Canceled!"' INT
+	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Canceled!"' INT
 
 	# Check for existing install
 	if [[ -d "$GO_INSTALL_ROOT" ]]; then
 		[[ -f "$GO_INSTALL_ROOT/manifest" ]] &&
-			display_error "Already installed!"
+			display_fatal "Already installed!"
 		display_warning "Removing corrupt install..."
 		gvm uninstall $version
 	fi
@@ -105,7 +105,7 @@ install_go() {
 
 	# Create the global package set folder
 	mkdir -p $GVM_ROOT/pkgsets/$version >> $GVM_ROOT/logs/go-$version-install.log 2>&1 || 
-		display_error "Couldn't create global package set folder"
+		display_fatal "Couldn't create global package set folder"
 
 	copy_source
 	compile_go
@@ -140,11 +140,11 @@ install_goprotobuf() {
 }
 
 main() {
-	trap 'display_error "Canceled!"' INT
+	trap 'display_fatal "Canceled!"' INT
 	read_command_line $@
-	[[ "$VERSION" == "" ]] && display_error "No version specified"
+	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
 	download_source
-	check_tag || (update_source && check_tag) || display_error "Unrecognized Go version"
+	check_tag || (update_source && check_tag) || display_fatal "Unrecognized Go version"
 	install_go
 
 	GVM_GOINSTALL="goinstall"

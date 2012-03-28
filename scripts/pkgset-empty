@@ -2,7 +2,7 @@
 . $GVM_ROOT/scripts/functions
 
 [[ $gvm_pkgset_name != "" ]] ||
-	display_error "No Package set selected"
+	display_fatal "No Package set selected"
 rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/* ||
-	display_error "Could not delete package set files"
+	display_fatal "Could not delete package set files"
 

@@ -2,17 +2,17 @@
 . $GVM_ROOT/scripts/functions
 
 [[ $gvm_go_name != "" ]] || 
-	display_error "No Go version selected"
+	display_fatal "No Go version selected"
 
 [[ $1 != "" ]] || 
-	display_error "Please specifiy the name"
+	display_fatal "Please specifiy the name"
 
 [[ -d $GVM_ROOT/pkgsets/$gvm_go_name/$1 ]] || 
-	display_error "Packageset doesn't exist!"
+	display_fatal "Packageset doesn't exist!"
 
 rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$1 ||
-	display_error "Could not delete package set"
+	display_fatal "Could not delete package set"
 
 rm -rf $GVM_ROOT/environments/$gvm_go_name@$1 ||
-	display_error "Could not delete package set"
+	display_fatal "Could not delete package set"
 
