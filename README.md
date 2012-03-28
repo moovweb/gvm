@@ -5,7 +5,7 @@ GVM provides an interface to manage Go versions.
 
 Features
 ========
-* Install/Uninstall Go versions with `gvm install [tag]` where tag is "60.3", "weekly.2011-11-08", or "tip"
+* Install/Uninstall Go versions with `gvm install [tag]` where tag is "60.3", "go1", "weekly.2011-11-08", or "tip"
 * List added/removed files in GOROOT with `gvm diff`
 * Manage GOPATHs with `gvm pkgset [create/use/delete] [name]`
 * List latest release tags with `gvm listall`. Use `--all` to list weekly as well.
@@ -26,8 +26,8 @@ To install:
 
 Installing Go
 =============
-    gvm install 60.3
-    gvm use 60.3
+    gvm install go1
+    gvm use go1 [--default]
 Once this is done Go will be in the path and ready to use. $GOROOT and $GOPATH are set automatically.
 
 You are now ready to create and use packages built using gpkg. Instructions can be found at http://github.com/moovweb/gpkg
