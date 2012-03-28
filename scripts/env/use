@@ -1,22 +1,4 @@
 #!/bin/bash
-. $GVM_ROOT/scripts/function/tools
-
-function display_error() {
-	tput sgr0
-	tput setaf 1
-	echo "ERROR: $1" >&2
-	tput sgr0
-	return 1
-}
-
-function display_message() {
-	# GREEN!
-	tput sgr0
-	tput setaf 2
-	echo "$1"
-	tput sgr0
-}
-
 function gvm_use() {
 	[[ "$1" != "" ]] || 
 		display_error "Please specifiy the version" || return 1

@@ -1,11 +1,5 @@
 #!/bin/bash
-function display_error() {
-	tput sgr0
-	tput setaf 1
-	echo "ERROR: $1" >&2
-	tput sgr0
-	return 1
-}
+. $GVM_ROOT/scripts/functions || return 1
 
 function gvm() {
 	if [[ "$GVM_ROOT" == "" ]]; then

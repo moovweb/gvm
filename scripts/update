@@ -2,8 +2,8 @@
 . $GVM_ROOT/scripts/functions
 
 cd $GVM_ROOT/archive/go &> /dev/null ||
-	display_error "Failed to find local Go source"
+	display_fatal "Failed to find local Go source"
 
 cd $GVM_ROOT/archive/go && hg pull ||
-	display_error "Failed to update"
+	display_fatal "Failed to update"
 

@@ -2,18 +2,18 @@
 . $GVM_ROOT/scripts/functions
 
 [[ $gvm_go_name != "" ]] || 
-	display_error "No Go version selected"
+	display_fatal "No Go version selected"
 [[ -d $GVM_ROOT/gos/$gvm_go_name ]] ||
-	display_error "Invalid or corrupt Go version"
+	display_fatal "Invalid or corrupt Go version"
 [[ -d $GVM_ROOT/pkgsets/$gvm_go_name ]] ||
-	display_error "Missing package set folder for this Go version"
+	display_fatal "Missing package set folder for this Go version"
 
 command=$1
 if [[ -f $GVM_ROOT/scripts/pkgset-$command ]]; then
 	shift
   $GVM_ROOT/scripts/pkgset-$command $@
 elif [[ -n $command ]]; then
-  display_error "Unrecognized command line argument: '$command'"
+  display_fatal "Unrecognized command line argument: '$command'"
 else
   echo "= gvm pkgset
 

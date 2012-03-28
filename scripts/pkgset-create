@@ -2,19 +2,19 @@
 . $GVM_ROOT/scripts/functions
 
 [[ $1 != "" ]] || 
-	display_error "Please specifiy the name"
+	display_fatal "Please specifiy the name"
 
 [[ ! -f "$GVM_ROOT/environments/$gvm_go_name@$1" ]] || 
-	display_error "Packageset already exists!"
+	display_fatal "Packageset already exists!"
 
 mkdir -p $GVM_ROOT/pkgsets/$gvm_go_name/$1 ||
-	display_error "Could not create folder"
+	display_fatal "Could not create folder"
 cp $GVM_ROOT/environments/$gvm_go_name $GVM_ROOT/environments/$gvm_go_name@$1 ||
-	display_error "Could copy environment"
+	display_fatal "Could copy environment"
 echo "export gvm_pkgset_name=\"$1\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
-	display_error "Could not extend environment"
+	display_fatal "Could not extend environment"
 echo "export GOPATH; GOPATH=\"$GVM_ROOT/pkgsets/$gvm_go_name/$1:\$GOPATH\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
-	display_error "Could not extend environment"
+	display_fatal "Could not extend environment"
 echo "export PATH; PATH=\"$GVM_ROOT/pkgsets/$gvm_go_name/$1/bin:\$PATH\"" >> $GVM_ROOT/environments/$gvm_go_name@$1 ||
-	display_error "Could not extend environment"
+	display_fatal "Could not extend environment"
 
