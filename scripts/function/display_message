@@ -1,7 +1,12 @@
 display_message() {
-	# GREEN!
-	tput sgr0
-	tput setaf 2
-	echo "$1"
-	tput sgr0
+	which tput &> /dev/null
+	if [[ "$?" == "0" ]]; then
+		# GREEN!
+		tput sgr0
+		tput setaf 2
+		echo "$1"
+		tput sgr0
+	else
+		echo "$1"
+	fi
 }

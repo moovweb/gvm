@@ -1,7 +1,12 @@
 display_warning() {
-	# YELLOW!
-	tput sgr0
-	tput setaf 3
-	echo "$1"
-	tput sgr0
+	which tput &> /dev/null
+	if [[ "$?" == "0" ]]; then
+		# YELLOW!
+		tput sgr0
+		tput setaf 3
+		echo "$1"
+		tput sgr0
+	else
+		echo "$1"
+	fi
 }
