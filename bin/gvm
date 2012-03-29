@@ -20,7 +20,7 @@ fi
 
 $GVM_ROOT/scripts/gvm-check
 if [[ "$?" != "0" ]]; then
-	display_error "Missing requirements."
+	display_fatal "Missing requirements."
 fi
 
 if [[ $command == "version" ]]; then
@@ -30,7 +30,7 @@ else
 		shift
 		$GVM_ROOT/scripts/$command $@
 	elif [[ -n $command ]]; then
-		display_error "Unrecognized command line argument: '$command'"
+		display_fatal "Unrecognized command line argument: '$command'"
 	else
 		echo "Usage: gvm [command]
 

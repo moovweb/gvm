@@ -2,36 +2,36 @@
 . $GVM_ROOT/scripts/functions
 
 # Check for hg
-[ -z `which hg` ] &&
+which hg &> /dev/null ||
 	display_warning "Could not find mercurial
 
   linux: apt-get install mercurial
   mac:   brew install mercurial
-" && exit 1
+" || exit 1
 # Check for ar
-[ -z `which ar` ] &&
+which ar &> /dev/null ||
 	display_warning "Could not find binutils
 
   linux: apt-get install binutils
-" && exit 1
+" || exit 1
 # Check for bison
-[ -z `which bison` ] &&
+which bison &> /dev/null ||
 	display_warning "Could not find bison
 
   linux: apt-get install bison
-" && exit 1
+" || exit 1
 # Check for gcc
-[ -z `which gcc` ] &&
+which gcc &> /dev/null ||
 	display_warning "Could not find gcc
 
   linux: apt-get install gcc
-" && exit 1
+" || exit 1
 # Check for make
-[ -z `which make` ] &&
+which make &> /dev/null ||
 	display_warning "Could not find make
 
   linux: apt-get install make
-" && exit 1
+" || exit 1
 
 # All good!
 exit 0

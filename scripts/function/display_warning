@@ -9,4 +9,5 @@ display_warning() {
 	else
 		echo "$1"
 	fi
+	return 1
 }
