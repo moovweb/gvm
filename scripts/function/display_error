@@ -1,6 +1,6 @@
 display_error() {
 	which tput &> /dev/null
-	if [[ "$?" == "0" ]]; then
+	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
 		tput sgr0
 		tput setaf 1
 		echo "ERROR: $1" >&2

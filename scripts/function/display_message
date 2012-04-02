@@ -1,6 +1,6 @@
 display_message() {
 	which tput &> /dev/null
-	if [[ "$?" == "0" ]]; then
+	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
 		# GREEN!
 		tput sgr0
 		tput setaf 2
