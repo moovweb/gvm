@@ -14,6 +14,8 @@ display_list() {
 
 which go &> /dev/null || display_fatal "Only available in versions after Go 1"
 
+[ -z "$1" ] && display_list
+
 if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
 	display_message "Installing x86 and x86-64 commands"
 	set -e
@@ -25,7 +27,6 @@ if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
 	touch $GOROOT/pkg/tool/cross
 fi
 
-[ -z "$1" ] && display_list
 export GOOS=$1
 shift
 [ -z "$1" ] && display_fatal "GOARCH is not specified"
