@@ -1,0 +1,1 @@
+aclocal && automake --add-missing
