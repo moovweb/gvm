@@ -1,3 +1,6 @@
 AC_INIT(hello, 0.0.1)
+
 AM_INIT_AUTOMAKE
+
 AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

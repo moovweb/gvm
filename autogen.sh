@@ -1,1 +1,1 @@
-aclocal && automake --add-missing
+aclocal && automake --add-missing && autoconf && ./configure $@
