@@ -45,6 +45,7 @@ Commands:
   implode    - completely remove gvm
   install    - install go versions
   uninstall  - uninstall go versions
+  cross      - install go cross compilers
   list       - list installed go versions
   listall    - list available versions
   pkgset     - manage go packages sets
