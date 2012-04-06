@@ -5,9 +5,9 @@ display_list() {
 	echo
 	display_message "gvm cross [os] [arch] - To install additional cross compilers"
 	echo
-	ls $GOROOT/pkg | grep windows_
-	ls $GOROOT/pkg | grep darwin_
-	ls $GOROOT/pkg | grep linux_
+	$LS_PATH $GOROOT/pkg | $GREP_PATH windows_
+	$LS_PATH $GOROOT/pkg | $GREP_PATH darwin_
+	$LS_PATH $GOROOT/pkg | $GREP_PATH linux_
 	echo
 	exit 1
 }
