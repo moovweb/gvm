@@ -1,9 +1,18 @@
 #!/bin/bash
 function gvm_use() {
-	[[ "$1" != "" ]] || 
+	[[ "$1" != "" ]] ||
 		display_error "Please specifiy the version" || return 1
-	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||
-		display_error "Invalid version $1" || return 1
+	VERSION=$1
+	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"`
+	if [[ "$?" != "0" ]]; then
+		GO_CACHE_PATH=$GVM_ROOT/archive/go
+		version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION"`
+		if [[ "x$version" == "x" ]]; then
+			display_error "Version not found locally. Try 'gvm install $1'" || return 1
+		else
+			display_warning "$version is not installed. Install it by running 'gvm install $version'" || return 1
+		fi
+	fi
 
 	export PATH=$GVM_PATH_BACKUP
 	. $GVM_ROOT/environments/$fuzzy_match &> /dev/null || display_error "Couldn't source environment" || return 1
