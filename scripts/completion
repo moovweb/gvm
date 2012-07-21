@@ -1,4 +1,4 @@
-. $GVM_ROOT/scripts/functions/tools
+. $GVM_ROOT/scripts/functions
 
 _gvm() 
 {
