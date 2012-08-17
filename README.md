@@ -30,8 +30,6 @@ Installing Go
     gvm use go1 [--default]
 Once this is done Go will be in the path and ready to use. $GOROOT and $GOPATH are set automatically.
 
-You are now ready to create and use packages built using gpkg. Instructions can be found at http://github.com/moovweb/gpkg
-
 List Go Versions
 ================
 To list all installed Go versions (The current version is prefixed with "=>"):
@@ -43,8 +41,6 @@ Uninstalling
 To completely remove gvm and all installed Go versions and packages:
 
     gvm implode
-
-If that doesn't work see the troubleshooting steps at the bottom of this page.
 
 Mac OSX Requirements
 ====================
