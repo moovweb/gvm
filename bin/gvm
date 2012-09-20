@@ -48,6 +48,7 @@ Commands:
   cross      - install go cross compilers
   list       - list installed go versions
   listall    - list available versions
+  alias      - manage go version aliases
   pkgset     - manage go packages sets
 "
 	fi
