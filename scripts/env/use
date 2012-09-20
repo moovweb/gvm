@@ -2,7 +2,7 @@
 function gvm_use() {
 	[[ "$1" != "" ]] ||
 		display_error "Please specifiy the version" || return 1
-	VERSION=$1
+	local VERSION=$1
 	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"`
 	if [[ "$?" != "0" ]]; then
 		GO_CACHE_PATH=$GVM_ROOT/archive/go
