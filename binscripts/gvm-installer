@@ -45,7 +45,9 @@ else
 	GVM_NAME="gvm"
 fi
 
-SRC_REPO=https://github.com/moovweb/gvm.git
+if [ "$SRC_REPO" == "" ]; then
+	SRC_REPO=https://github.com/moovweb/gvm.git
+fi
 
 [ "$GVM_DEST" == "" ] && display_error "No destination specified!"
 [ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
@@ -56,7 +58,7 @@ SRC_REPO=https://github.com/moovweb/gvm.git
   mac:   brew install git
 "
 
-cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1 || 
+cd $GVM_DEST && git clone $SRC_REPO $GVM_NAME > /dev/null 2>&1 ||
 	display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
 
 if [ "$BRANCH" != "" ]; then
