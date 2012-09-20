@@ -1,0 +1,18 @@
+#!/bin/bash
+. $GVM_ROOT/scripts/functions
+
+[[ $1 != "" ]] ||
+	display_fatal "Please specifiy the name"
+
+[[ -f $GVM_ROOT/environments/$1 ]] ||
+	display_fatal "Alias doesn't exist!"
+
+cat $GVM_ROOT/environments/$1 | $GREP_PATH "gvm_alias_name" > /dev/null ||
+	display_fatal "$1 is not an alias!"
+
+rm -rf $GVM_ROOT/environments/$1 ||
+	display_fatal "Could not delete alias"
+
+rm -rf $GVM_ROOT/gos/$1 ||
+	display_fatal "Could not delete alias"
+
