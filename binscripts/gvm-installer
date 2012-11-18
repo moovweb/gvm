@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 display_error() {
 	tput sgr0
 	tput setaf 1

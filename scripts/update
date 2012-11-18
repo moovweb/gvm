@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 . $GVM_ROOT/scripts/functions
 
 cd $GVM_ROOT/archive/go &> /dev/null ||

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 . $GVM_ROOT/scripts/functions
 
 command=$1
