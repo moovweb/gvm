@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 LS_ERROR="GVM couldn't find ls"
 GREP_ERROR="GVM couldn't find grep"
 SORT_ERROR="GVM couldn't find sort"

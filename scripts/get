@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 . $GVM_ROOT/scripts/functions
 
 [[ -d $GVM_ROOT/.git ]] || mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||

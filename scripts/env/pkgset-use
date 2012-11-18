@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 function gvm_pkgset_use() {
 	[[ "$1" != "" ]] ||
 		display_error "Please specify a package set" || return 1

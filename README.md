@@ -42,7 +42,7 @@ To completely remove gvm and all installed Go versions and packages:
 
     gvm implode
 
-Mac OSX Requirements
+Mac OS X Requirements
 ====================
     Install mercurial from http://mercurial.berkwood.com/
 
@@ -55,3 +55,11 @@ Linux Requirements
     sudo apt-get install binutils
     sudo apt-get install bison
     sudo apt-get install gcc
+
+FreeBSD Requirements
+====================
+
+    sudo pkg_add -r bash
+    sudo pkg_add -r git
+    sudo pkg_add -r mercurial
+
