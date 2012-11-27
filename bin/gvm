@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 if [ -z "$GVM_ROOT" ]; then
 	tput sgr0
 	tput setaf 1

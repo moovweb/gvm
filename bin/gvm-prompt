@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 function gvm_prompt() {
 	if [[ "$1" == "g" ]]; then
 		echo $gvm_go_name
