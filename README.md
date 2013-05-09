@@ -30,6 +30,15 @@ Installing Go
     gvm use go1 [--default]
 Once this is done Go will be in the path and ready to use. $GOROOT and $GOPATH are set automatically.
 
+Additional options can be specified when installing Go:
+
+    Usage: gvm install [version] [options]
+        -s,  --source=SOURCE      Install Go from specified source.
+        -n,  --name=NAME          Override the default name for this version.
+        -pb, --with-protobuf      Install Go protocol buffers.
+        -b,  --with-build-tools   Install package build tools.
+        -h,  --help               Display this message.
+
 List Go Versions
 ================
 To list all installed Go versions (The current version is prefixed with "=>"):
