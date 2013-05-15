@@ -56,7 +56,7 @@ download_source() {
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION"`
+	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION"`
 }
 
 update_source() {
