@@ -53,7 +53,7 @@ To completely remove gvm and all installed Go versions and packages:
 
 Mac OS X Requirements
 ====================
-    Install mercurial from http://mercurial.berkwood.com/
+Install mercurial from http://mercurial.berkwood.com/
 
 Linux Requirements
 ==================
@@ -72,3 +72,53 @@ FreeBSD Requirements
     sudo pkg_add -r git
     sudo pkg_add -r mercurial
 
+Vendoring Native Code and Dependencies
+==================================================
+GVM supports vendoring package set-specific native code and related
+dependencies, which is useful if you need to qualify a new configuration
+or version of one of these dependencies against a last-known-good version
+in an isolated manner.  Such behavior is critical to maintaining good release
+engineering and production environment hygiene.
+
+As a convenience matter, GVM will furnish the following environment variables to
+aid in this manner if you want to decouple your work from what the operating
+system provides:
+
+1. ``${GVM_OVERLAY_PREFIX}`` functions in a manner akin to a root directory
+  hierarchy suitable for auto{conf,make,tools} where it could be passed in
+  to ``./configure --prefix=${GVM_OVERLAY_PREFIX}`` and not conflict with any
+  existing operating system artifacts and hermetically be used by your
+  workspace.  This is suitable to use with ``C{PP,XX}FLAGS and LDFLAGS``, but you will have
+  to manage these yourself, since each tool that uses them is different.
+
+2. ``${PATH}`` includes ``${GVM_OVERLAY_PREFIX}/bin`` so that any tools you
+  manually install will reside there, available for you.
+
+3. ``${LD_LIBRARY_PATH}`` includes ``${GVM_OVERLAY_PREFIX}/lib`` so that any
+  runtime library searching can be fulfilled there on FreeBSD and Linux.
+
+4. ``${DYLD_LIBRARY_PATH}`` includes ``${GVM_OVERLAY_PREFIX}/lib`` so that any
+  runtime library searching can be fulfilled there on Mac OS X.
+
+5. ``${PKG_CONFIG_PATH}`` includes ``${GVM_OVERLAY_PREFIX}/lib/pkgconfig`` so
+  that ``pkg-config`` can automatically resolve any vendored dependencies.
+
+Recipe for success:
+
+    gvm use go1.1
+    gvm pkgset use current-known-good
+    # Let's assume that this includes some C headers and native libraries, which
+    # Go's CGO facility wraps for us.  Let's assume that these native
+    # dependencies are at version V.
+    gvm pkgset create trial-next-version
+    # Let's assume that V+1 has come along and you want to safely trial it in
+    # your workspace.
+    gvm pkgset use trial-next-version
+    # Do your work here replicating current-known-good from above, but install
+    # V+1 into ${GVM_OVERLAY_PREFIX}.
+
+See examples/native for a working example.
+
+Troubleshooting
+===============
+Sometimes especially during upgrades the state of gvm's files can get mixed up. This is mostly true for upgrade from older version than 0.0.8. Changes are slowing down and a LTR is imminent. But for now `rm -rf ~/.gvm` will always remove gvm. Stay tuned!

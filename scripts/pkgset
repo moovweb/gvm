@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . $GVM_ROOT/scripts/functions
 
-[[ $gvm_go_name != "" ]] || 
+[[ $gvm_go_name != "" ]] ||
 	display_fatal "No Go version selected"
 [[ -d $GVM_ROOT/gos/$gvm_go_name ]] ||
 	display_fatal "Invalid or corrupt Go version"

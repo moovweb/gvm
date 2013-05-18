@@ -61,7 +61,7 @@ check_tag() {
 
 update_source() {
 	display_message "Updating Go source..."
-	hg pull -R $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log 2>&1 || 
+	hg pull -R $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log 2>&1 ||
 		display_fatal "Couldn't get latest Go version info"
 }
 
@@ -74,11 +74,11 @@ copy_source() {
 compile_go() {
 	display_message " * Compiling..."
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
-	export GOBIN=$GO_INSTALL_ROOT/bin && 
-	export PATH=$GOBIN:$PATH && 
+	export GOBIN=$GO_INSTALL_ROOT/bin &&
+	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
-	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log || 
-	cd $GO_INSTALL_ROOT/src && ./make.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log || 
+	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
+	cd $GO_INSTALL_ROOT/src && ./make.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
 		(rm -rf $GO_INSTALL_ROOT && display_fatal "Failed to compile")
 }
 
@@ -89,7 +89,11 @@ create_enviroment() {
 	echo "export gvm_pkgset_name; gvm_pkgset_name=\"global\"" >> $new_env_file
 	echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$GO_NAME\"" >> $new_env_file
 	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global\"" >> $new_env_file
-	echo "export PATH; PATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global/bin:\$GVM_ROOT/gos/$GO_NAME/bin:\$GVM_ROOT/bin:\$PATH\"" >> $new_env_file
+	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay\"" >> $new_env_file
+	echo "export PATH; PATH=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/bin:\${GVM_ROOT}/gos/${GO_NAME}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}\"" >> $new_env_file
+	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${LD_LIBRARY_PATH}\"" >> $new_env_file
+	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> $new_env_file
+	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> $new_env_file
 	. $GVM_ROOT/scripts/env/use
 	gvm_use $GO_NAME &> /dev/null ||
 		display_fatal "Failed to use installed version"
@@ -99,7 +103,7 @@ create_enviroment() {
 
 install_go() {
 	GO_INSTALL_ROOT=$GVM_ROOT/gos/$GO_NAME
-	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Canceled!"' INT
+	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Cancelled!"' INT
 
 	# Check for existing install
 	if [[ -d "$GO_INSTALL_ROOT" ]]; then
@@ -113,14 +117,18 @@ install_go() {
 
 	if [[ "$version" != "$GO_NAME" ]]; then
 		display_message "Installing $version as $GO_NAME..."
-	else	
+	else
 		display_message "Installing $version..."
 	fi
 
 	# Create the global package set folder
-	mkdir -p $GVM_ROOT/pkgsets/$GO_NAME >> $GVM_ROOT/logs/go-$GO_NAME-install.log 2>&1 || 
+	mkdir -p $GVM_ROOT/pkgsets/$GO_NAME >> $GVM_ROOT/logs/go-$GO_NAME-install.log 2>&1 ||
 		display_fatal "Couldn't create global package set folder"
-
+  GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
+  mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
+		display_fatal "Couldn't create global overlay library directory"
+  mkdir -p "${GVM_OVERLAY_ROOT}/bin" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
+		display_fatal "Couldn't create global overlay bin directory"
 	copy_source
 	compile_go
 	create_enviroment
@@ -203,4 +211,3 @@ main() {
 }
 
 main $@
-
