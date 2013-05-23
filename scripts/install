@@ -174,7 +174,11 @@ main() {
 	read_command_line $@
 	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
 	download_source
-	check_tag || (update_source && check_tag) || display_fatal "Unrecognized Go version"
+	check_tag
+	if [[ "$?" == "1" ]]; then
+		update_source
+		check_tag || display_fatal "Unrecognized Go version"
+	fi
 	if [[ "$GO_NAME" == "" ]]; then
 		GO_NAME=$version
 	fi
