@@ -103,8 +103,10 @@ install_go() {
 
 	# Check for existing install
 	if [[ -d "$GO_INSTALL_ROOT" ]]; then
-		[[ -f "$GO_INSTALL_ROOT/manifest" ]] &&
-			display_fatal "Already installed!"
+		if [[ -f "$GO_INSTALL_ROOT/manifest" ]]; then
+			display_message "Already installed!"
+			exit 0
+		fi
 		display_warning "Removing corrupt install..."
 		gvm uninstall $GO_NAME
 	fi
