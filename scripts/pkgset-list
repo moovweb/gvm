@@ -6,13 +6,22 @@ display_message "gvm go package sets ($gvm_go_name)"
 echo
 
 if [[ -d $GVM_ROOT/pkgsets/$gvm_go_name ]]; then
+	pkgset_local=$(find_local_pkgset)
+	if [[ -d $pkgset_local ]]; then
+		if [[ "$gvm_pkgset_name" == "__local__" ]]; then
+			echo "=>L $pkgset_local"
+		else
+			echo "  L $pkgset_local"
+		fi
+	fi
+
 	for cur_dir in $GVM_ROOT/pkgsets/$gvm_go_name/*; do
 		[[ "$cur_dir" == "$GVM_ROOT/pkgsets/$gvm_go_name/*" ]] && exit
 		pkgset=`basename $cur_dir`
 		if [[ "$gvm_pkgset_name" == "$pkgset" ]]; then
-			echo "=> $pkgset"
+			echo "=>  $pkgset"
 		else
-			echo "   $pkgset"
+			echo "    $pkgset"
 		fi
 	done
 fi
