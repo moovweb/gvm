@@ -40,3 +40,16 @@ echo "export GOPATH; GOPATH=\"$add_gopath:\$GOPATH\"" >> $target_top/environment
 echo "export PATH; PATH=\"$add_path:\$PATH\"" >> $target_top/environments/$gvm_go_name@$target_set_name ||
 	display_fatal "Could not extend environment"
 
+if [ "${target_set_name}" != "global" ]; then
+  echo "# Package Set-Specific Overrides" >> "${GVM_ROOT}/environments/${gvm_go_name}@${target_set_name}"
+	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${gvm_go_name}/${target_set_name}/overlay\"" >> "${GVM_ROOT}/environments/${gvm_go_name}@${target_set_name}"
+  mkdir -p "${GVM_ROOT}/pkgsets/${gvm_go_name}/${target_set_name}/overlay/"{bin,lib/pkgconfig}
+  echo "export PATH; PATH=\"${GVM_ROOT}/pkgsets/${gvm_go_name}/${target_set_name}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${PATH}\"" >> "$GVM_ROOT/environments/${gvm_go_name}@${target_set_name}" ||
+	  display_fatal "Could not extend environment"
+  echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${LD_LIBRARY_PATH}\"" >> "${GVM_ROOT}/environments/${gvm_go_name}@${target_set_name}" ||
+	  display_fatal "Could not extend environment"
+  echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> "${GVM_ROOT}/environments/${gvm_go_name}@${target_set_name}" ||
+	  display_fatal "Could not extend environment"
+  echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> "${GVM_ROOT}/environments/${gvm_go_name}@${target_set_name}" ||
+	  display_fatal "Could not extend environment"
+fi

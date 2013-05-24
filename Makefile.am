@@ -8,6 +8,6 @@ install-exec-hook:
 	(mkdir -p $(install_dir) ;	 \
 	cp -rf . $(install_dir))
 
-#install-data-hook: 
+#install-data-hook:
 #        (mkdir -p $(help_dir) ; \
-#        cp -f *_help.txt $(help_dir)) 
+#        cp -f *_help.txt $(help_dir))
