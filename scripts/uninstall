@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . $GVM_ROOT/scripts/functions
 
-[[ "$1" == "" ]] && 
+[[ "$1" == "" ]] &&
 	display_fatal "Please specifiy the version"
 
 fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||

@@ -1,6 +1,6 @@
 . $GVM_ROOT/scripts/functions
 
-_gvm() 
+_gvm()
 {
 	local cur prev opts base
 	COMPREPLY=()

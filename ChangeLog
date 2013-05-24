@@ -12,7 +12,7 @@ Version: 0.0.8
 State: Stable
 
 CHANGES:
-  * Complete overhaul of the package system. Now uses 
+  * Complete overhaul of the package system. Now uses
     http://github.com/moovweb/gpkg
 
 Version: 0.0.7
@@ -66,7 +66,7 @@ Version: 0.0.3
 State: Beta
 
 CHANGES:
-  * Go versions are now identified by the full tag name. Fuzzy matches of Go 
+  * Go versions are now identified by the full tag name. Fuzzy matches of Go
     versions still works (ex. "60.3").
   * Fixed bug with ~/.gvm/gos folder not being created by Mercurial
   * Fixed error message in `gvm list` when no Go versions are installed

@@ -29,7 +29,7 @@ if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
 	set -e
 	for arch in 8 6; do
 		    for cmd in a c g l; do
-		            go tool dist install -v cmd/$arch$cmd || 
+		            go tool dist install -v cmd/$arch$cmd ||
 						display_fatal "Couldn't compile tool: $arch$cmd"
 		    done
 	done
@@ -48,9 +48,9 @@ if [ ! -d "$GOROOT/pkg/${GOOS}_${GOARCH}" ]; then
 	fi
 
 	cd $GOROOT/src
-	go tool dist install -v pkg/runtime || 
+	go tool dist install -v pkg/runtime ||
 		display_fatal "Couldn't compile runtime library for $GOOS $GOARCH"
-	go install -v -a std || 
+	go install -v -a std ||
 		display_fatal "Install runtime library for $GOOS $GOARCH"
 else
 	display_message "Runtime library already installed for $GOOS $GOARCH"
