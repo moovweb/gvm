@@ -196,7 +196,7 @@ main() {
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="`hg tags -R ~/.gvm/archive/go`"; echo ${x#*b0819469a6df} | $GREP_PATH "$version " &> /dev/null
+	x="`hg tags -R $GO_CACHE_PATH`"; echo ${x#*b0819469a6df} | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
