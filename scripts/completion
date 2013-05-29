@@ -65,7 +65,7 @@ _gvm()
 		use|uninstall)
 			[ ! -d $GVM_ROOT/gos ] && return 1
 			[[ $COMP_CWORD > 2 ]] && return 1
-			local installed_versions=$(for x in `$LS_PATH $GVM_ROOT/gos`; do echo ${x} ; done )
+			local installed_versions="$(for x in `$LS_PATH $GVM_ROOT/gos`; do echo ${x} ; done )"
 			COMPREPLY=( $(compgen -W "${installed_versions}" -- ${cur}) )
 			return 0
 		;;
