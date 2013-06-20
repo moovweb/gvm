@@ -14,7 +14,7 @@ function gvm_use() {
 		fi
 	fi
 
-	export PATH=$GVM_PATH_BACKUP
+	gvm_export_path
 	. $GVM_ROOT/environments/$fuzzy_match &> /dev/null || display_error "Couldn't source environment" || return 1
 	if [[ "$2" == "--default" ]]; then
 		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default || display_error "Couldn't make $fuzzy_match default"
