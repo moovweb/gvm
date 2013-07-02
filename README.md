@@ -53,7 +53,8 @@ To completely remove gvm and all installed Go versions and packages:
 
 Mac OS X Requirements
 ====================
-Install mercurial from http://mercurial.berkwood.com/
+Install Mercurial from http://mercurial.berkwood.com/
+Install Xcode Command Line Tools from the App Store.
 
 Linux Requirements
 ==================
