@@ -51,6 +51,8 @@ To completely remove gvm and all installed Go versions and packages:
 
     gvm implode
 
+If that doesn't work see the troubleshooting steps at the bottom of this page.
+
 Mac OS X Requirements
 ====================
 Install Mercurial from http://mercurial.berkwood.com/
