@@ -55,8 +55,8 @@ If that doesn't work see the troubleshooting steps at the bottom of this page.
 
 Mac OS X Requirements
 ====================
-Install Mercurial from http://mercurial.berkwood.com/
-Install Xcode Command Line Tools from the App Store.
+ * Install Mercurial from http://mercurial.berkwood.com/
+ * Install Xcode Command Line Tools from the App Store.
 
 Linux Requirements
 ==================
