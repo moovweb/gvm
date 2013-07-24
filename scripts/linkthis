@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+. $GVM_ROOT/scripts/functions
+
+function show_usage() {
+	echo "Usage: gvm linkthis <package-name> [options]"
+	echo "    -h, --help                Display this message."
+}
+
+package_name="$(basename "$PWD")"
+
+function read_command_line() {
+	for i in $*; do
+		case $i in
+			-h|--help*)
+				show_usage
+				exit 0
+			;;
+			-*|--*)
+				echo "Invalid option $i"
+				show_usage
+				exit 65 # Bad arguments
+			;;
+      *)
+        package_name="$i"
+        ;;
+		esac
+	done
+}
+
+read_command_line "$@"
+
+target="${GOPATH%%:*}/src/$package_name"
+
+mkdir -p "$(dirname "$target")"
+ln -sv "$PWD" "$target"
