@@ -46,6 +46,7 @@ Commands:
   install    - install go versions
   uninstall  - uninstall go versions
   cross      - install go cross compilers
+  linkthis   - link this directory into GOPATH
   list       - list installed go versions
   listall    - list available versions
   alias      - manage go version aliases
