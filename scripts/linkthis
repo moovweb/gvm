@@ -2,11 +2,17 @@
 . $GVM_ROOT/scripts/functions
 
 function show_usage() {
-	echo "Usage: gvm linkthis <package-name> [options]"
-	echo "    -h, --help                Display this message."
+	echo "Usage: gvm linkthis [package-name] [options]"
+	echo "    -h, --help     Display this message."
+	echo
+	echo "If the [package-name] is provided, it will be used in the path based"
+	echo "at \${GOPATH%%:*}/src, e.g.:"
+	echo
+	echo "    gvm linkthis github.com/moovweb/gpkg"
+	echo
+	echo "If omitted, the [package-name] will be the basename of the current"
+	echo "directory, e.g. '$package_name_basename'."
 }
-
-package_name="$(basename "$PWD")"
 
 function read_command_line() {
 	for i in $*; do
@@ -20,12 +26,15 @@ function read_command_line() {
 				show_usage
 				exit 65 # Bad arguments
 			;;
-      *)
-        package_name="$i"
-        ;;
+			*)
+				package_name="$i"
+			;;
 		esac
 	done
 }
+
+package_name="$(basename "$PWD")"
+package_name_basename="$package_name"
 
 read_command_line "$@"
 
