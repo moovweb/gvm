@@ -10,6 +10,7 @@ Features
 * Manage GOPATHs with `gvm pkgset [create/use/delete] [name]`. Use `--local` as `name` to manage repository under local path (`/path/to/repo/.gvm_local`).
 * List latest release tags with `gvm listall`. Use `--all` to list weekly as well.
 * Cache a clean copy of the latest Go source for multiple version installs.
+* Link project directories into GOPATH
 
 Background
 ==========
