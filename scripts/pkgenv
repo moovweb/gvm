@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+. $GVM_ROOT/scripts/functions
+
+function show_usage() {
+  echo "Usage: gvm pkgenv [packageset-name]"
+  echo
+  echo "       -h, --help   Display this message."
+  echo
+  echo "The [packageset-name] is optional."
+  echo
+}
+
+for i in $*; do
+  case $i in
+    -h|--help*)
+      show_usage
+      exit 0
+    ;;
+    *)
+      gvm_env="$i"
+    ;;
+  esac
+done
+
+if [ -z $gvm_go_name ]; then
+  display_fatal "current go version not managed by gvm"
+fi
+
+if [ ! -z $gvm_env ]; then
+  gvm_env="@$gvm_env"
+fi
+
+env_file=$GVM_ROOT/environments/$gvm_go_name$gvm_env
+
+vi $env_file
