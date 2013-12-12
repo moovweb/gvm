@@ -51,6 +51,7 @@ Commands:
   listall    - list available versions
   alias      - manage go version aliases
   pkgset     - manage go packages sets
+  pkgenv     - edit the environment for a package set
 "
 	fi
 fi
