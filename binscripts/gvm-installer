@@ -76,7 +76,9 @@ else
 	source_file="${GVM_DEST}/gvm/scripts/gvm"
 fi
 
-if [ "`uname`" == "Linux" ]; then
+if [ -n "$ZSH_NAME" ]; then
+	update_profile $HOME/.zshrc
+elif [ "`uname`" == "Linux" ]; then
 	update_profile $HOME/.bashrc || update_profile $HOME/.bash_profile
 elif [ "`uname`" == "Darwin" ]; then
 	update_profile $HOME/.profile || update_profile $HOME/.bash_profile
