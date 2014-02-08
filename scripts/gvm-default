@@ -14,8 +14,8 @@ mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
 mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
 
 export GVM_VERSION=`cat $GVM_ROOT/VERSION`
-export PATH=$GVM_ROOT/bin:$PATH
-export GVM_PATH_BACKUP=$PATH
+export PATH="$GVM_ROOT/bin:$PATH"
+export GVM_PATH_BACKUP="$PATH"
 [ -f $GVM_ROOT/environments/default ] && . $GVM_ROOT/environments/default
 . $GVM_ROOT/scripts/env/gvm
 
