@@ -33,4 +33,4 @@ fi
 
 env_file=$GVM_ROOT/environments/$gvm_go_name$gvm_env
 
-vi $env_file
+$(printenv EDITOR || echo 'vi') $env_file
