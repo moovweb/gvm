@@ -68,6 +68,7 @@ Linux Requirements
     sudo apt-get install binutils
     sudo apt-get install bison
     sudo apt-get install gcc
+    sudo apt-get install build-essential
 
 FreeBSD Requirements
 ====================
