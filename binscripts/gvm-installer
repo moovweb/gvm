@@ -85,7 +85,7 @@ elif [ "`uname`" == "Darwin" ]; then
 fi
 
 if [ "$?" != "0" ]; then
-	echo 'Unable to locate profile settings file'
+	echo "Unable to locate profile settings file(Something like $HOME/.bashrc or $HOME/.bash_profile)"
 	echo
 	echo " You will have to manually add the following line:"
 	echo
