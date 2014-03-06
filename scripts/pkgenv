@@ -6,6 +6,7 @@ function show_usage() {
   echo "Usage: gvm pkgenv [packageset-name]"
   echo
   echo "       -h, --help   Display this message."
+  echo "       -o, --output Write content to stdout"
   echo
   echo "The [packageset-name] is optional."
   echo
@@ -16,6 +17,9 @@ for i in $*; do
     -h|--help*)
       show_usage
       exit 0
+    ;;
+    -o|--output*)
+      output=true
     ;;
     *)
       gvm_env="$i"
@@ -32,5 +36,10 @@ if [ ! -z $gvm_env ]; then
 fi
 
 env_file=$GVM_ROOT/environments/$gvm_go_name$gvm_env
+
+if [ $output ]; then
+    cat $env_file
+    exit 0
+fi
 
 $(printenv EDITOR || echo 'vi') $env_file
