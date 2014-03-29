@@ -61,6 +61,9 @@ Mac OS X Requirements
 
 Linux Requirements
 ==================
+
+Debian/Ubuntu
+==================
     sudo apt-get install curl
     sudo apt-get install git
     sudo apt-get install mercurial
@@ -69,6 +72,18 @@ Linux Requirements
     sudo apt-get install bison
     sudo apt-get install gcc
     sudo apt-get install build-essential
+
+Redhat/Centos
+==================
+
+    sudo yum install curl
+    sudo yum install git
+    sudo yum install make
+    sudo yum install bison
+    sudo yum install gcc
+    sudo yum install glibc-devel
+
+ * Install Mercurial from http://pkgs.repoforge.org/mercurial/
 
 FreeBSD Requirements
 ====================
