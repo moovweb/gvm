@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+
 function gvm_prompt() {
 	if [[ "$1" == "g" ]]; then
-		echo $gvm_go_name
+		echo "$gvm_go_name"
 	elif [[ "$1" == "ps" ]]; then
-		echo $gvm_pkgset_name
+		echo "$gvm_pkgset_name"
 	else
 		if [[ $gvm_pkgset_name != "" ]]; then
 			if [[ $gvm_pkgset_name != "global" ]]; then
@@ -11,7 +12,7 @@ function gvm_prompt() {
 				return 0
 			fi
 		fi
-		echo $gvm_go_name
+		echo "$gvm_go_name"
 	fi
 }
 

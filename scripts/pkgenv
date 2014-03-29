@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 function show_usage() {
   echo "Usage: gvm pkgenv [packageset-name]"
@@ -12,7 +12,7 @@ function show_usage() {
   echo
 }
 
-for i in $*; do
+for i in "$@"; do
   case $i in
     -h|--help*)
       show_usage
@@ -27,19 +27,19 @@ for i in $*; do
   esac
 done
 
-if [ -z $gvm_go_name ]; then
+if [ -z "$gvm_go_name" ]; then
   display_fatal "current go version not managed by gvm"
 fi
 
-if [ ! -z $gvm_env ]; then
+if [ ! -z "$gvm_env" ]; then
   gvm_env="@$gvm_env"
 fi
 
 env_file=$GVM_ROOT/environments/$gvm_go_name$gvm_env
 
 if [ $output ]; then
-    cat $env_file
+    cat "$env_file"
     exit 0
 fi
 
-$(printenv EDITOR || echo 'vi') $env_file
+${EDITOR:-vi} "$env_file"

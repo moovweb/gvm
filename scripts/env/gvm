@@ -3,7 +3,7 @@
 
 function gvm() {
 	if [[ "$GVM_ROOT" == "" ]]; then
-		display_error "GVM_ROOT not set. Please source GVM_ROOT/scripts/gvm"
+		display_error "GVM_ROOT not set. Please source \$GVM_ROOT/scripts/gvm"
 		return $?
 	fi
 	if [[ -d $GVM_ROOT/.git ]]; then

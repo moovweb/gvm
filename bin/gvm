@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 if [ -z "$GVM_ROOT" ]; then
 	tput sgr0
 	tput setaf 1
@@ -10,15 +11,15 @@ if [ -z "$GVM_ROOT" ]; then
 	exit 1
 fi
 
-. $GVM_ROOT/scripts/functions || exit 1
+. "$GVM_ROOT/scripts/functions" || exit 1
 
 command=$1
 if [[ $command == "implode" ]]; then
-	rm -rf $GVM_ROOT
+	rm -rf "$GVM_ROOT"
 	exit 0
 fi
 
-$GVM_ROOT/scripts/gvm-check
+"$GVM_ROOT/scripts/gvm-check"
 if [[ "$?" != "0" ]]; then
 	display_fatal "Missing requirements."
 fi
@@ -26,9 +27,9 @@ fi
 if [[ $command == "version" ]]; then
 	display_message "Go Version Manager v$GVM_VERSION installed at $GVM_ROOT"
 else
-	if [ -f $GVM_ROOT/scripts/$command ]; then
+	if [ -f "$GVM_ROOT/scripts/$command" ]; then
 		shift
-		$GVM_ROOT/scripts/$command "$@"
+		"$GVM_ROOT/scripts/$command" "$@"
 	elif [[ -n $command ]]; then
 		display_fatal "Unrecognized command line argument: '$command'"
 	else
