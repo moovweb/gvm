@@ -15,4 +15,4 @@ function gvm_prompt() {
 	fi
 }
 
-gvm_prompt $@
+gvm_prompt "$@"
