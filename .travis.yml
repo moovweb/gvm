@@ -3,6 +3,5 @@ os: [linux, osx]
 osx_image: mavericks
 before_install:
   - "binscripts/gvm-installer $TRAVIS_COMMIT $TRAVIS_BUILD_DIR/tmp"
-  - "source $TRAVIS_BUILD_DIR/tmp/gvm/scripts/gvm; gvm install tip"
 install: gem install tf -v '>=0.4.1'
 script: source $TRAVIS_BUILD_DIR/tmp/gvm/scripts/gvm; tf --text tests/*
