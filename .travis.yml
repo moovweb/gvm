@@ -1,0 +1,7 @@
+language: c
+os: [linux, osx]
+osx_image: mavericks
+before_install:
+  - "env | grep '^gvm' || true"
+install: gem install tf -v '>=0.4.1'
+script: tf --text tests/*
