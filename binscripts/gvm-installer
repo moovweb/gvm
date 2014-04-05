@@ -53,8 +53,26 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
   mac:   brew install git
 "
 
-git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
-	display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+# Is gvm-installer being called from the origin repo?
+# If so, skip the clone and source locally!
+# This prevents, the CI to break on non-merge commits
+
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [[ -z "$GIT_ROOT" ]]
+then
+  echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
+
+  git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
+	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+else
+  if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
+  then
+    ln -s $GIT_ROOT $GVM_DEST
+  else
+    cp -r $GIT_ROOT $GVM_DEST/$GVM_NAME
+  fi
+fi
 
 # GVM_DEST may be a non-relative path
 # i.e: gvm-installer master foo
@@ -62,7 +80,7 @@ pushd . > /dev/null
 
 cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	display_error "Failed to checkout $BRANCH branch"
 
-popd
+popd > /dev/null
 
 mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
 
