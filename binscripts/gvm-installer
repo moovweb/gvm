@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 display_error() {
 	tput sgr0
 	tput setaf 1
@@ -8,11 +9,11 @@ display_error() {
 }
 
 update_profile() {
-	[ -f $1 ] || return 1
+	[ -f "$1" ] || return 1
 
 	grep "$source_line" "$1" > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		echo "$source_line" >> $1
+		echo "$source_line" >> "$1"
 	fi
 }
 
@@ -22,9 +23,9 @@ check_existing_go() {
 		return
 	fi
 	echo "Created profile for existing install of Go at $GOROOT"
-	mkdir -p $GVM_DEST/$GVM_NAME/environments &> /dev/null || display_error "Failed to create environment directory"
-	mkdir -p $GVM_DEST/$GVM_NAME/pkgsets/system/global &> /dev/null || display_error "Failed to create new package set"
-	mkdir -p $GVM_DEST/$GVM_NAME/gos/system &> /dev/null || display_error "Failed to create new Go folder"
+	mkdir -p "$GVM_DEST/$GVM_NAME/environments" &> /dev/null || display_error "Failed to create environment directory"
+	mkdir -p "$GVM_DEST/$GVM_NAME/pkgsets/system/global" &> /dev/null || display_error "Failed to create new package set"
+	mkdir -p "$GVM_DEST/$GVM_NAME/gos/system" &> /dev/null || display_error "Failed to create new Go folder"
 	cat << EOF > $GVM_DEST/$GVM_NAME/environments/system
 # Automatically generated file. DO NOT EDIT!
 export GVM_ROOT; GVM_ROOT="$GVM_DEST/$GVM_NAME"
@@ -36,53 +37,62 @@ export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:$GOROOT/bin:$GVM_RO
 EOF
 }
 
-BRANCH=$1
-GVM_DEST=$2
-if [ "$GVM_DEST" == "" ]; then
-	GVM_DEST="$HOME"
-	GVM_NAME=".gvm"
-else
-	GVM_NAME="gvm"
-fi
+BRANCH=${1:-master}
+GVM_DEST=${2:-$HOME}
+GVM_NAME="gvm"
+SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
-if [ "$SRC_REPO" == "" ]; then
-	SRC_REPO=https://github.com/moovweb/gvm.git
-fi
+[ "$GVM_DEST" = "$HOME" ] && GVM_NAME=".gvm"
 
-[ "$GVM_DEST" == "" ] && display_error "No destination specified!"
-[ -d $GVM_DEST/$GVM_NAME ] && display_error "Already installed!"
-[ -d $GVM_DEST ] || mkdir -p $GVM_DEST > /dev/null 2>&1 || display_error "Failed to create $GVM_DEST"
+[ -d "$GVM_DEST/$GVM_NAME" ] && display_error "Already installed!"
+[ -d "$GVM_DEST" ] || mkdir -p "$GVM_DEST" > /dev/null 2>&1 || display_error "Failed to create $GVM_DEST"
 [ -z "$(which git)" ] && display_error "Could not find git
 
-  debina/ubuntu: apt-get install git
+  debian/ubuntu: apt-get install git
   redhat/centos: yum install git
   mac:   brew install git
 "
 
-git clone --quiet $SRC_REPO "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
-	display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+# Is gvm-installer being called from the origin repo?
+# If so, skip the clone and source locally!
+# This prevents, the CI to break on non-merge commits
 
-if [ "$BRANCH" != "" ]; then
-	cd $GVM_DEST/$GVM_NAME && git checkout $BRANCH > /dev/null 2>&1 ||
-		display_error "Failed to checkout $BRANCH branch"
-fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
-mv $GVM_DEST/$GVM_NAME/.git $GVM_DEST/$GVM_NAME/git.bak
+if [[ -z "$GIT_ROOT" ]]
+then
+  echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
 
-if [ "$GVM_NAME" == ".gvm" ]; then
-	source_line="[[ -s \"\$HOME/.gvm/scripts/gvm\" ]] && source \"\$HOME/.gvm/scripts/gvm\""
-	source_file="\$HOME/.gvm/scripts/gvm"
+  git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
+	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
 else
-	source_line="[[ -s \"${GVM_DEST}/gvm/scripts/gvm\" ]] && source \"${GVM_DEST}/gvm/scripts/gvm\""
-	source_file="${GVM_DEST}/gvm/scripts/gvm"
+  if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
+  then
+    ln -s $GIT_ROOT $GVM_DEST
+  else
+    cp -r $GIT_ROOT $GVM_DEST/$GVM_NAME
+  fi
 fi
+
+# GVM_DEST may be a non-relative path
+# i.e: gvm-installer master foo
+pushd . > /dev/null
+
+cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	display_error "Failed to checkout $BRANCH branch"
+
+popd > /dev/null
+
+mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
+
+source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
+source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -n "$ZSH_NAME" ]; then
-	update_profile $HOME/.zshrc
+	update_profile "$HOME/.zshrc"
 elif [ "$(uname)" == "Linux" ]; then
-	update_profile $HOME/.bashrc || update_profile $HOME/.bash_profile
+	update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
 elif [ "$(uname)" == "Darwin" ]; then
-	update_profile $HOME/.profile || update_profile $HOME/.bash_profile
+	update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
 fi
 
 if [ "$?" != "0" ]; then
@@ -93,8 +103,9 @@ if [ "$?" != "0" ]; then
 	echo "  $source_line"
 	echo
 fi
-echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > $GVM_DEST/$GVM_NAME/scripts/gvm
-echo ". \$GVM_ROOT/scripts/gvm-default" >> $GVM_DEST/$GVM_NAME/scripts/gvm
+
+echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > "$GVM_DEST/$GVM_NAME/scripts/gvm"
+echo ". \$GVM_ROOT/scripts/gvm-default" >> "$GVM_DEST/$GVM_NAME/scripts/gvm"
 check_existing_go
 [[ -s "$GVM_DEST/$GVM_NAME/scripts/gvm" ]] && source "$GVM_DEST/$GVM_NAME/scripts/gvm"
 echo "Installed GVM v${GVM_VERSION}"
