@@ -26,7 +26,8 @@ function gvm() {
 		shift
 		gvm_use "$@"
 	elif [[ "$1" == "implode" ]]; then
-		rm -rf "$GVM_ROOT"
+		. "$GVM_ROOT/scripts/env/implode"
+		gvm_implode
 	elif [[ "$1" == "pkgset" ]] && [[ "$2" == "use" ]]; then
 		. "$GVM_ROOT/scripts/env/pkgset-use"
 		shift

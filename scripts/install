@@ -95,6 +95,7 @@ create_enviroment() {
 	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> "$new_env_file"
 	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> "$new_env_file"
 	. "$GVM_ROOT/scripts/env/use"
+	. "$GVM_ROOT/scripts/env/implode"
 	gvm_use "$GO_NAME" &> /dev/null ||
 		display_fatal "Failed to use installed version"
 	gvm pkgset create global
