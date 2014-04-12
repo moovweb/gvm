@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 function show_usage() {
 	echo "Usage: gvm listall [options]"
@@ -9,7 +9,7 @@ function show_usage() {
 
 function read_command_line() {
 	tag_filter="release"
-	for i in $*; do
+	for i in "$@"; do
 		case $i in
 			-a|--all)
 				tag_filter=""
@@ -27,12 +27,12 @@ function read_command_line() {
 	done
 }
 
-read_command_line $@
+read_command_line "$@"
 
 echo
 display_message "gvm gos (available)"
 echo
-versions=`curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | $SORT_PATH`
+versions=$(curl -s https://go.googlecode.com/hg/.hgtags | awk '{ print $2 }' | $SORT_PATH)
 if [[ $? -ne 0 ]]; then
 	display_fatal "Failed to get version list from Google"
 fi

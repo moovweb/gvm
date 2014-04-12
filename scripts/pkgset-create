@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 [[ $1 != "" ]] ||
 	display_fatal "Please specifiy the name"
@@ -27,17 +27,17 @@ fi
 [[ ! -f "$target_top/environments/$gvm_go_name@$target_set_name" ]] ||
 	display_fatal "Packageset already exists!"
 
-mkdir -p $target_top/environments ||
+mkdir -p "$target_top/environments" ||
 	display_fatal "Could not create environments folder"
-mkdir -p $target_top/pkgsets/$gvm_go_name/$target_set_name ||
+mkdir -p "$target_top/pkgsets/$gvm_go_name/$target_set_name" ||
 	display_fatal "Could not create packageset folder"
-cp $GVM_ROOT/environments/$gvm_go_name $target_top/environments/$gvm_go_name@$target_set_name ||
+cp "$GVM_ROOT/environments/$gvm_go_name" "$target_top/environments/$gvm_go_name@$target_set_name" ||
 	display_fatal "Could copy environment"
-echo "export gvm_pkgset_name=\"$target_set_name_str\"" >> $target_top/environments/$gvm_go_name@$target_set_name ||
+echo "export gvm_pkgset_name=\"$target_set_name_str\"" >> "$target_top/environments/$gvm_go_name@$target_set_name" ||
 	display_fatal "Could not extend environment"
-echo "export GOPATH; GOPATH=\"$add_gopath:\$GOPATH\"" >> $target_top/environments/$gvm_go_name@$target_set_name ||
+echo "export GOPATH; GOPATH=\"$add_gopath:\$GOPATH\"" >> "$target_top/environments/$gvm_go_name@$target_set_name" ||
 	display_fatal "Could not extend environment"
-echo "export PATH; PATH=\"$add_path:\$PATH\"" >> $target_top/environments/$gvm_go_name@$target_set_name ||
+echo "export PATH; PATH=\"$add_path:\$PATH\"" >> "$target_top/environments/$gvm_go_name@$target_set_name" ||
 	display_fatal "Could not extend environment"
 
 if [ "${target_set_name}" != "global" ]; then

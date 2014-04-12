@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 [[ "$1" == "" ]] &&
 	display_fatal "Please specifiy the version"
 
-fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"` ||
+fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
 	display_fatal "Invalid version $1"
 
 if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
-	rm -rf $GVM_ROOT/pkgsets/$fuzzy_match &> /dev/null ||
+	rm -rf "$GVM_ROOT/pkgsets/$fuzzy_match" &> /dev/null ||
 		display_fatal "Couldn't remove pkgsets"
-	rm -f $GVM_ROOT/environments/$fuzzy_match &> /dev/null ||
+	rm -f "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null ||
 		display_fatal "Couldn't remove environment files"
 	rm -f "$GVM_ROOT/environments/$fuzzy_match@"* &> /dev/null ||
 		display_fatal "Couldn't remove pkgset environment files"
-	rm -rf $GVM_ROOT/gos/$fuzzy_match &> /dev/null ||
+	rm -rf "$GVM_ROOT/gos/$fuzzy_match" &> /dev/null ||
 		display_fatal "Couldn't remove Go folder"
 	display_message "Uninstalled version $fuzzy_match"
 else

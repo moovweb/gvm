@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 command=$1
 if [[ -f $GVM_ROOT/scripts/alias-$command ]]; then
 	shift
-  $GVM_ROOT/scripts/alias-$command $@
+  "$GVM_ROOT/scripts/alias-$command" "$@"
 elif [[ -n $command ]]; then
   display_fatal "Unrecognized command line argument: '$command'"
 else

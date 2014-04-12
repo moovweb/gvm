@@ -7,14 +7,14 @@ function gvm_pkgset_use() {
 		display_error "No Go version selected" || return 1
 
 	if [[ "$1" == "--local" ]]; then
-		. $GVM_ROOT/scripts/function/find_local_pkgset
+		. "$GVM_ROOT/scripts/function/find_local_pkgset"
 		local LOCAL_TOP=$(find_local_pkgset)
 		unset -f find_local_pkgset
 		[[ -d $LOCAL_TOP ]] ||
 			display_error "Caonnt find local pakcage set" || return 1
 		LOCAL_TOP=$LOCAL_TOP/.gvm_local
 
-		fuzzy_match=`$LS_PATH $LOCAL_TOP/environments | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1` ||
+		fuzzy_match=$($LS_PATH "$LOCAL_TOP/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1) ||
 			display_error "Cannot find local package set" || return 1
 
 		[[ "$2" != "--default" ]] ||
@@ -27,7 +27,7 @@ function gvm_pkgset_use() {
 		echo "Now using version $gvm_go_name in local package set"
 		echo "Local GOPATH is now $LOCAL_TOP"
 	else
-		fuzzy_match=`$LS_PATH $GVM_ROOT/environments | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "$1" | $HEAD_PATH -n 1` ||
+		fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "$1" | $HEAD_PATH -n 1) ||
 			display_error "Invalid package set" || return 1
 
 		gvm_export_path
@@ -35,7 +35,7 @@ function gvm_pkgset_use() {
 			display_error "Failed to source the package set environment" || return 1
 
 		if [[ "$2" == "--default" ]]; then
-			cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default
+			cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
 		fi
 
 		echo "Now using version $fuzzy_match"

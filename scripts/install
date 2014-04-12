@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 function show_usage() {
 	echo "Usage: gvm install [version] [options]"
@@ -20,13 +20,13 @@ read_command_line() {
 		exit 1
 	fi
 	GO_SOURCE_URL=https://go.googlecode.com/hg/
-	for i in $*; do
+	for i in "$@"; do
 		case $i in
 			-s=*|--source=*)
-				GO_SOURCE_URL=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+        GO_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
 			;;
 			-n=*|--name=*)
-				GO_NAME=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+        GO_NAME=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
 			;;
 			-pb|--with-protobuf)
 				INSTALL_PB="true"
@@ -51,22 +51,22 @@ download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
-	hg clone $GO_SOURCE_URL $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log  2>&1 ||
+	hg clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
 		display_fatal "Couldn't download Go source\nCheck the logs $GVM_ROOT/logs/go-download.log"
 }
 
 check_tag() {
-	version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION"`
+  version=$(hg tags -R "$GO_CACHE_PATH" | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
 	display_message "Updating Go source..."
-	hg pull -R $GO_CACHE_PATH >> $GVM_ROOT/logs/go-download.log 2>&1 ||
+	hg pull -R "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't get latest Go version info\nCheck the logs $GVM_ROOT/logs/go-download.log"
 }
 
 copy_source() {
-	hg clone -u $version $GO_CACHE_PATH $GO_INSTALL_ROOT >> $GVM_ROOT/logs/go-$GO_NAME-install.log 2>&1 ||
+	hg clone -u "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
 		display_fatal "Couldn't copy source to target folder,\nCheck the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
 }
 
@@ -78,24 +78,24 @@ compile_go() {
 	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
 	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	cd $GO_INSTALL_ROOT/src && ./make.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-		(rm -rf $GO_INSTALL_ROOT && display_fatal "Failed to compile\nCheck the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
+	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile\nCheck the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
 create_enviroment() {
 	new_env_file=$GVM_ROOT/environments/$GO_NAME
-	echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > $new_env_file
-	echo "export gvm_go_name; gvm_go_name=\"$GO_NAME\"" >> $new_env_file
-	echo "export gvm_pkgset_name; gvm_pkgset_name=\"global\"" >> $new_env_file
-	echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$GO_NAME\"" >> $new_env_file
-	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global\"" >> $new_env_file
-	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay\"" >> $new_env_file
-	echo "export PATH; PATH=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/bin:\${GVM_ROOT}/gos/${GO_NAME}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}\"" >> $new_env_file
-	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${LD_LIBRARY_PATH}\"" >> $new_env_file
-	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> $new_env_file
-	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> $new_env_file
-	. $GVM_ROOT/scripts/env/use
-	gvm_use $GO_NAME &> /dev/null ||
+	echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > "$new_env_file"
+	echo "export gvm_go_name; gvm_go_name=\"$GO_NAME\"" >> "$new_env_file"
+	echo "export gvm_pkgset_name; gvm_pkgset_name=\"global\"" >> "$new_env_file"
+	echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$GO_NAME\"" >> "$new_env_file"
+	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global\"" >> "$new_env_file"
+	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay\"" >> "$new_env_file"
+	echo "export PATH; PATH=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/bin:\${GVM_ROOT}/gos/${GO_NAME}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}\"" >> "$new_env_file"
+	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${LD_LIBRARY_PATH}\"" >> "$new_env_file"
+	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> "$new_env_file"
+	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> "$new_env_file"
+	. "$GVM_ROOT/scripts/env/use"
+	gvm_use "$GO_NAME" &> /dev/null ||
 		display_fatal "Failed to use installed version"
 	gvm pkgset create global
 	unset GOPATH
@@ -112,7 +112,7 @@ install_go() {
 			exit 0
 		fi
 		display_warning "Removing corrupt install..."
-		gvm uninstall $GO_NAME
+		gvm uninstall "$GO_NAME"
 	fi
 
 	if [[ "$version" != "$GO_NAME" ]]; then
@@ -122,7 +122,7 @@ install_go() {
 	fi
 
 	# Create the global package set folder
-	mkdir -p $GVM_ROOT/pkgsets/$GO_NAME >> $GVM_ROOT/logs/go-$GO_NAME-install.log 2>&1 ||
+	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
 		display_fatal "Couldn't create global package set folder\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
   GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
   mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
@@ -136,12 +136,12 @@ install_go() {
 
 install_gpkg() {
 	display_message " * Installing gpkg..."
-	$GVM_GOINSTALL github.com/moovweb/gpkg > $GVM_ROOT/logs/$GO_NAME-gpkg.log 2>&1 || return 1
+	$GVM_GOINSTALL github.com/moovweb/gpkg > "$GVM_ROOT/logs/$GO_NAME-gpkg.log" 2>&1 || return 1
 }
 
 install_gb() {
 	display_message " * Installing gb..."
-	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > $GVM_ROOT/logs/$GO_NAME-gb.log 2>&1 || return 1
+	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > "$GVM_ROOT/logs/$GO_NAME-gb.log" 2>&1 || return 1
 }
 
 install_goprotobuf() {
@@ -152,24 +152,24 @@ install_goprotobuf() {
 "
 	display_message " * Installing goprotobuf..."
 	if [[ "$GVM_GOINSTALL" == "goinstall" ]]; then
-		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > $GVM_ROOT/logs/$GO_NAME-pb-compiler.log 2>&1
+		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
-		cd $GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler
-		make install >> $GVM_ROOT/logs/$GO_NAME-pb-compiler.log 2>&1
+		cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
+		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf compiler\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
 	else
-		$GVM_GOINSTALL code.google.com/p/goprotobuf/proto > $GVM_ROOT/logs/$GO_NAME-pb-compiler.log 2>&1
+		$GVM_GOINSTALL code.google.com/p/goprotobuf/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
-		$GVM_GOINSTALL code.google.com/p/goprotobuf/protoc-gen-go > $GVM_ROOT/logs/$GO_NAME-pb-compiler.log 2>&1
+		$GVM_GOINSTALL code.google.com/p/goprotobuf/protoc-gen-go > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf compiler\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
@@ -179,7 +179,7 @@ install_goprotobuf() {
 
 main() {
 	trap 'display_fatal "Canceled!"' INT
-	read_command_line $@
+	read_command_line "$@"
 	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
 	download_source
 	check_tag
@@ -196,7 +196,7 @@ main() {
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="`hg tags -R $GO_CACHE_PATH`"; echo ${x#*b0819469a6df} | $GREP_PATH "$version " &> /dev/null
+	x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
@@ -207,7 +207,7 @@ main() {
 		fi
 	fi
 
-	cd $GO_INSTALL_ROOT && find . > manifest
+	cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
-main $@
+main "$@"

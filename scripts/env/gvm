@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions || return 1
+. "$GVM_ROOT/scripts/functions" || return 1
 
 function gvm() {
 	if [[ "$GVM_ROOT" == "" ]]; then
@@ -7,7 +7,7 @@ function gvm() {
 		return $?
 	fi
 	if [[ -d $GVM_ROOT/.git ]]; then
-		mv $GVM_ROOT/.git $GVM_ROOT/git.bak ||
+		mv "$GVM_ROOT/.git" "$GVM_ROOT/git.bak" ||
 			display_error "Failed to move git info out of the way"
 	fi
 	if [[ ! -d $GVM_ROOT ]]; then
@@ -15,25 +15,25 @@ function gvm() {
 		return $?
 	fi
 
-	mkdir -p $GVM_ROOT/logs > /dev/null 2>&1
-	mkdir -p $GVM_ROOT/gos > /dev/null 2>&1
-	mkdir -p $GVM_ROOT/archive > /dev/null 2>&1
-	mkdir -p $GVM_ROOT/archive/package > /dev/null 2>&1
-	mkdir -p $GVM_ROOT/environments > /dev/null 2>&1
+	mkdir -p "$GVM_ROOT/logs" > /dev/null 2>&1
+	mkdir -p "$GVM_ROOT/gos" > /dev/null 2>&1
+	mkdir -p "$GVM_ROOT/archive" > /dev/null 2>&1
+	mkdir -p "$GVM_ROOT/archive/package" > /dev/null 2>&1
+	mkdir -p "$GVM_ROOT/environments" > /dev/null 2>&1
 
 	if [[ "$1" == "use" ]]; then
-		. $GVM_ROOT/scripts/env/use
+		. "$GVM_ROOT/scripts/env/use"
 		shift
-		gvm_use $@
+		gvm_use "$@"
 	elif [[ "$1" == "implode" ]]; then
-		rm -rf $GVM_ROOT
+		rm -rf "$GVM_ROOT"
 	elif [[ "$1" == "pkgset" ]] && [[ "$2" == "use" ]]; then
-		. $GVM_ROOT/scripts/env/pkgset-use
+		. "$GVM_ROOT/scripts/env/pkgset-use"
 		shift
 		shift
-		gvm_pkgset_use $@
+		gvm_pkgset_use "$@"
 	else
-		$GVM_ROOT/bin/gvm $@
+		"$GVM_ROOT/bin/gvm" "$@"
 	fi
 }
 

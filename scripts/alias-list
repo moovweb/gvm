@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 echo
 display_message "gvm go aliases"
 echo
 
-for a in $(cd $GVM_ROOT/environments ; grep -l "gvm_alias_name" *); do
+for a in $(cd "$GVM_ROOT/environments" ; grep -l "gvm_alias_name" ./*); do
   t=$(sh -c ". $GVM_ROOT/environments/$a ; echo \$gvm_go_name")
   echo "  $a ($t)"
 done
