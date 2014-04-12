@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function gvm_export_path() {
-	export PATH="$GVM_ROOT/bin:`echo "$PATH" | tr ":" "\n" | grep -v '^$' | egrep -v "$GVM_ROOT/(pkgsets|gos|bin)" | tr "\n" ":" | sed 's/:*$//'`"
+	export PATH="$GVM_ROOT/bin:$(echo "$PATH" | tr ":" "\n" | grep -v '^$' | egrep -v "$GVM_ROOT/(pkgsets|gos|bin)" | tr "\n" ":" | sed 's/:*$//')"
 	export GVM_PATH_BACKUP="$PATH"
 }
 

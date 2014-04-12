@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 function show_usage() {
 	echo "Usage: gvm linkthis [package-name] [options]"
@@ -15,7 +15,7 @@ function show_usage() {
 }
 
 function read_command_line() {
-	for i in $*; do
+	for i in "$@"; do
 		case $i in
 			-h|--help*)
 				show_usage

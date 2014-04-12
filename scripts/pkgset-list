@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 echo
 display_message "gvm go package sets ($gvm_go_name)"
@@ -17,7 +17,7 @@ if [[ -d $GVM_ROOT/pkgsets/$gvm_go_name ]]; then
 
 	for cur_dir in $GVM_ROOT/pkgsets/$gvm_go_name/*; do
 		[[ "$cur_dir" == "$GVM_ROOT/pkgsets/$gvm_go_name/*" ]] && exit
-		pkgset=`basename $cur_dir`
+    pkgset=$(basename "$cur_dir")
 		if [[ "$gvm_pkgset_name" == "$pkgset" ]]; then
 			echo "=>  $pkgset"
 		else

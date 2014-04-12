@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
-cd $GVM_ROOT/archive/go &> /dev/null ||
+cd "$GVM_ROOT/archive/go" &> /dev/null ||
 	display_fatal "Failed to find local Go source"
 
-cd $GVM_ROOT/archive/go && hg pull ||
-	display_fatal "Failed to update"
+hg pull || display_fatal "Failed to update"
 

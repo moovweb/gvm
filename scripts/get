@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
-[[ -d $GVM_ROOT/.git ]] || mv $GVM_ROOT/git.bak $GVM_ROOT/.git &> /dev/null ||
+[[ -d $GVM_ROOT/.git ]] || mv "$GVM_ROOT/git.bak" "$GVM_ROOT/.git" &> /dev/null ||
 	display_fatal "Couldn't find git info"
 
-cd $GVM_ROOT && git checkout -f ||
-	display_fatal "Failed to clean install"
+cd "$GVM_ROOT"
 
 if [[ -n $1 ]]; then
-	cd $GVM_ROOT && git checkout $1 -f ||
-		display_fatal "Failed to checkout $1 branch"
+  git checkout "$1" -f || display_fatal "Failed to checkout $1 branch"
+else
+  git checkout -f || display_fatal "Failed to clean install"
 fi
 
-cd $GVM_ROOT && git pull ||
-	display_fatal "Failed to update"
+git pull || display_fatal "Failed to update"
 
-mv $GVM_ROOT/.git $GVM_ROOT/git.bak ||
-	display_fatal "Couldn't backup git info"
-
+mv ".git" "git.bak" || display_fatal "Couldn't backup git info"

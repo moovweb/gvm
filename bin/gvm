@@ -15,7 +15,7 @@ fi
 
 command=$1
 if [[ $command == "implode" ]]; then
-	rm -rf "$GVM_ROOT"
+  gvm_implode
 	exit 0
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 [[ $1 != "" ]] ||
 	display_fatal "Please specifiy the alias name"
@@ -12,12 +12,12 @@
 [[ -f "$GVM_ROOT/environments/$2" ]] ||
 	display_fatal "Target doesn't exist!"
 
-mkdir -p $GVM_ROOT/environments ||
+mkdir -p "$GVM_ROOT/environments" ||
 	display_fatal "Could not create folder"
-mkdir -p $GVM_ROOT/gos/$1 ||
+mkdir -p "$GVM_ROOT/gos/$1" ||
 	display_fatal "Could not create folder"
-cp $GVM_ROOT/environments/$2 $GVM_ROOT/environments/$1 ||
+cp "$GVM_ROOT/environments/$2" "$GVM_ROOT/environments/$1" ||
 	display_fatal "Could copy environment"
-echo "export gvm_alias_name=\"$1\"" >> $GVM_ROOT/environments/$1 ||
+echo "export gvm_alias_name=\"$1\"" >> "$GVM_ROOT/environments/$1" ||
 	display_fatal "Could not extend environment"
 

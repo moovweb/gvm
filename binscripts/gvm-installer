@@ -68,9 +68,9 @@ then
 else
   if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
   then
-    ln -s $GIT_ROOT $GVM_DEST
+    ln -s "$GIT_ROOT" "$GVM_DEST"
   else
-    cp -r $GIT_ROOT $GVM_DEST/$GVM_NAME
+    cp -r "$GIT_ROOT" "$GVM_DEST/$GVM_NAME"
   fi
 fi
 

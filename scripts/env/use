@@ -3,10 +3,10 @@ function gvm_use() {
 	[[ "$1" != "" ]] ||
 		display_error "Please specifiy the version" || return 1
 	local VERSION=$1
-	fuzzy_match=`$LS_PATH $GVM_ROOT/gos | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1"`
+  fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1")
 	if [[ "$?" != "0" ]]; then
 		GO_CACHE_PATH=$GVM_ROOT/archive/go
-		version=`hg tags -R $GO_CACHE_PATH | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION"`
+    version=$(hg tags -R "$GO_CACHE_PATH" | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
 		if [[ "x$version" == "x" ]]; then
 			display_error "Version not found locally. Try 'gvm install $1'" || return 1
 		else
@@ -15,9 +15,9 @@ function gvm_use() {
 	fi
 
 	gvm_export_path
-	. $GVM_ROOT/environments/$fuzzy_match &> /dev/null || display_error "Couldn't source environment" || return 1
+	. "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null || display_error "Couldn't source environment" || return 1
 	if [[ "$2" == "--default" ]]; then
-		cp $GVM_ROOT/environments/$fuzzy_match $GVM_ROOT/environments/default || display_error "Couldn't make $fuzzy_match default"
+		cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default" || display_error "Couldn't make $fuzzy_match default"
 	fi
 
 	display_message "Now using version $fuzzy_match"

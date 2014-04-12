@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-. $GVM_ROOT/scripts/functions
+. "$GVM_ROOT/scripts/functions"
 
 [[ $gvm_pkgset_name != "" ]] ||
 	display_fatal "No Package set selected"
-rm -rf $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/* ||
+rm -rf "$GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/"* ||
 	display_fatal "Could not delete package set files"
 
