@@ -59,7 +59,7 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
-if [[ -z "$GIT_ROOT" ]]
+if [[ -z "$GIT_ROOT" || "$(basename "$GIT_ROOT")" != "gvm" ]]
 then
   echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
 
