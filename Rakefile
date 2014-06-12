@@ -5,7 +5,7 @@ task :default do
   Dir.mktmpdir("gvm-test") do |tmpdir|
     puts `binscripts/gvm-installer binary_default #{tmpdir}`
     pid = fork do
-      exec("bash -c 'source #{tmpdir}/gvm/scripts/gvm; tf --text #{tmpdir}/gvm/tests/*'")
+      exec("bash -c 'source #{tmpdir}/gvm/scripts/gvm; tf --text #{tmpdir}/gvm/tests/*.sh'")
     end
     Process.waitpid(pid)
   end
