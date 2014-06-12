@@ -56,7 +56,7 @@ download_source() {
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
 	hg clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
-		display_fatal "Couldn't download Go source\nCheck the logs $GVM_ROOT/logs/go-download.log"
+		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
 }
 
 check_tag() {
@@ -66,12 +66,12 @@ check_tag() {
 update_source() {
 	display_message "Updating Go source..."
 	hg pull -R "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
-		display_fatal "Couldn't get latest Go version info\nCheck the logs $GVM_ROOT/logs/go-download.log"
+		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log"
 }
 
 copy_source() {
 	hg clone -u "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't copy source to target folder,\nCheck the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
+		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
 }
 
 
@@ -83,7 +83,7 @@ compile_go() {
 	export GOROOT=$GO_INSTALL_ROOT &&
 	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
 	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
-		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile\nCheck the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
+		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
 create_enviroment() {
@@ -109,12 +109,12 @@ create_enviroment() {
 create_global_package_set() {
 	# Create the global package set folder
 	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't create global package set folder\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+		display_fatal "Couldn't create global package set folder. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
 	GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
 	mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay library directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+		display_fatal "Couldn't create global overlay library directory. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
 	mkdir -p "${GVM_OVERLAY_ROOT}/bin" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay bin directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+		display_fatal "Couldn't create global overlay bin directory. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
 }
 
 install_go() {
@@ -235,24 +235,24 @@ install_goprotobuf() {
 	if [[ "$GVM_GOINSTALL" == "goinstall" ]]; then
 		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
+			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
 		cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
 		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf compiler\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
+			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
 	else
 		$GVM_GOINSTALL code.google.com/p/goprotobuf/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
+			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
 		$GVM_GOINSTALL code.google.com/p/goprotobuf/protoc-gen-go > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf compiler\nCheck the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
+			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
 	fi
