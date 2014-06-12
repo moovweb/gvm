@@ -7,3 +7,4 @@ environments/
 tmp/
 *.log
 scripts/gvm
+Gemfile.lock
