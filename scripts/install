@@ -148,6 +148,17 @@ download_binary() {
 
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
+		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
+		if [ "${osx_major_version}" -ge 8 ]; then
+			GVM_OS_VERSION="-osx10.8"
+		elif [ "${osx_major_version}" -ge 6 ]; then
+			GVM_OS_VERSION="-osx10.6"
+		else
+			display_error "Binary Go unavailable for this platform"
+			rm -rf $GO_INSTALL_ROOT
+			rm -f $GO_BINARY_PATH
+			exit 1
+		fi
 	else
 	  GVM_OS="linux"
 	fi
@@ -158,7 +169,7 @@ download_binary() {
 	  GVM_ARCH="386"
 	fi
 
-	GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
+	GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
 	GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
