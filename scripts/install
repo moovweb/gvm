@@ -7,6 +7,7 @@ function show_usage() {
 	echo "    -n,  --name=NAME          Override the default name for this version."
 	echo "    -pb, --with-protobuf      Install Go protocol buffers."
 	echo "    -b,  --with-build-tools   Install package build tools."
+	echo "    -B,  --binary             Only install from binary."
 	echo "    -h,  --help               Display this message."
 }
 
@@ -23,16 +24,19 @@ read_command_line() {
 	for i in "$@"; do
 		case $i in
 			-s=*|--source=*)
-        GO_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
+				GO_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
 			;;
 			-n=*|--name=*)
-        GO_NAME=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
+				GO_NAME=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
 			;;
 			-pb|--with-protobuf)
 				INSTALL_PB="true"
 			;;
 			-b|--with-build-tools)
 				INSTALL_BUILD_TOOLS="true"
+			;;
+			-B|--binary)
+				INSTALL_SOURCE="binary"
 			;;
 			-h|--help)
 				show_usage
@@ -56,7 +60,7 @@ download_source() {
 }
 
 check_tag() {
-  version=$(hg tags -R "$GO_CACHE_PATH" | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+	version=$(hg tags -R "$GO_CACHE_PATH" | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
@@ -102,6 +106,17 @@ create_enviroment() {
 	unset GOPATH
 }
 
+create_global_package_set() {
+	# Create the global package set folder
+	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
+		display_fatal "Couldn't create global package set folder\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+	GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
+	mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
+		display_fatal "Couldn't create global overlay library directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+	mkdir -p "${GVM_OVERLAY_ROOT}/bin" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
+		display_fatal "Couldn't create global overlay bin directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+}
+
 install_go() {
 	GO_INSTALL_ROOT=$GVM_ROOT/gos/$GO_NAME
 	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Cancelled!"' INT
@@ -122,16 +137,70 @@ install_go() {
 		display_message "Installing $version..."
 	fi
 
-	# Create the global package set folder
-	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't create global package set folder\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
-  GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
-  mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay library directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
-  mkdir -p "${GVM_OVERLAY_ROOT}/bin" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay bin directory\nCheck the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
+	create_global_package_set
 	copy_source
 	compile_go
+	create_enviroment
+}
+
+download_binary() {
+	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
+
+	if [ "$(uname)" == "Darwin" ]; then
+		GVM_OS="darwin"
+	else
+	  GVM_OS="linux"
+	fi
+
+	if [ "$(uname -m)" == "x86_64" ]; then
+	  GVM_ARCH="amd64"
+	else
+	  GVM_ARCH="386"
+	fi
+
+	GO_BINARY_FILE=${VERSION}.${GVM_OS}-amd64.tar.gz
+	GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
+	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
+
+	if [ ! -f $GO_BINARY_PATH ]; then
+		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+
+		if [[ $? -ne 0 ]]; then
+			display_error "Failed to download binary go"
+			rm -rf $GO_INSTALL_ROOT
+			rm -f $GO_BINARY_PATH
+			exit 1
+		fi
+	fi
+
+	tar zxf ${GO_BINARY_PATH} -C $GO_INSTALL_ROOT --strip-components 1 >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
+
+	if [[ $? -ne 0 ]]; then
+		display_error "Failed to extract binary go"
+		rm -rf $GO_INSTALL_ROOT
+		rm -f $GO_BINARY_PATH
+		exit 1
+	fi
+}
+
+install_go_binary() {
+	GO_INSTALL_ROOT=$GVM_ROOT/gos/$GO_NAME
+	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Cancelled!"' INT
+
+	# Check for existing install
+	if [[ -d "$GO_INSTALL_ROOT" ]]; then
+		if [[ -f "$GO_INSTALL_ROOT/manifest" ]]; then
+			display_message "Already installed!"
+			exit 0
+		fi
+		display_warning "Removing corrupt install..."
+		gvm uninstall "$GO_NAME"
+	fi
+
+	display_message "Installing $GO_NAME from binary source"
+
+	create_global_package_set
+	download_binary
 	create_enviroment
 }
 
@@ -182,29 +251,39 @@ main() {
 	trap 'display_fatal "Canceled!"' INT
 	read_command_line "$@"
 	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
-	download_source
-	check_tag
-	if [[ "$?" == "1" ]]; then
-		update_source
-		check_tag || display_fatal "Unrecognized Go version"
+
+	if [[ "x$INSTALL_SOURCE" != "xbinary" ]]; then
+		download_source
+		check_tag
+		if [[ "$?" == "1" ]]; then
+			update_source
+			check_tag || display_fatal "Unrecognized Go version"
+		fi
+		if [[ "$GO_NAME" == "" ]]; then
+			GO_NAME=$version
+		fi
+		install_go
+	else
+		if [[ "$GO_NAME" == "" ]]; then
+			GO_NAME=$VERSION
+		fi
+		install_go_binary
 	fi
-	if [[ "$GO_NAME" == "" ]]; then
-		GO_NAME=$version
-	fi
-	install_go
 
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
-	if [[ "$?" == "1" ]]; then
-		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
-			install_gb || display_warning "Failed to install gb"
-			install_gpkg || display_warning "Failed to install gpkg"
-		fi
-		if [[ "$INSTALL_PB" == "true" ]]; then
-			install_goprotobuf
+	if [[ "x$INSTALL_SOURCE" != "xbinary" ]]; then
+		x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+		if [[ "$?" == "1" ]]; then
+			if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
+				install_gb || display_warning "Failed to install gb"
+				install_gpkg || display_warning "Failed to install gpkg"
+			fi
+			if [[ "$INSTALL_PB" == "true" ]]; then
+				install_goprotobuf
+			fi
 		fi
 	fi
 
