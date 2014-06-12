@@ -144,8 +144,43 @@ install_go() {
 }
 
 download_binary() {
-	mkdir -p $GO_INSTALL_ROOT
-	curl -s -L "https://storage.googleapis.com/golang/$VERSION.linux-amd64.tar.gz" | tar zx -C $GO_INSTALL_ROOT --strip-components 1
+	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
+
+	if [ "$(uname)" == "Darwin" ]; then
+		GVM_OS="darwin"
+	else
+	  GVM_OS="linux"
+	fi
+
+	if [ "$(uname -m)" == "x86_64" ]; then
+	  GVM_ARCH="amd64"
+	else
+	  GVM_ARCH="386"
+	fi
+
+	GO_BINARY_FILE=${VERSION}.${GVM_OS}-amd64.tar.gz
+	GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
+	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
+
+	if [ ! -f $GO_BINARY_PATH ]; then
+		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+
+		if [[ $? -ne 0 ]]; then
+			display_error "Failed to download binary go"
+			rm -rf $GO_INSTALL_ROOT
+			rm -f $GO_BINARY_PATH
+			exit 1
+		fi
+	fi
+
+	tar zxf ${GO_BINARY_PATH} -C $GO_INSTALL_ROOT --strip-components 1 >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
+
+	if [[ $? -ne 0 ]]; then
+		display_error "Failed to extract binary go"
+		rm -rf $GO_INSTALL_ROOT
+		rm -f $GO_BINARY_PATH
+		exit 1
+	fi
 }
 
 install_go_binary() {

@@ -38,6 +38,7 @@ Additional options can be specified when installing Go:
         -n,  --name=NAME          Override the default name for this version.
         -pb, --with-protobuf      Install Go protocol buffers.
         -b,  --with-build-tools   Install package build tools.
+        -B,  --binary             Only install from binary.
         -h,  --help               Display this message.
 
 List Go Versions
