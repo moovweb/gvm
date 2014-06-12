@@ -8,3 +8,4 @@ tmp/
 *.log
 scripts/gvm
 Gemfile.lock
+.vagrant/
