@@ -18,9 +18,14 @@ update_profile() {
 }
 
 check_existing_go() {
+
 	if [ "$GOROOT" == "" ]; then
-		echo "No existing Go versions detected"
-		return
+		if which go > /dev/null; then
+			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
+		else
+			echo "No existing Go versions detected"
+			return
+		fi
 	fi
 	echo "Created profile for existing install of Go at $GOROOT"
 	mkdir -p "$GVM_DEST/$GVM_NAME/environments" &> /dev/null || display_error "Failed to create environment directory"
