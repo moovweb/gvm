@@ -38,7 +38,7 @@ export gvm_go_name; gvm_go_name="system"
 export gvm_pkgset_name; gvm_pkgset_name="global"
 export GOROOT; GOROOT="$GOROOT"
 export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global"
-export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
+export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
 EOF
 }
 
