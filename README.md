@@ -68,14 +68,7 @@ Linux Requirements
 
 Debian/Ubuntu
 ==================
-    sudo apt-get install curl
-    sudo apt-get install git
-    sudo apt-get install mercurial
-    sudo apt-get install make
-    sudo apt-get install binutils
-    sudo apt-get install bison
-    sudo apt-get install gcc
-    sudo apt-get install build-essential
+    sudo apt-get install curl git mercurial make binutils bison gcc build-essential
 
 Redhat/Centos
 ==================
