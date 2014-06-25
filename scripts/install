@@ -38,6 +38,9 @@ read_command_line() {
 			-B|--binary)
 				INSTALL_SOURCE="binary"
 			;;
+      --prefer-binary)
+        INSTALL_SOURCE="preferbinary"
+      ;;
 			-h|--help)
 				show_usage
 				exit 0
@@ -258,44 +261,54 @@ install_goprotobuf() {
 	fi
 }
 
-main() {
-	trap 'display_fatal "Canceled!"' INT
-	read_command_line "$@"
-	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
-
-	if [[ "x$INSTALL_SOURCE" != "xbinary" ]]; then
-		download_source
-		check_tag
-		if [[ "$?" == "1" ]]; then
-			update_source
-			check_tag || display_fatal "Unrecognized Go version"
-		fi
-		if [[ "$GO_NAME" == "" ]]; then
-			GO_NAME=$version
-		fi
-		install_go
-	else
-		if [[ "$GO_NAME" == "" ]]; then
-			GO_NAME=$VERSION
-		fi
-		install_go_binary
+install_from_source() {
+	download_source
+	check_tag
+	if [[ "$?" == "1" ]]; then
+		update_source
+		check_tag || display_fatal "Unrecognized Go version"
 	fi
+	if [[ "$GO_NAME" == "" ]]; then
+		GO_NAME=$version
+	fi
+	install_go
 
 	GVM_GOINSTALL="goinstall"
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	if [[ "x$INSTALL_SOURCE" != "xbinary" ]]; then
-		x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
-		if [[ "$?" == "1" ]]; then
-			if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
-				install_gb || display_warning "Failed to install gb"
-				install_gpkg || display_warning "Failed to install gpkg"
-			fi
-			if [[ "$INSTALL_PB" == "true" ]]; then
-				install_goprotobuf
-			fi
+	x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	if [[ "$?" == "1" ]]; then
+		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
+			install_gb || display_warning "Failed to install gb"
+			install_gpkg || display_warning "Failed to install gpkg"
 		fi
+		if [[ "$INSTALL_PB" == "true" ]]; then
+			install_goprotobuf
+		fi
+	fi
+
+	cd "$GO_INSTALL_ROOT" && find . > manifest
+}
+
+main() {
+	trap 'display_fatal "Canceled!"' INT
+	read_command_line "$@"
+	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
+
+	if [[ "$GO_NAME" == "" ]]; then
+		GO_NAME=$VERSION
+	fi
+
+	if [[ "x$INSTALL_SOURCE" == "xbinary" ]]; then
+		install_go_binary
+	elif [[ "x$INSTALL_SOURCE" == "xpreferbinary" ]]; then
+		install_go_binary || {
+			display_message "Falling back to source installation of $GO_NAME"
+			install_from_source
+		}
+	else
+		install_from_source
 	fi
 
 	cd "$GO_INSTALL_ROOT" && find . > manifest
