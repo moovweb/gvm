@@ -42,7 +42,7 @@ Additional options can be specified when installing Go:
         -pb, --with-protobuf      Install Go protocol buffers.
         -b,  --with-build-tools   Install package build tools.
         -B,  --binary             Only install from binary.
-             --preferbinary       Attempt a binary install, falling back to source.
+             --prefer-binary      Attempt a binary install, falling back to source.
         -h,  --help               Display this message.
 
 List Go Versions
