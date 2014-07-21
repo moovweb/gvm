@@ -8,6 +8,7 @@ function show_usage() {
 	echo "    -pb, --with-protobuf      Install Go protocol buffers."
 	echo "    -b,  --with-build-tools   Install package build tools."
 	echo "    -B,  --binary             Only install from binary."
+	echo "         --prefer-binary      Attempt a binary install, falling back to source."
 	echo "    -h,  --help               Display this message."
 }
 
@@ -38,9 +39,9 @@ read_command_line() {
 			-B|--binary)
 				INSTALL_SOURCE="binary"
 			;;
-      --prefer-binary)
-        INSTALL_SOURCE="preferbinary"
-      ;;
+			--prefer-binary)
+				INSTALL_SOURCE="preferbinary"
+			;;
 			-h|--help)
 				show_usage
 				exit 0
