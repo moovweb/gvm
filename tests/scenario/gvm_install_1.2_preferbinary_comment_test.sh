@@ -1,1 +1,1 @@
-gvm install go1.2 --preferbinary #status=0
+gvm install go1.2 --prefer-binary #status=0

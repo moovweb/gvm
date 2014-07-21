@@ -8,6 +8,7 @@ function show_usage() {
 	echo "    -pb, --with-protobuf      Install Go protocol buffers."
 	echo "    -b,  --with-build-tools   Install package build tools."
 	echo "    -B,  --binary             Only install from binary."
+	echo "         --prefer-binary      Attempt a binary install, falling back to source."
 	echo "    -h,  --help               Display this message."
 }
 
@@ -39,7 +40,7 @@ read_command_line() {
 				INSTALL_SOURCE="binary"
 			;;
       --prefer-binary)
-        INSTALL_SOURCE="preferbinary"
+        INSTALL_SOURCE="prefer-binary"
       ;;
 			-h|--help)
 				show_usage
@@ -309,7 +310,7 @@ main() {
 
 	if [[ "x$INSTALL_SOURCE" == "xbinary" ]]; then
 		install_go_binary
-	elif [[ "x$INSTALL_SOURCE" == "xpreferbinary" ]]; then
+	elif [[ "x$INSTALL_SOURCE" == "xprefer-binary" ]]; then
 		install_go_binary || {
 			display_message "Falling back to source installation of $GO_NAME"
 			install_from_source
