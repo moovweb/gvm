@@ -4,7 +4,7 @@
 display_usage() {
 	display_message "Usage: gvm cross [os] [arch]"
 	display_message "  os   = linux/darwin/windows"
-	display_message "  arch = amd64/386 (arm unsupported)"
+	display_message "  arch = amd64/386/arm"
 }
 
 display_list() {
@@ -25,9 +25,9 @@ which go &> /dev/null || display_fatal "Only available in versions after Go 1"
 [ -z "$1" ] && display_list
 
 if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
-	display_message "Installing x86 and x86-64 commands"
+	display_message "Installing x86, x86-64, and ARM commands"
 	set -e
-	for arch in 8 6; do
+	for arch in 8 6 5; do
 		    for cmd in a c g l; do
 		            go tool dist install -v cmd/$arch$cmd ||
 						display_fatal "Couldn't compile tool: $arch$cmd"
