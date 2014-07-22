@@ -39,9 +39,9 @@ read_command_line() {
 			-B|--binary)
 				INSTALL_SOURCE="binary"
 			;;
-      --prefer-binary)
-        INSTALL_SOURCE="prefer-binary"
-      ;;
+			--prefer-binary)
+			  INSTALL_SOURCE="prefer-binary"
+			;;
 			-h|--help)
 				show_usage
 				exit 0
@@ -164,13 +164,13 @@ download_binary() {
 			exit 1
 		fi
 	else
-	  GVM_OS="linux"
+		GVM_OS="linux"
 	fi
 
 	if [ "$(uname -m)" == "x86_64" ]; then
-	  GVM_ARCH="amd64"
+		GVM_ARCH="amd64"
 	else
-	  GVM_ARCH="386"
+		GVM_ARCH="386"
 	fi
 
 	GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
@@ -181,17 +181,17 @@ download_binary() {
 		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
 
 		if [[ $? -ne 0 ]]; then
-			display_error "Failed to download binary go from http://golang.org. Trying https://go.googlecode.com"
-            		GO_BINARY_URL="https://go.googlecode.com/files/go${GO_BINARY_FILE}"
+			display_error "Failed to download binary go from http://golang.org. Trying https://storage.googleapis.com"
+			GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
 
-            		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+			curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
 
-            		if [[ $? -ne 0 ]]; then
-                		display_error "Failed to download binary go"
-                		rm -rf $GO_INSTALL_ROOT
-                		rm -f $GO_BINARY_PATH
-                		exit 1
-            		fi
+			if [[ $? -ne 0 ]]; then
+				display_error "Failed to download binary go"
+				rm -rf $GO_INSTALL_ROOT
+				rm -f $GO_BINARY_PATH
+				exit 1
+			fi
 		fi
 	fi
 
