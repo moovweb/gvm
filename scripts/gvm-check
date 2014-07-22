@@ -1,37 +1,49 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
+error_message=""
+
 # Check for hg
 which hg &> /dev/null ||
-	display_warning "Could not find mercurial
+	error_message="${error_message}
+Could not find mercurial
 
   linux: apt-get install mercurial
   mac:   brew install mercurial
-" || exit 1
+"
 # Check for ar
 which ar &> /dev/null ||
-	display_warning "Could not find binutils
+	error_message="${error_message}
+Could not find binutils
 
   linux: apt-get install binutils
-" || exit 1
+"
 # Check for bison
 which bison &> /dev/null ||
-	display_warning "Could not find bison
+	error_message="${error_message}
+Could not find bison
 
   linux: apt-get install bison
-" || exit 1
+"
 # Check for gcc
 which gcc &> /dev/null ||
-	display_warning "Could not find gcc
+	error_message="${error_message}
+Could not find gcc
 
   linux: apt-get install gcc
-" || exit 1
+"
 # Check for make
 which make &> /dev/null ||
-	display_warning "Could not find make
+	error_message="${error_message}
+Could not find make
 
   linux: apt-get install make
-" || exit 1
+"
 
-# All good!
-exit 0
+if [ -n "$error_message" ]; then
+	display_warning "$error_message"
+	exit 1
+else
+	# All good!
+	exit 0
+fi
