@@ -19,7 +19,7 @@ update_profile() {
 
 check_existing_go() {
 
-	if [ "$GOROOT" == "" ]; then
+	if [ "$GOROOT" = "" ]; then
 		if which go > /dev/null; then
 			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
 		else
