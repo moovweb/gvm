@@ -60,7 +60,7 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
 # Is gvm-installer being called from the origin repo?
 # If so, skip the clone and source locally!
-# This prevents, the CI to break on non-merge commits
+# This prevents CI from breaking on non-merge commits.
 
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
@@ -87,20 +87,22 @@ cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	displ
 
 popd > /dev/null
 
-mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
+[ -z "$GVM_NO_GIT_BAK" ] && mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
 
 source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
-if [ -n "$ZSH_NAME" ]; then
-	update_profile "$HOME/.zshrc"
-elif [ "$(uname)" == "Linux" ]; then
-	update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
-elif [ "$(uname)" == "Darwin" ]; then
-	update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
+  if [ -n "$ZSH_NAME" ]; then
+    update_profile "$HOME/.zshrc"
+  elif [ "$(uname)" == "Linux" ]; then
+    update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
+  elif [ "$(uname)" == "Darwin" ]; then
+    update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+  fi
 fi
 
-if [ "$?" != "0" ]; then
+if [ -z "$GVM_NO_UPDATE_PROFILE" ] && [ "$?" != "0" ]; then
 	echo "Unable to locate profile settings file(Something like $HOME/.bashrc or $HOME/.bash_profile)"
 	echo
 	echo " You will have to manually add the following line:"
