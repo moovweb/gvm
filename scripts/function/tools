@@ -9,3 +9,7 @@ GREP_PATH=$(unalias grep &> /dev/null; which grep) || display_error "$GREP_ERROR
 SORT_PATH=$(unalias sort &> /dev/null; which sort) || display_error "$SORT_ERROR" || return 1
 HEAD_PATH=$(unalias head &> /dev/null; which head) || display_error "$HEAD_ERROR" || return 1
 
+LS_PATH=${LS_PATH:$(expr index $LS_PATH '/')-1}
+GREP_PATH=${GREP_PATH:$(expr index $GREP_PATH '/')-1}
+SORT_PATH=${SORT_PATH:$(expr index $SORT_PATH '/')-1}
+HEAD_PATH=${HEAD_PATH:$(expr index $HEAD_PATH '/')-1}
