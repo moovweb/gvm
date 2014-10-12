@@ -174,25 +174,25 @@ download_binary() {
 	fi
 
 	GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
-	GO_BINARY_URL="http://golang.org/dl/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
+	GO_BINARY_URL_LIST=("http://golang.org/dl/${GO_BINARY_FILE}" 
+		"https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
+		"http://golangtc.com/static/go/${GO_BINARY_FILE}")
 
 	if [ ! -f $GO_BINARY_PATH ]; then
-		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
-
-		if [[ $? -ne 0 ]]; then
-			display_error "Failed to download binary go from http://golang.org. Trying https://storage.googleapis.com"
-			GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
-
+		for GO_BINARY_URL in ${GO_BINARY_URL_LIST[@]}
+		do
+			echo "Downloading binary go from $GO_BINARY_URL"
 			curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
-
 			if [[ $? -ne 0 ]]; then
-				display_error "Failed to download binary go"
-				rm -rf $GO_INSTALL_ROOT
+				display_error "Failed to download binary go from $GO_BINARY_URL"
 				rm -f $GO_BINARY_PATH
-				exit 1
+			else
+				break
 			fi
-		fi
+		done
+	else
+		echo "$GO_BINARY_PATH already exists!"
 	fi
 
 	tar zxf ${GO_BINARY_PATH} -C $GO_INSTALL_ROOT --strip-components 1 >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
