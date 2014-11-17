@@ -83,7 +83,12 @@ Redhat/Centos
     sudo yum install gcc
     sudo yum install glibc-devel
 
- * Install Mercurial from http://pkgs.repoforge.org/mercurial/
+ Install Mercurial using:
+
+    sudo yum install python-setuptools python-devel gcc -y
+    sudo easy_install Mercurial
+
+ or from http://pkgs.repoforge.org/mercurial/ 
 
 FreeBSD Requirements
 ====================
