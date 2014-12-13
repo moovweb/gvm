@@ -73,6 +73,10 @@ Debian/Ubuntu
 ==================
     sudo apt-get install curl git mercurial make binutils bison gcc build-essential
 
+Fedora using DNF
+    sudo dnf install curl git make bison gcc glibc-devel mercurial
+==================
+
 Redhat/Centos
 ==================
 
