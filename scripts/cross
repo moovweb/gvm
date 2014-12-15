@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
+setup_goroot_path
+
 display_usage() {
 	display_message "Usage: gvm cross [os] [arch]"
 	display_message "  os   = linux/darwin/windows"
