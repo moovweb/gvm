@@ -28,10 +28,10 @@ if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
 	display_message "Installing x86, x86-64, and ARM commands"
 	set -e
 	for arch in 8 6 5; do
-		    for cmd in a c g l; do
-		            go tool dist install -v cmd/$arch$cmd ||
-						display_fatal "Couldn't compile tool: $arch$cmd"
-		    done
+		for cmd in a c g l; do
+			go tool dist install -v cmd/$arch$cmd ||
+				display_fatal "Couldn't compile tool: $arch$cmd"
+		done
 	done
 	touch "$GOROOT/pkg/tool/cross"
 fi
@@ -44,7 +44,7 @@ export GOARCH=$1
 if [ ! -d "$GOROOT/pkg/${GOOS}_${GOARCH}" ]; then
 	display_message "Installing $GOOS $GOARCH runtime library"
 	if [ "$GOOS" = "windows" ]; then
-		    export CGO_ENABLED=0
+		export CGO_ENABLED=0
 	fi
 
 	cd "$GOROOT/src"
