@@ -48,7 +48,13 @@ if [ ! -d "$GOROOT/pkg/${GOOS}_${GOARCH}" ]; then
 	fi
 
 	cd "$GOROOT/src"
-	go tool dist install -v pkg/runtime ||
+	if [ -d pkg/runtime ]; then
+		runtime='pkg/runtime'
+	else
+		# Go 1.4 moved pkg/ up a level
+		runtime='runtime'
+	fi
+	go tool dist install -v "$runtime" ||
 		display_fatal "Couldn't compile runtime library for $GOOS $GOARCH"
 	go install -v -a std ||
 		display_fatal "Install runtime library for $GOOS $GOARCH"
