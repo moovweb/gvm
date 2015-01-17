@@ -3,10 +3,10 @@
 
 error_message=""
 
-# Check for hg
-which hg &> /dev/null ||
+# Check for git
+which git &> /dev/null ||
 	error_message="${error_message}
-Could not find mercurial
+Could not find git
 
   linux: apt-get install mercurial
   mac:   brew install mercurial
