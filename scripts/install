@@ -64,7 +64,7 @@ download_source() {
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git tag -l "$VERSION")
+    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
