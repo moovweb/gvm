@@ -4,5 +4,5 @@
 cd "$GVM_ROOT/archive/go" &> /dev/null ||
 	display_fatal "Failed to find local Go source"
 
-hg pull || display_fatal "Failed to update"
+git pull || display_fatal "Failed to update"
 
