@@ -21,7 +21,7 @@ read_command_line() {
 		show_usage
 		exit 1
 	fi
-	GO_SOURCE_URL=https://go.googlecode.com/hg/
+	GO_SOURCE_URL=https://go.googlesource.com/go
 	for i in "$@"; do
 		case $i in
 			-s=*|--source=*)
@@ -59,22 +59,22 @@ download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
-	hg clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
+	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
 		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
 }
 
 check_tag() {
-	version=$(hg tags -R "$GO_CACHE_PATH" | awk '{print $1}' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
 	display_message "Updating Go source..."
-	hg pull -R "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
-		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log"
+	(cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
+		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
 copy_source() {
-	hg clone -u "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
+	git clone -b "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
 		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
 }
 
@@ -193,8 +193,8 @@ download_binary() {
 		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
 
 		if [[ $? -ne 0 ]]; then
-			display_error "Failed to download binary go from http://golang.org. Trying https://storage.googleapis.com"
-			GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
+			display_error "Failed to download binary go from http://golang.org. Trying https://go.googlecode.com"
+			GO_BINARY_URL="https://go.googlecode.com/files/${GO_BINARY_FILE}"
 
 			curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
 
@@ -297,7 +297,7 @@ install_from_source() {
 	which goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(hg tags -R "$GO_CACHE_PATH")"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
