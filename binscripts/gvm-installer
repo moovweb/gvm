@@ -11,9 +11,12 @@ display_error() {
 update_profile() {
 	[ -f "$1" ] || return 1
 
-	grep "$source_line" "$1" > /dev/null 2>&1
+	grep "${source_line//\$HOME/.*}" "$1" > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		echo "$source_line" >> "$1"
+		echo "Added GVM source line to $1"
+	else
+		echo "GVM is already sourced in $1"
 	fi
 }
 
