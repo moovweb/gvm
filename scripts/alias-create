@@ -2,10 +2,10 @@
 . "$GVM_ROOT/scripts/functions"
 
 [[ $1 != "" ]] ||
-	display_fatal "Please specifiy the alias name"
+	display_fatal "Please specify the alias name"
 
 [[ $2 != "" ]] ||
-	display_fatal "Please specifiy the go version name"
+	display_fatal "Please specify the go version name"
 
 [[ ! -f "$GVM_ROOT/environments/$1" ]] ||
 	display_fatal "Alias already exists!"
