@@ -53,6 +53,10 @@ To list all installed Go versions (The current version is prefixed with "=>"):
 
     gvm list
 
+To list all Go versions available for download:
+
+    gvm listall
+
 Uninstalling
 ============
 To completely remove gvm and all installed Go versions and packages:
