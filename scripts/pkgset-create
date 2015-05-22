@@ -2,7 +2,7 @@
 . "$GVM_ROOT/scripts/functions"
 
 [[ $1 != "" ]] ||
-	display_fatal "Please specifiy the name"
+	display_fatal "Please specify the name"
 
 target_top=$GVM_ROOT
 target_set_name=$1
