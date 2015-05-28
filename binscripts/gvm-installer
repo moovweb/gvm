@@ -89,7 +89,7 @@ popd > /dev/null
 
 [ -z "$GVM_NO_GIT_BAK" ] && mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
 
-source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
+source_line="\n[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
