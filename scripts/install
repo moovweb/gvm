@@ -85,6 +85,7 @@ compile_go() {
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
 	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
+	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
 	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
 	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
 		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
