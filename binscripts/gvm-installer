@@ -11,9 +11,9 @@ display_error() {
 update_profile() {
 	[ -f "$1" ] || return 1
 
-	grep "$source_line" "$1" > /dev/null 2>&1
+	grep -F "$source_line" "$1" > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		echo "$source_line" >> "$1"
+		echo -e "\n$source_line" >> "$1"
 	fi
 }
 
@@ -89,7 +89,7 @@ popd > /dev/null
 
 [ -z "$GVM_NO_GIT_BAK" ] && mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
 
-source_line="\n[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
+source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
