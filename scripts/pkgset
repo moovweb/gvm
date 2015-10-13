@@ -33,6 +33,8 @@ GVM pkgset is used to manage various Go packages
   delete     - delete a package set
   use        - select where gb and goinstall target and link
   empty      - remove all code and compiled binaries from package set
-  list       - list installed go packages"
-fi
+  list       - list installed go packages
+  this       - make a pkgset named as the basename of the current directory,
+               and link the current directory as src"
 
+fi
