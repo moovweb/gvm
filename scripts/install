@@ -146,6 +146,8 @@ install_go() {
 	copy_source
 	compile_go
 	create_enviroment
+
+	display_message "$GO_NAME successfully installed!"
 }
 
 download_binary() {
