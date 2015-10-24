@@ -46,6 +46,17 @@ Additional options can be specified when installing Go:
         -B,  --binary             Only install from binary.
              --prefer-binary      Attempt a binary install, falling back to source.
         -h,  --help               Display this message.
+        
+### A Note on Compiling Go 1.5
+Go 1.5+ removed the C compilers from the toolchain and [replaced][compiler_note] them with one written in Go. Obviously, this creates a bootstrapping problem if you don't already have a working Go install. In order to compile Go 1.5+, make sure Go 1.4 is installed first.
+
+```
+gvm install go1.4
+gvm use go1.4
+gvm install go1.5
+```
+
+[compiler_note]: https://docs.google.com/document/d/1OaatvGhEAq7VseQ9kkavxKNAfepWy2yhPUBs96FGV28/edit
 
 List Go Versions
 ================
