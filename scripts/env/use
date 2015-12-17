@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 function gvm_use() {
+	if [[ "$1" == "-h" ]]; then
+		display_message "Usage: gvm use VERSION [--default]"
+		return 1
+	fi
+
 	[[ "$1" != "" ]] ||
 		display_error "Please specify the version" || return 1
 	local VERSION=$1
