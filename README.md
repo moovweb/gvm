@@ -51,8 +51,9 @@ Additional options can be specified when installing Go:
 Go 1.5+ removed the C compilers from the toolchain and [replaced][compiler_note] them with one written in Go. Obviously, this creates a bootstrapping problem if you don't already have a working Go install. In order to compile Go 1.5+, make sure Go 1.4 is installed first.
 
 ```
-gvm install go1.4
+gvm install go1.4 -B
 gvm use go1.4
+export GOROOT_BOOTSTRAP=$GOROOT
 gvm install go1.5
 ```
 
