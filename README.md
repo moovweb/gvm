@@ -82,6 +82,12 @@ Mac OS X Requirements
  * Install Mercurial from https://www.mercurial-scm.org/downloads
  * Install Xcode Command Line Tools from the App Store.
 
+```
+xcode-select --install
+brew update
+brew install mercurial
+```
+
 Linux Requirements
 ==================
 
