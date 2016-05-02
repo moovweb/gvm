@@ -1,19 +1,28 @@
 #!/usr/bin/env bash
 function gvm_use() {
 	if [[ "$1" == "-h" ]]; then
-		display_message "Usage: gvm use VERSION [--default]"
+		display_message "Usage: gvm use VERSION[@PKGSET] [--default]"
 		return 1
 	fi
 
-	[[ "$1" != "" ]] ||
-		display_error "Please specify the version" || return 1
-	local VERSION=$1
-  fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1")
+	if [[ "x$1" == x ]]; then
+		display_error "Please specify the version"
+		return 1
+	fi
+
+	if [[ "$1" =~ ^(.+)@(.+)$ ]]; then
+		local VERSION="${BASH_REMATCH[1]}"
+		local PKGSET="${BASH_REMATCH[2]}"
+	else
+		local VERSION=$1
+        fi
+
+	fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
 	if [[ "$?" != "0" ]]; then
 		GO_CACHE_PATH=$GVM_ROOT/archive/go
-    version=$(cd "$GO_CACHE_PATH" && git tag -l "$VERSION")
+		version=$(cd "$GO_CACHE_PATH" && git tag -l "$VERSION")
 		if [[ "x$version" == "x" ]]; then
-			display_error "Version not found locally. Try 'gvm install $1'" || return 1
+			display_error "Version not found locally. Try 'gvm install $VERSION'" || return 1
 		else
 			display_warning "$version is not installed. Install it by running 'gvm install $version'" || return 1
 		fi
@@ -25,6 +34,11 @@ function gvm_use() {
 		cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default" || display_error "Couldn't make $fuzzy_match default"
 	fi
 
+
+	if [[ "x$PKGSET" != "x" ]]; then
+		gvm_pkgset_use $PKGSET &> /dev/null || display_error "Couldn't find pkgset $PKGSET for $VERSION" || return 1
+	fi
 	display_message "Now using version $fuzzy_match"
+
 }
 
