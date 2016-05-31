@@ -4,7 +4,7 @@
 error_message=""
 
 # Check for git
-which git &> /dev/null ||
+command -v git &> /dev/null ||
 	error_message="${error_message}
 Could not find git
 
@@ -12,35 +12,35 @@ Could not find git
   mac:   brew install mercurial
 "
 # Check for ar
-which ar &> /dev/null ||
+command -v ar &> /dev/null ||
 	error_message="${error_message}
 Could not find binutils
 
   linux: apt-get install binutils
 "
 # Check for bison
-which bison &> /dev/null ||
+command -v bison &> /dev/null ||
 	error_message="${error_message}
 Could not find bison
 
   linux: apt-get install bison
 "
 # Check for gcc
-which gcc &> /dev/null ||
+command -v gcc &> /dev/null ||
 	error_message="${error_message}
 Could not find gcc
 
   linux: apt-get install gcc
 "
 # Check for make
-which make &> /dev/null ||
+command -v make &> /dev/null ||
 	error_message="${error_message}
 Could not find make
 
   linux: apt-get install make
 "
 # Check for curl
-which curl &> /dev/null ||
+command -v curl &> /dev/null ||
 	error_message="${error_message}
 Could not find curl
 

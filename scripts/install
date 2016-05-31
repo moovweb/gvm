@@ -240,7 +240,7 @@ install_gb() {
 }
 
 install_goprotobuf() {
-	which protoc &> /dev/null || display_warning "Could not find protocol buffer compiler
+	command -v protoc &> /dev/null || display_warning "Could not find protocol buffer compiler
 
   linux: apt-get install protobuf-compiler
   mac:   brew install protobuf
@@ -285,7 +285,7 @@ install_from_source() {
 	install_go
 
 	GVM_GOINSTALL="goinstall"
-	which goinstall &> /dev/null ||
+	command -v goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
 	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
