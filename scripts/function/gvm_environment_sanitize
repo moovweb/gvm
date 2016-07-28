@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+function gvm_environment_sanitize() {
+	local ACTIVE_GO=$(which go)
+	if [[ "${ACTIVE_GO/${GOROOT}}" != "/bin/go" ]]; then
+		OLD_GOROOT=$GOROOT && unset GOROOT
+		GOROOT=$(go env GOROOT)
+		sed 's|'${OLD_GOROOT}'|'${GOROOT}'|g' "$GVM_ROOT/environments/$1" > \
+			"$GVM_ROOT/environments/$1.sanity" && \
+			mv "$GVM_ROOT/environments/$1"{.sanity,}
+		. "$GVM_ROOT/environments/$1" &> /dev/null
+	fi
+}
