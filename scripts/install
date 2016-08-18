@@ -157,9 +157,9 @@ download_binary() {
 		GVM_OS="darwin"
 		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
 		if [ "${osx_major_version}" -ge 8 ]; then
-			GVM_OS_VERSION="-osx10.8"
+			GVM_OS_VERSION=""
 		elif [ "${osx_major_version}" -ge 6 ]; then
-			GVM_OS_VERSION="-osx10.6"
+			GVM_OS_VERSION=""
 		else
 			display_error "Binary Go unavailable for this platform"
 			rm -rf $GO_INSTALL_ROOT
