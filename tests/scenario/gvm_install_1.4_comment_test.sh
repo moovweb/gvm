@@ -1,0 +1,1 @@
+gvm install go1.4 #status=0
