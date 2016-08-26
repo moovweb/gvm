@@ -1,0 +1,12 @@
+extract_version(){
+	# Go versions can either be go* or release*
+	# They can also have the suffix rc or betaN
+
+	# Early versions can be 0.0.1
+	if [ $(echo $1 | grep release) ]; then
+		echo "0.0.1"
+	else
+		# Let's strip those prefixes and suffixes
+		echo "$(echo "$1" | sed 's/^go\(.*\)/\1/g; s/beta.*//g; s/rc.*//g')"
+	fi
+}
