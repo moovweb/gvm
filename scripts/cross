@@ -20,7 +20,7 @@ display_list() {
 	exit 1
 }
 
-which go &> /dev/null || display_fatal "Only available in versions after Go 1"
+command -v go &> /dev/null || display_fatal "Only available in versions after Go 1"
 
 [ -z "$1" ] && display_list
 

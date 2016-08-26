@@ -1,5 +1,5 @@
 display_fatal() {
-	which tput &> /dev/null
+	command -v tput &> /dev/null
 	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
 		tput sgr0
 		tput setaf 1
