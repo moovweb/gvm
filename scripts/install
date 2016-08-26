@@ -157,7 +157,10 @@ download_binary() {
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
 		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
+		ver_comp $GO_NAME go1.5
+		if [[ $? -ne 0 ]]; then
+			GVM_OS_VERSION=""
+		elif [ "${osx_major_version}" -ge 8 ]; then
 			GVM_OS_VERSION="-osx10.8"
 		elif [ "${osx_major_version}" -ge 6 ]; then
 			GVM_OS_VERSION="-osx10.6"
@@ -178,7 +181,7 @@ download_binary() {
 	fi
 
 	GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
-	GO_BINARY_URL="http://golang.org/dl/${GO_BINARY_FILE}"
+	GO_BINARY_URL="https://storage.googleapis.com/golang/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
 	if [ ! -f $GO_BINARY_PATH ]; then
@@ -324,6 +327,10 @@ main() {
 	fi
 
 	cd "$GO_INSTALL_ROOT" && find . > manifest
+}
+
+ver_comp() {
+	[  "$1" = "`echo "$1\n$2" | sort -r | sed 's/^0// ; s/\.0/./g' | head -n1`"  ]
 }
 
 main "$@"
