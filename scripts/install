@@ -79,9 +79,16 @@ copy_source() {
 }
 
 
+set_goroot_bootstrap() {
+    if [ -z "$GOROOT_BOOTSTRAP" ]; then
+        local goroot=$(go env GOROOT 2>/dev/null)
+        export GOROOT_BOOTSTRAP=${goroot%%/bin/go}
+    fi
+}
+
 compile_go() {
 	display_message " * Compiling..."
-	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$GOROOT
+	set_goroot_bootstrap
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
 	export PATH=$GOBIN:$PATH &&
