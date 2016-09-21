@@ -1,0 +1,174 @@
+# cd
+#
+# -*- Shell-Unix-Generic -*-
+#
+# Override the cd() function to implement auto-switching of go version and
+# pkgset when changing into a directory.
+#
+. "$GVM_ROOT/scripts/functions" || return 1
+. "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
+
+# user could be reloading this file, restore preserved functions if we've been
+# through here already.
+if [[ $(declare -F gvm-oldcd) ]]
+then
+    eval "$(echo "cd()"; declare -f gvm-oldcd | tail -n +2)"
+    unset -f gvm-oldcd
+fi
+
+if [[ $(declare -F cd) ]]
+then
+    eval "$(echo "gvm-oldcd()"; declare -f cd | tail -n +2)"
+elif [[ "$(builtin type cd)" == "cd is a shell builtin" ]]
+then
+    eval "$(echo "gvm-oldcd() { builtin cd \$*; return \$?; }")"
+fi
+
+# cd()
+# /*!
+# @abstract Override the cd() function to implement auto-switching of go version
+#   and pkgset when changing into a directory
+# @discussion
+# This override seeks to preserve the functionality of any pre-existing override
+#  of the cd() function.
+# @param path Path of directory to change into
+# @return Returns success (status 0) or failure (status 1).
+# */
+cd() {
+    if [[ $(declare -F gvm-oldcd) ]]
+    then
+        gvm-oldcd $*
+    fi
+
+    local dot_go_version dot_go_pkgset rslt
+    local defaults_hash=()
+    local defaults_go_name defaults_go_pkgset
+    local default_environment_path="${GVM_ROOT}/environments/default"
+
+	if [[ "$GVM_ROOT" == "" ]]; then
+		display_error "GVM_ROOT not set. Please source \$GVM_ROOT/scripts/gvm"
+		return $?
+	fi
+
+    # gather default environment settings, the can change at any time!
+    if [[ ! -r "${default_environment_path}" ]]
+    then
+        if [[ $GVM_DEBUG ]]
+        then
+            echo "Can't find default environment. Falling back to system."
+        fi
+        default_environment_path="${GVM_ROOT/environments/system}"
+    fi
+    defaults_hash=( $(read_environment_file "${GVM_ROOT}/environments/default") )
+    defaults_go_name="$(valueForKeyFakeAssocArray "gvm_go_name" "${defaults_hash[*]}")"
+    defaults_go_pkgset="$(valueForKeyFakeAssocArray "gvm_pkgset_name" "${defaults_hash[*]}")"
+    if [[ $GVM_DEBUG ]]
+    then
+        echo "Resolved default go: ${defaults_go_name}"
+        echo "Resolved default pkgset: ${defaults_go_pkgset}"
+    fi
+
+    dot_go_version="$(_find_closest_dot_go_version)"
+    rslt=$?
+    if [[ $rslt -eq 0 ]]
+    then
+        [[ $GVM_DEBUG ]] && echo "Found dot_go_version: ${dot_go_version}"
+        local use_goversion="$(_read_dot_go_version "${dot_go_version}")"
+        [[ $GVM_DEBUG ]] && echo "Switching to: ${use_goversion}"
+
+        \gvm use "${use_goversion}"
+        unset use_goversion
+    else
+        [[ $GVM_DEBUG ]] && echo "No .go_version found. Using system or default go."
+        \gvm use "${defaults_go_name}"
+    fi
+
+    dot_go_pkgset="$(_find_closest_dot_go_pkgset)"
+    rslt=$?
+    if [[ $rslt -eq 0 ]]
+    then
+        [[ $GVM_DEBUG ]] && echo "Found .go_pkgset: ${dot_go_pkgset}"
+        local use_gopkgset="$(_read_dot_go_pkgset "${dot_go_pkgset}")"
+        [[ $GVM_DEBUG ]] && echo "Switching to: ${use_gopkgset}"
+
+        \gvm pkgset use "${use_gopkgset}"
+        unset use_gopkgset
+    else
+        [[ $GVM_DEBUG ]] && echo "No .go_pkgset found. Using system or default pkgset."
+        \gvm pkgset use "${defaults_go_pkgset}"
+    fi
+
+    return 0
+}
+
+function _find_closest_dot_go_version() {
+    local resp rslt
+
+    resp="$(find_path_upwards ".go-version")"
+    rslt=$?
+
+    echo "${resp}"; return $rslt
+}
+
+function _find_closest_dot_go_pkgset() {
+    local resp rslt
+
+    resp="$(find_path_upwards ".go-pkgset")"
+    rslt=$?
+
+    echo "${resp}"; return $rslt
+}
+
+function _read_dot_go_version() {
+    local path="${1}"
+    local version=""
+    local regex='^go([0-9]+\.[0-9]+)(\.[0-9]+)?$'
+
+    while IFS=$'\n' read -r _line; do
+        # skip comment lines
+        [[ "${_line}" =~ \#.* ]] && continue
+
+        # looking for pattern "go1.2[.3]"
+        if [[ "${_line}" =~ ${regex} ]]
+        then
+            version="${_line}"
+            break
+        fi
+    done <<< "$(cat "${path}")"
+
+    echo "${version}"
+
+    if [[ -z "${version}" ]]
+    then
+        return 1
+    fi
+
+    return 0
+}
+
+function _read_dot_go_pkgset() {
+    local path="${1}"
+    local pkgset=""
+    local regex='^([A-Za-z0-9._#:%\+\-]+)$'
+
+    while IFS=$'\n' read -r _line; do
+        # skip comment lines
+        [[ "${_line}" =~ \#.* ]] && continue
+
+        # fairly loose naming convention, exclude @ symbol
+        if [[ "${_line}" =~ ${regex} ]]
+        then
+            pkgset="${_line}"
+            break
+        fi
+    done <<< "$(cat "${path}")"
+
+    echo "${pkgset}"
+
+    if [[ -z "${version}" ]]
+    then
+        return 1
+    fi
+
+    return 0
+}
