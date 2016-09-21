@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-cd "$GVM_ROOT/archive/go" &> /dev/null ||
+builtin cd "$GVM_ROOT/archive/go" &> /dev/null ||
 	display_fatal "Failed to find local Go source"
 
 git pull || display_fatal "Failed to update"

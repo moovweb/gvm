@@ -58,7 +58,7 @@ _gvm()
 		install)
 			[ ! -d $GVM_ROOT/archive/go ] && return 1
 			[[ $COMP_CWORD > 2 ]] && return 1
-			local version="$(cd $GVM_ROOT/archive/go && for x in `git tag | $GREP_PATH -E "release|tip|go"`; do echo ${x} ; done )"
+			local version="$(builtin cd $GVM_ROOT/archive/go && for x in `git tag | $GREP_PATH -E "release|tip|go"`; do echo ${x} ; done )"
 			COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
 			return 0
 		;;
