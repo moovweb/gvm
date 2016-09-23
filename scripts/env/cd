@@ -43,23 +43,41 @@ cd() {
     local dot_go_version dot_go_pkgset rslt
     local defaults_hash=()
     local defaults_go_name defaults_go_pkgset
-    local default_environment_path="${GVM_ROOT}/environments/default"
+    local defaults_resolved=false
 
 	if [[ "$GVM_ROOT" == "" ]]; then
 		display_error "GVM_ROOT not set. Please source \$GVM_ROOT/scripts/gvm"
 		return $?
 	fi
 
-    # gather default environment settings, the can change at any time!
-    if [[ ! -r "${default_environment_path}" ]]
-    then
-        if [[ $GVM_DEBUG ]]
-        then
-            echo "Can't find default environment. Falling back to system."
-        fi
-        default_environment_path="${GVM_ROOT/environments/system}"
-    fi
+    # gather default environment settings, they can change at any time!
     defaults_hash=( $(read_environment_file "${GVM_ROOT}/environments/default") )
+    if [[ $? -eq 0 ]]
+    then
+        defaults_resolved=true
+    else
+        [[ $GVM_DEBUG ]] && echo "Can't find default environment. Falling back to system."
+        defaults_hash=( $(read_environment_file "${GVM_ROOT}/environments/system") )
+        if [[ $? -eq 0 ]]
+        then
+            defaults_resolved=true
+        else
+            [[ $GVM_DEBUG ]] && echo "Can't find system environment."
+        fi
+    fi
+
+    if [[ "${defaults_resolved}" == false ]]
+    then
+        [[ $GVM_DEBUG ]] && echo "Resolving fallback go version and pkgset."
+        local fallback_go_version="$(resolve_fallback_version)"
+        local fallback_go_pkgset="$(resolve_fallback_pkgset "${fallback_go_version}")"
+        defaults_hash=( $(setValueForKeyFakeAssocArray "gvm_go_name" "${fallback_go_version}" "${defaults_hash[*]}") )
+        defaults_hash=( $(setValueForKeyFakeAssocArray "gvm_pkgset_name" "${fallback_go_pkgset}" "${defaults_hash[*]}") )
+        unset fallback_go_version
+        unset fallback_go_pkgset
+        defaults_resolved=true
+    fi
+
     defaults_go_name="$(valueForKeyFakeAssocArray "gvm_go_name" "${defaults_hash[*]}")"
     defaults_go_pkgset="$(valueForKeyFakeAssocArray "gvm_pkgset_name" "${defaults_hash[*]}")"
     if [[ $GVM_DEBUG ]]
@@ -122,7 +140,7 @@ function _find_closest_dot_go_pkgset() {
 function _read_dot_go_version() {
     local path="${1}"
     local version=""
-    local regex='^go([0-9]+\.[0-9]+)(\.[0-9]+)?$'
+    local regex='^(go([0-9]+(\.[0-9]+)*))$'
 
     while IFS=$'\n' read -r _line; do
         # skip comment lines
@@ -165,7 +183,7 @@ function _read_dot_go_pkgset() {
 
     echo "${pkgset}"
 
-    if [[ -z "${version}" ]]
+    if [[ -z "${pkgset}" ]]
     then
         return 1
     fi
