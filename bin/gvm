@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[ -n "$GVM_DEBUG" ] && {
+[[ -n "$GVM_DEBUG" ]] && [[ -n "$GVM_DEBUG_LEVEL" && "$GVM_DEBUG_LEVEL" -gt 1 ]] && {
   set -x
 }
 
