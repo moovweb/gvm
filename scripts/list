@@ -1,15 +1,55 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-echo
-display_message "gvm gos (installed)"
-echo
-if [[ -d $GVM_ROOT/gos ]]; then
-	if [[ "$gvm_go_name" != "" ]]; then
-		$LS_PATH -1 "$GVM_ROOT/gos" | sed 's/^/   /g' | sed 's/^   '$gvm_go_name\$'/=> '$gvm_go_name'/g'
-	else
-		$LS_PATH -1 "$GVM_ROOT/gos" | sed 's/^/   /g'
-	fi
-fi
-echo
+usage() {
+cat <<EOF
+Usage: gvm list [option]
 
+Options:
+  --porcelain    - machine-readable output
+  -h, --help     - show this message
+
+EOF
+
+    return 0
+}
+
+list() {
+    local porcelain="${1:-false}"
+
+    if [[ "${porcelain}" == false ]]
+    then
+        echo
+        display_message "gvm gos (installed)"
+        echo
+    fi
+    if [[ -d $GVM_ROOT/gos ]]; then
+        if [[ "${gvm_go_name}" != "" ]]; then
+            $LS_PATH -1 "${GVM_ROOT}/gos" | sed 's/^/   /g' | sed 's/^   '$gvm_go_name\$'/=> '$gvm_go_name'/g'
+        else
+            $LS_PATH -1 "${GVM_ROOT}/gos" | sed 's/^/   /g'
+        fi
+    fi
+    [[ "${porcelain}" == false ]] && echo
+
+    return 0
+}
+
+option="${1}"
+if [[ "x${option}" != "x" ]]
+then
+    case "${option}" in
+        --help|-h)
+            usage; exit 0
+            ;;
+        --porcelain)
+            list true; exit $?
+            ;;
+        *)
+            display_warning "Unrecognized command line argument: '$option'"
+            usage; exit 1
+            ;;
+    esac
+else
+    list
+fi
