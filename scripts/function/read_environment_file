@@ -27,7 +27,7 @@
 # */
 read_environment_file() {
     local path="${1}"
-    local regex='^export ([^[:digit:]]+[[:alnum:]_]+);[\s]*([^[:digit:]]+[[:alnum:]_]+=(.*))$'
+    local regex='^export ([^[:digit:]]+[[:alnum:]_]+);[[:space:]]*([^[:digit:]]+[[:alnum:]_]+=(.*))$'
     local hash=()
 
     if [[ -z "${path}" || ! -r "${path}" ]]
