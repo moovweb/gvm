@@ -1,44 +1,135 @@
 #!/usr/bin/env bash
+. "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
+
+# gvm_pkgset_use()
+# /*!
+# @abstract Select a gvm pkgset
+# @discussion
+# For basic usage, this function selects the pkgset specified as a string
+#   argument. The argument list is parsed and both standard pkgset and local
+#   pkgset names are identified by pattern (where the latter pattern begins
+#	with a forward slash and generally conforms with a file path pattern).
+#
+#   For more advanced usage the following options are supported:
+# <pre>@textblock
+#	usage: gvm_pkgset_use [--pkgset | --local] <pkgset-name> [--default]
+#	  --pkgset value        standard pkgset name
+#	  --local value         local pkgset name (follows file path pattern)
+#	  --default             select pkgset and make default
+# @/textblock</pre>
+#   The default option is only supported for standard pkgsets. If both standard
+#   and local pkgsets are supplied as arguments, the local pkgset will be
+#   selected and the stanard pkgset argument will be ignored.
+# @param args Variable list of options and values
+# @return Returns success (status 0) if a pkgset was selected successfully or
+#	(status 1) failure if an error was encountered.
+# */
 function gvm_pkgset_use() {
-	[[ "$1" != "" ]] ||
-		display_error "Please specify a package set" || return 1
+    local options_hash=()
+    local pkgset_regex='^([A-Za-z0-9._#:%\/\+\-]+)$'
+    local local_pkgset_regex='^(\/[^\0:\n]*)+$'
 
-	[[ "$gvm_go_name" != "" ]] ||
-		display_error "No Go version selected" || return 1
+    for _option in "${@}"
+    do
+        local __key __val
+        if [[ "${_option}" =~ ${local_pkgset_regex} ]]
+        then
+            __key="--local"
+            __val="${_option}"
+        elif [[ "${_option}" =~ ${pkgset_regex} ]]
+        then
+            __key="--pkgset"
+            __val="${_option}"
+        elif [[ "${_option}" == "--local" ]] && [[ -z "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
+        then
+            __key="--local"
+            __val="nil"
+        elif [[ "${_option}" == "--default" ]]
+        then
+            __key="--default"
+            __val="nil"
+        else
+            display_warning "Unrecognized command line argument: '${_option}'"
+            return 1
+        fi
+        options_hash=( $(setValueForKeyFakeAssocArray "${__key}" "${__val}" "${options_hash[*]}") )
+        unset __key __val
+    done
 
-	if [[ "$1" == "--local" ]]; then
-		. "$GVM_ROOT/scripts/function/find_local_pkgset"
-		local LOCAL_TOP=$(find_local_pkgset)
-		unset -f find_local_pkgset
-		[[ -d $LOCAL_TOP ]] ||
-			display_error "Cannot find local package set" || return 1
-		LOCAL_TOP=$LOCAL_TOP/.gvm_local
+    if [[ $GVM_DEBUG ]]
+    then
+        printf "Command (%s) options dump:\n" "${BASH_SOURCE[0]##*/}"
+        local _item
+        for _item in "${options_hash[@]}"
+        do
+            local __key="${_item%%:*}"
+            local __val="$(valueForKeyFakeAssocArray "${__key}" "${options_hash[*]}")"
+            printf "  [%s]: %s\n" "${__key}" "${__val}"
+            unset __key __val
+        done
+    fi
 
-		fuzzy_match=$($LS_PATH "$LOCAL_TOP/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1) ||
-			display_error "Cannot find local package set" || return 1
+    [[ -z "$gvm_go_name" ]] && display_error "No Go version selected" && return 1
 
-		[[ "$2" != "--default" ]] ||
-			display_error "Cannot set local pkgset as default" || return 1
+    if [[ -n "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
+    then
+        local LOCAL_TOP="$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")"
 
-		gvm_export_path
-		. "$LOCAL_TOP/environments/$fuzzy_match" ||
-			display_error "Failed to source the package set environment" || return 1
+        if [[ -z "${LOCAL_TOP}" || "${LOCAL_TOP}" == "nil" ]]
+        then
+            . "$GVM_ROOT/scripts/function/find_local_pkgset"
+            LOCAL_TOP=$(find_local_pkgset)
+            unset -f find_local_pkgset
+        fi
 
-		echo "Now using version $gvm_go_name in local package set"
-		echo "Local GOPATH is now $LOCAL_TOP"
-	else
-		fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "$1" | $HEAD_PATH -n 1) ||
-			display_error "Invalid package set" || return 1
+        [[ -d "${LOCAL_TOP}" ]] ||
+            display_error "Cannot find local package set" || return 1
 
-		gvm_export_path
-		. "$GVM_ROOT/environments/$fuzzy_match" ||
-			display_error "Failed to source the package set environment" || return 1
+        LOCAL_TOP="${LOCAL_TOP}/.gvm_local"
+        [[ $GVM_DEBUG ]] && echo "Resolved local directory: ${LOCAL_TOP}"
 
-		if [[ "$2" == "--default" ]]; then
-			cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
-		fi
+        fuzzy_match=$($LS_PATH "$LOCAL_TOP/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
+        [[ -n "${fuzzy_match}" ]] || display_error "Cannot find local package set" || return 1
 
-		echo "Now using version $fuzzy_match"
-	fi
+        if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+        then
+            display_error "Cannot set local pkgset as default"
+            return 1
+        fi
+
+        gvm_export_path
+        . "$LOCAL_TOP/environments/$fuzzy_match" ||
+            display_error "Failed to source the package set environment" || return 1
+
+        echo "Now using version $gvm_go_name in local package set"
+        echo "Local GOPATH is now $LOCAL_TOP"
+
+        unset LOCAL_TOP
+    elif [[ -n "$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")" ]]
+    then
+        local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
+
+        fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "${pkgset}" | $HEAD_PATH -n 1)
+        [[ -n "${fuzzy_match}" ]] || display_error "Invalid package set: ${pkgset}" || return 1
+
+        gvm_export_path
+        . "$GVM_ROOT/environments/$fuzzy_match" ||
+            display_error "Failed to source the package set environment" || return 1
+
+        if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+        then
+            cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
+        fi
+
+        echo "Now using version $fuzzy_match"
+
+        unset pkgset
+    else
+        display_error "Please specify a package set"
+        return 1
+    fi
+
+    unset options_hash
+    unset pkgset_regex
+    unset local_pkgset_regex
 }
-
