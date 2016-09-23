@@ -13,10 +13,10 @@
 #
 # It is expected that the file format consists of lines conforming to the
 # following pattern:
-# @code
+# <pre>@textblock
 #   # this is a comment line
 #   export gvm_pkgset_name; gvm_pkgset_name="global"
-# @endcode
+# @/textblock</pre>
 #
 # In the above example, everything is discarded before the final key=val part,
 # which is parsed and stored in the resulting hash. Comment lines (beginning
