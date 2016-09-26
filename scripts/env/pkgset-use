@@ -201,12 +201,6 @@ function gvm_pkgset_use() {
     then
         local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
 
-        # if [[ -z "${pkgset}" ]]
-        # then
-        #     display_error "Please specify the version. Execute 'gvm use --help' for command help."
-        #     return 1
-        # fi
-
         fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "${pkgset}" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Invalid package set: ${pkgset}" || return 1
 
