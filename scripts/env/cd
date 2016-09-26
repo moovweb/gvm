@@ -95,12 +95,12 @@ cd() {
         local use_goversion="$(_read_dot_go_version "${dot_go_version}")"
         [[ $GVM_DEBUG ]] && echo "Switching to: ${use_goversion}"
 
-        \gvm use --quiet "${use_goversion}"
+        \gvm use --quiet "${use_goversion}" || return 1
         unset use_goversion
     elif [[ -n "${defaults_go_name}" ]]
     then
         [[ $GVM_DEBUG ]] && echo "No .go_version found. Using system or default go."
-        \gvm use --quiet "${defaults_go_name}"
+        \gvm use --quiet "${defaults_go_name}" || return 1
     else
         # quietly failing
         if [[ $GVM_DEBUG ]]
@@ -124,12 +124,12 @@ cd() {
         local use_gopkgset="$(_read_dot_go_pkgset "${dot_go_pkgset}")"
         [[ $GVM_DEBUG ]] && echo "Switching to: ${use_gopkgset}"
 
-        \gvm pkgset use --quiet "${use_gopkgset}"
+        \gvm pkgset use --quiet "${use_gopkgset}" || return 1
         unset use_gopkgset
     elif [[ -n "${defaults_go_pkgset}" ]]
     then
         [[ $GVM_DEBUG ]] && echo "No .go_pkgset found. Using system or default pkgset."
-        \gvm pkgset use --quiet "${defaults_go_pkgset}"
+        \gvm pkgset use --quiet "${defaults_go_pkgset}" || return 1
     else
         # quietly failing
         [[ $GVM_DEBUG ]] && echo "No fallback pkgset could be found."
