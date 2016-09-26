@@ -24,6 +24,16 @@ then
     eval "$(echo "gvm-oldcd() { builtin cd \$*; return \$?; }")"
 fi
 
+# Path cleanup
+#
+# Sort all paths, place rvm paths first, followed by gvm, followed by the rest.
+# We do this so that rvm and gvm can live together happily.
+#
+# NOTE: Cleanup will also take place everytime 'gvm use' or 'gvm pkgset use' is
+# executed but we do it now just to call it from some place on login.
+#
+export PATH="$(munge_path)"
+
 # cd()
 # /*!
 # @abstract Override the cd() function to implement auto-switching of go version

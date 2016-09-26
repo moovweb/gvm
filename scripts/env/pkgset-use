@@ -190,6 +190,12 @@ function gvm_pkgset_use() {
         . "$local_pkgset/environments/$fuzzy_match" ||
             display_error "Failed to source the package set environment" || return 1
 
+        # fix PATH to correct order
+        local fixed_path="$(munge_path)"
+        [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+        export PATH="${fixed_path}"
+        unset fixed_path
+
         if [[ -z "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
         then
             echo "Now using version $gvm_go_name in local package set"
@@ -207,6 +213,12 @@ function gvm_pkgset_use() {
         gvm_export_path
         . "$GVM_ROOT/environments/$fuzzy_match" ||
             display_error "Failed to source the package set environment" || return 1
+
+        # fix PATH to correct order
+        local fixed_path="$(munge_path)"
+        [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+        export PATH="${fixed_path}"
+        unset fixed_path
 
         if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
         then

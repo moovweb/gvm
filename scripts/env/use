@@ -199,6 +199,12 @@ function gvm_use() {
     . "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null || display_error "Couldn't source environment" || return 1
     gvm_environment_sanitize "$fuzzy_match"
 
+    # fix PATH to correct order
+    local fixed_path="$(munge_path)"
+    [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+    export PATH="${fixed_path}"
+    unset fixed_path
+
     if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
     then
         cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
