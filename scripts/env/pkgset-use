@@ -8,53 +8,142 @@
 # For basic usage, this function selects the pkgset specified as a string
 #   argument. The argument list is parsed and both standard pkgset and local
 #   pkgset names are identified by pattern (where the latter pattern begins
-#	with a forward slash and generally conforms with a file path pattern).
+#   with a forward slash and generally conforms with a file path pattern).
 #
 #   For more advanced usage the following options are supported:
 # <pre>@textblock
-#	usage: gvm_pkgset_use [--pkgset | --local] <pkgset-name> [--default]
-#	  --pkgset value        standard pkgset name
-#	  --local value         local pkgset name (follows file path pattern)
-#	  --default             select pkgset and make default
+#   Usage: gvm pkgset use [--pkgset ] <value> [--default]
+#          gvm pkgset use --local [<value>]
+#
+#   Options:
+#     --pkgset value        standard pkgset name
+#     --local value         local pkgset name (follows file path pattern)
+#     --default             make selected pkgset default
+#     --quiet               suppress 'now using' acknowledgements
+#     -h, --help            show this message
+#
+#   The --pkgset and --local options are exclusive (only one can be specified).
 # @/textblock</pre>
 #   The default option is only supported for standard pkgsets. If both standard
 #   and local pkgsets are supplied as arguments, the local pkgset will be
-#   selected and the stanard pkgset argument will be ignored.
+#   selected and the standard pkgset argument will be ignored.
 # @param args Variable list of options and values
 # @return Returns success (status 0) if a pkgset was selected successfully or
-#	(status 1) failure if an error was encountered.
+#   (status 1) failure if an error was encountered.
 # */
 function gvm_pkgset_use() {
+    local args_array=( "${@}" )
     local options_hash=()
-    local pkgset_regex='^([A-Za-z0-9._#:%\/\+\-]+)$'
-    local local_pkgset_regex='^(\/[^\0:\n]*)+$'
+    # gvm pkgset regex patterns are specifically implement to output rematches
+    # in a consistent format. Consider the following examples:
+    #   my-pkgset
+    #   my-pkgset.12.3
+    #   /home/me/dev/project (a local pkgset)
+    #
+    # These rematches apply:
+    #   BASH_REMATCH[1]: pkgset name (e.g. my-pkgset, /home/me/dev/project)
+    #
+    local pkgset_regex='^([A-Za-z0-9]+[A-Za-z0-9._#:%\/\+\-]+)$'
+    local local_pkgset_regex='^(\/[^:'$'\n'$'\0'']*)+$'
 
+    local accumulator=()
     for _option in "${@}"
     do
-        local __key __val
-        if [[ "${_option}" =~ ${local_pkgset_regex} ]]
+        [[ $GVM_DEBUG ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
+
+        # if the accumulator has a trailing option flag (that is, the option
+        # flag has been specified but no argument has been supplied) then make
+        # sure the next _option value is not another option flag.
+        if [[ $(( ${#accumulator[@]}%2 )) -eq 1 && "${_option}" =~ ^[\-]+ ]]
         then
-            __key="--local"
-            __val="${_option}"
-        elif [[ "${_option}" =~ ${pkgset_regex} ]]
+            echo "Missing argument for: '${accumulator[${#accumulator[@]}-1]}'"
+            return 1
+        fi
+
+        # parse all freeform strings first according to regex patterns above
+        if [[ "${_option}" =~ ${pkgset_regex} && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
-            __key="--pkgset"
-            __val="${_option}"
-        elif [[ "${_option}" == "--local" ]] && [[ -z "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
+            # if the regex matches and the accumulator is even, we can add the
+            # key/val pair.
+            accumulator+=( "--pkgset" "${BASH_REMATCH[1]}" )
+        elif [[ "${_option}" =~ ${pkgset_regex}
+            && "${#accumulator[@]}" -gt 0
+            && "${accumulator[${#accumulator[@]}-1]}" == "--pkgset" ]]
         then
-            __key="--local"
-            __val="nil"
+            # if the regex matches and the accumulator is odd, the previous
+            # element in the accumulator must be the option for which this
+            # regex matches, we then just add the value.
+            accumulator+=( "${BASH_REMATCH[1]}" )
+        elif [[ "${_option}" =~ ${local_pkgset_regex} && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        then
+            accumulator+=( "--local" "${BASH_REMATCH[1]}")
+        elif [[ "${_option}" =~ ${local_pkgset_regex}
+            && -n "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
+        then
+            # --local is a special case: for legacy compatibility we need to
+            # support the option without an argument (we do that later by always
+            # setting a value of nil). But here we are checking if the option
+            # has been set previously and then just adding an override if true.
+            accumulator+=( "--local" "${BASH_REMATCH[1]}" )
+        elif [[ "${_option}" == "--local" ]]
+        then
+            accumulator+=( "--local" "nil" )
+        elif [[ "${_option}" == "--pkgset" ]]
+        then
+            accumulator+=( "--pkgset" )
         elif [[ "${_option}" == "--default" ]]
         then
-            __key="--default"
-            __val="nil"
+            accumulator+=( "--default" "true" )
+        elif [[ "${_option}" == "--quiet" ]]
+        then
+            accumulator+=( "--quiet" "true" )
+        elif [[ "${_option}" == "-h" || "${_option}" == "--help" ]]
+        then
+            echo "Usage: gvm pkgset use [--pkgset ] <value> [--default]"
+            echo "       gvm pkgset use --local [<value>]"
+            echo
+            echo "Options:"
+            echo "  --pkgset value        standard pkgset name"
+            echo "  --local value         local pkgset name (follows file path pattern)"
+            echo "  --default             make selected pkgset default"
+            echo "  --quiet               suppress 'now using' acknowledgements"
+            echo "  -h, --help            show this message"
+            echo
+            echo "The --pkgset and --local options are exclusive (only one can be specified)."
+            echo
+            return 0
         else
             display_warning "Unrecognized command line argument: '${_option}'"
             return 1
         fi
-        options_hash=( $(setValueForKeyFakeAssocArray "${__key}" "${__val}" "${options_hash[*]}") )
-        unset __key __val
+        # flush accumulator when we reach an even number of key/value pairs
+        if [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        then
+            for (( i=0; i<"${#accumulator[@]}"; i+=2 ))
+            do
+                local __key __val
+                __key="${accumulator[i]}"
+                __val="${accumulator[i+1]}"
+                options_hash=( $(setValueForKeyFakeAssocArray "${__key}" "${__val}" "${options_hash[*]}") )
+                unset __key __val
+            done
+            accumulator=()
+        fi
     done
+
+    if [[ $GVM_DEBUG -ne 0 && "${#accumulator[@]}" -gt 0 ]]
+    then
+        printf "Accumulator wasn't flushed. Remaining elements:\n"
+        local _item _index=0
+        for _item in "${accumulator[@]}"
+        do
+            printf "  [%s]: %s\n" "${_index}" "${_item}"
+            unset __val
+            (( index++ ))
+        done
+        unset _item _index
+    fi
+    unset accumulator
 
     if [[ $GVM_DEBUG ]]
     then
@@ -67,28 +156,29 @@ function gvm_pkgset_use() {
             printf "  [%s]: %s\n" "${__key}" "${__val}"
             unset __key __val
         done
+        unset _item
     fi
 
-    [[ -z "$gvm_go_name" ]] && display_error "No Go version selected" && return 1
+    [[ -n "$gvm_go_name" ]] || display_error "No Go version selected" || return 1
 
     if [[ -n "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
     then
-        local LOCAL_TOP="$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")"
+        local local_pkgset="$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")"
 
-        if [[ -z "${LOCAL_TOP}" || "${LOCAL_TOP}" == "nil" ]]
+        if [[ -z "${local_pkgset}" || "${local_pkgset}" == "nil" ]]
         then
             . "$GVM_ROOT/scripts/function/find_local_pkgset"
-            LOCAL_TOP=$(find_local_pkgset)
+            local_pkgset=$(find_local_pkgset)
             unset -f find_local_pkgset
         fi
 
-        [[ -d "${LOCAL_TOP}" ]] ||
+        [[ -d "${local_pkgset}" ]] ||
             display_error "Cannot find local package set" || return 1
 
-        LOCAL_TOP="${LOCAL_TOP}/.gvm_local"
-        [[ $GVM_DEBUG ]] && echo "Resolved local directory: ${LOCAL_TOP}"
+        local_pkgset="${local_pkgset}/.gvm_local"
+        [[ $GVM_DEBUG ]] && echo "Resolved local directory: ${local_pkgset}"
 
-        fuzzy_match=$($LS_PATH "$LOCAL_TOP/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
+        fuzzy_match=$($LS_PATH "$local_pkgset/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Cannot find local package set" || return 1
 
         if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
@@ -98,16 +188,25 @@ function gvm_pkgset_use() {
         fi
 
         gvm_export_path
-        . "$LOCAL_TOP/environments/$fuzzy_match" ||
+        . "$local_pkgset/environments/$fuzzy_match" ||
             display_error "Failed to source the package set environment" || return 1
 
-        echo "Now using version $gvm_go_name in local package set"
-        echo "Local GOPATH is now $LOCAL_TOP"
+        if [[ -z "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
+        then
+            echo "Now using version $gvm_go_name in local package set"
+            echo "Local GOPATH is now $local_pkgset"
+        fi
 
-        unset LOCAL_TOP
+        unset local_pkgset
     elif [[ -n "$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")" ]]
     then
         local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
+
+        # if [[ -z "${pkgset}" ]]
+        # then
+        #     display_error "Please specify the version. Execute 'gvm use --help' for command help."
+        #     return 1
+        # fi
 
         fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "${pkgset}" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Invalid package set: ${pkgset}" || return 1
@@ -119,13 +218,17 @@ function gvm_pkgset_use() {
         if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
         then
             cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
+            [[ $? -ne 0 ]] && display_error "Couldn't make $fuzzy_match default"
         fi
 
-        echo "Now using version $fuzzy_match"
+        if [[ -z "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
+        then
+            echo "Now using version $fuzzy_match"
+        fi
 
         unset pkgset
     else
-        display_error "Please specify a package set"
+        display_error "Please specify a package set. Execute 'gvm pkgset use' --help for command help."
         return 1
     fi
 
