@@ -213,12 +213,8 @@ function gvm_use() {
         then
             pkgset_args+=( "--default" )
         fi
-        if [[ -n "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
-        then
-            pkgset_args+=( "--quiet" )
-        fi
 
-        \gvm pkgset use "${pkgset_args[@]}"
+        \gvm pkgset use --quiet "${pkgset_args[@]}"
         unset pkgset_args
     fi
     unset pkgset
