@@ -32,7 +32,6 @@
 #   (status 1) failure if an error was encountered.
 # */
 function gvm_pkgset_use() {
-    local args_array=( "${@}" )
     local options_hash=()
     # gvm pkgset regex patterns are specifically implement to output rematches
     # in a consistent format. Consider the following examples:
