@@ -11,15 +11,29 @@
 # Searches upwards through the directory tree starting at start_dir for a target
 #   file or directory basename.
 # @param target Basename of file or directory to find
-# @param start_dir Path to starting directory of search
+# @param start_dir [optional] Path to starting directory of search, defaults to
+#   present working directory.
+# @param final_dir [optional] Path to ending directory of search (that is the
+#   highest directory in the tree that will be checked), defaults to user home
+#   directory.
 # @return Returns a string containing path of found file or directory (status 0)
 #   or an empty string (status 1) on failure.
 # */
 find_path_upwards() {
     local target="${1}"
-    local start_dir="${2}"
+    local start_dir="${2:-$PWD}"
+    local final_dir="${3:-$HOME}"
 
-    local found_file="$(_find_path_for_target "${target}" "${start_dir}")"
+    if [[
+        "x${target}" == "x" ||
+        "x${start_dir}" == "x" ||
+        "x${final_dir}" == "x"
+        ]]
+    then
+        echo "" && return 1
+    fi
+
+    local found_file="$(_find_path_for_target "${target}" "${start_dir}" "${final_dir}")"
     echo "${found_file}"
 
     if [[ -z "${found_file}" ]]
@@ -32,7 +46,8 @@ find_path_upwards() {
 
 _find_path_for_target() {
     local target="${1}"
-    local start_dir="${2:-$PWD}"
+    local start_dir="${2}"
+    local final_dir="${3}"
 
     if [[ ${#target} -eq 0 ]]
     then
@@ -49,7 +64,7 @@ _find_path_for_target() {
     fi
 
     local current_dir="${start_dir}"
-    local highest_dir="/"
+    local highest_dir="${final_dir}"
 
     builtin cd "${current_dir}"
     while [[ "${current_dir}" != "${highest_dir}" && "${current_dir}" != "/" ]];
