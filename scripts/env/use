@@ -205,18 +205,23 @@ function gvm_use() {
         [[ $? -ne 0 ]] && display_error "Couldn't make $fuzzy_match default"
     fi
 
-    local pkgset_args=( "$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")" )
-    if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+    local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
+    if [[ -n "${pkgset}" ]]
     then
-        pkgset_args+=( "--default" )
-    fi
-    if [[ -n "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
-    then
-        pkgset_args+=( "--quiet" )
-    fi
+        local pkgset_args=( "$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")" )
+        if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+        then
+            pkgset_args+=( "--default" )
+        fi
+        if [[ -n "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
+        then
+            pkgset_args+=( "--quiet" )
+        fi
 
-    \gvm pkgset use "${pkgset_args[@]}"
-    unset pkgset_args
+        \gvm pkgset use "${pkgset_args[@]}"
+        unset pkgset_args
+    fi
+    unset pkgset
 
     if [[ -z "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
     then
