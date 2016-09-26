@@ -22,7 +22,7 @@ function resolve_fallback_pkgset() {
     local version="${1:-$gvm_go_name}"
     local pkgset=""
     local pkgset_regex='^([[:space:]]*[=>*]*[[:space:]]+)([A-Za-z0-9._#:%\/\+\-]+)$'
-    local local_pkgset_regex='^([[:space:]]*[=>*]*)(L[[:space:]]+)(\/[^\0:\n]*)+$'
+    local local_pkgset_regex='^([[:space:]]*[=>*]*)(L[[:space:]]+)(\/[^:'$'\n'$'\0'']*)+$'
     local goversion_regex='^([[:space:]]*[=>*]*)(G[[:space:]]+)(go([0-9]+(\.[0-9]+)*))$'
 
     [[ -z "${version}" ]] && echo "" && return 1
