@@ -102,12 +102,12 @@ cd() {
         echo "Resolved default pkgset: ${defaults_go_pkgset:-[EMPTY]}"
     fi
 
-    dot_go_version="$(_find_closest_dot_go_version)"
+    dot_go_version="$(__gvmp_find_closest_dot_go_version)"
     rslt=$?
     if [[ $rslt -eq 0 ]]
     then
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Found dot_go_version: ${dot_go_version}"
-        local use_goversion="$(_read_dot_go_version "${dot_go_version}")"
+        local use_goversion="$(__gvmp_read_dot_go_version "${dot_go_version}")"
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Switching to: ${use_goversion}"
 
         \gvm use --quiet "${use_goversion}" || return 1
@@ -131,12 +131,12 @@ cd() {
         return 0
     fi
 
-    dot_go_pkgset="$(_find_closest_dot_go_pkgset)"
+    dot_go_pkgset="$(__gvmp_find_closest_dot_go_pkgset)"
     rslt=$?
     if [[ $rslt -eq 0 ]]
     then
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Found .go-pkgset: ${dot_go_pkgset}"
-        local use_gopkgset="$(_read_dot_go_pkgset "${dot_go_pkgset}")"
+        local use_gopkgset="$(__gvmp_read_dot_go_pkgset "${dot_go_pkgset}")"
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Switching to: ${use_gopkgset}"
 
         \gvm pkgset use --quiet "${use_gopkgset}" || return 1
@@ -153,7 +153,7 @@ cd() {
     return 0
 }
 
-function _find_closest_dot_go_version() {
+function __gvmp_find_closest_dot_go_version() {
     local resp rslt
 
     resp="$(__gvm_find_path_upwards ".go-version")"
@@ -162,7 +162,7 @@ function _find_closest_dot_go_version() {
     echo "${resp}"; return $rslt
 }
 
-function _find_closest_dot_go_pkgset() {
+function __gvmp_find_closest_dot_go_pkgset() {
     local resp rslt
 
     resp="$(__gvm_find_path_upwards ".go-pkgset")"
@@ -171,7 +171,7 @@ function _find_closest_dot_go_pkgset() {
     echo "${resp}"; return $rslt
 }
 
-function _read_dot_go_version() {
+function __gvmp_read_dot_go_version() {
     local filepath="${1}"
     local version=""
     local regex='^(go([0-9]+(\.[0-9]+)*))$'
@@ -198,7 +198,7 @@ function _read_dot_go_version() {
     return 0
 }
 
-function _read_dot_go_pkgset() {
+function __gvmp_read_dot_go_pkgset() {
     local filepath="${1}"
     local pkgset=""
     local regex='^([A-Za-z0-9._#:%\+\-]+)$'
