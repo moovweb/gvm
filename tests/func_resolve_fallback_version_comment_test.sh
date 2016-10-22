@@ -5,7 +5,7 @@ g_path_script="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" && /bin/pwd)"
 expectedVersion="go1.4"
 
 ## Execute command
-version="$(resolve_fallback_version)"
+version="$(__gvm_resolve_fallback_version)"
 
 ## Evaluate result
 [[ "${version}" == "${expectedVersion}" ]] # status=0

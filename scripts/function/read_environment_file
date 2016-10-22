@@ -4,7 +4,7 @@
 #
 . "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
 
-# read_environment_file()
+# __gvm_read_environment_file()
 # /*!
 # @abstract Read and parse a gvm environment file
 # @discussion
@@ -25,7 +25,7 @@
 # @return Returns a bash_pseudo_hash containing parsed key/val pairs (status 0)
 #   or an empty string (status 1) on failure.
 # */
-read_environment_file() {
+__gvm_read_environment_file() {
     local filepath="${1}"
     local regex='^export ([^[:digit:]]+[[:alnum:]_]+);[[:space:]]*([^[:digit:]]+[[:alnum:]_]+=(.*))$'
     local hash; hash=()

@@ -5,7 +5,7 @@ g_path_script="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" && /bin/pwd)"
 expectedPkgset="global"
 
 ## Execute command
-pkgset="$(resolve_fallback_pkgset)"
+pkgset="$(__gvm_resolve_fallback_pkgset)"
 
 ## Evaluate result
 [[ "${pkgset}" == "${expectedPkgset}" ]] # status=0

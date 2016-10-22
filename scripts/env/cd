@@ -66,13 +66,13 @@ cd() {
 
     # gather default environment settings, they can change at any time!
     [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Resolving defaults..."
-    defaults_hash=( $(read_environment_file "${GVM_ROOT}/environments/default") )
+    defaults_hash=( $(__gvm_read_environment_file "${GVM_ROOT}/environments/default") )
     if [[ $? -eq 0 ]]
     then
         defaults_resolved=true
     else
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Can't find default environment. Falling back to system."
-        defaults_hash=( $(read_environment_file "${GVM_ROOT}/environments/system") )
+        defaults_hash=( $(__gvm_read_environment_file "${GVM_ROOT}/environments/system") )
         if [[ $? -eq 0 ]]
         then
             defaults_resolved=true
@@ -84,8 +84,8 @@ cd() {
     if [[ "${defaults_resolved}" == false ]]
     then
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Resolving fallback go version and pkgset from all available."
-        local fallback_go_version="$(resolve_fallback_version)"
-        local fallback_go_pkgset="$(resolve_fallback_pkgset "${fallback_go_version}")"
+        local fallback_go_version="$(__gvm_resolve_fallback_version)"
+        local fallback_go_pkgset="$(__gvm_resolve_fallback_pkgset "${fallback_go_version}")"
         defaults_hash=( $(setValueForKeyFakeAssocArray "gvm_go_name" "${fallback_go_version}" "${defaults_hash[*]}") )
         defaults_hash=( $(setValueForKeyFakeAssocArray "gvm_pkgset_name" "${fallback_go_pkgset}" "${defaults_hash[*]}") )
         unset fallback_go_version
@@ -155,7 +155,7 @@ cd() {
 function _find_closest_dot_go_version() {
     local resp rslt
 
-    resp="$(find_path_upwards ".go-version")"
+    resp="$(__gvm_find_path_upwards ".go-version")"
     rslt=$?
 
     echo "${resp}"; return $rslt
@@ -164,7 +164,7 @@ function _find_closest_dot_go_version() {
 function _find_closest_dot_go_pkgset() {
     local resp rslt
 
-    resp="$(find_path_upwards ".go-pkgset")"
+    resp="$(__gvm_find_path_upwards ".go-pkgset")"
     rslt=$?
 
     echo "${resp}"; return $rslt

@@ -5,6 +5,7 @@
 #
 . "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
+# __gvm_munge_path()
 # /*!
 # @abstract Generate a new PATH with gvm and rvm elements in the correct order
 # @discussion

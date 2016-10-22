@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # use
 #
-# -*- Shell-Unix-Generic -*-
+# shellcheck shell=bash
+# vi: set ft=bash
 #
 . "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
 . "$GVM_ROOT/scripts/function/_shell_compat" || return 1

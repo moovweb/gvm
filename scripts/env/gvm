@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# shellcheck shell=bash
+# vi: set ft=bash
+#
 . "$GVM_ROOT/scripts/functions" || return 1
 
 function gvm() {

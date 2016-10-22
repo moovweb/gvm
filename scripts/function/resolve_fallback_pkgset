@@ -5,7 +5,7 @@
 #
 . "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
-# resolve_fallback_pkgset()
+# __gvm_resolve_fallback_pkgset()
 # /*!
 # @abstract Determine applicable fallback pkgset for go version
 # @discussion
@@ -20,7 +20,7 @@
 # @return Returns a string containing the fallback version name (status 0) or an
 #   empty string (status 1) on failure.
 # */
-function resolve_fallback_pkgset() {
+function __gvm_resolve_fallback_pkgset() {
     local version="${1:-$gvm_go_name}"
     local pkgset=""
     local pkgset_regex='^([[:space:]]*[=>*]*[[:space:]]+)([A-Za-z0-9._#:%\/\+\-]+)$'

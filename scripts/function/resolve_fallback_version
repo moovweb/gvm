@@ -5,7 +5,7 @@
 #
 . "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
-# resolve_fallback_version()
+# __gvm_resolve_fallback_version()
 # /*!
 # @abstract Determine a fallback version of go
 # @discussion
@@ -27,7 +27,7 @@
 # @return Returns a string containing the fallback version name (status 0) or an
 #   empty string (status 1) on failure.
 # */
-resolve_fallback_version() {
+__gvm_resolve_fallback_version() {
     local version=""
     local regex='^([[:space:]]*[=>*]*[[:space:]]+)(go([0-9]+(\.[0-9]+)*))$'
 
