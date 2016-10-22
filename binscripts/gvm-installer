@@ -28,7 +28,7 @@ update_profile() {
 check_existing_go() {
 
 	if [ "$GOROOT" = "" ]; then
-		if which go > /dev/null; then
+		if which go > /dev/null 2>&1; then
 			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
 		else
 			echo "No existing Go versions detected"
