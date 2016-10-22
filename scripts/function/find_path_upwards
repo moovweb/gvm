@@ -1,6 +1,7 @@
 # find_path_upwards
 #
-# -*- Shell-Unix-Generic -*-
+# shellcheck shell=bash
+# vi: set ft=bash
 #
 
 # find_path_upwards()
@@ -24,9 +25,9 @@ find_path_upwards() {
     local start_dir="${2:-$PWD}"
     local final_dir="${3:-$HOME}"
 
-    if [[
-        "x${target}" == "x" ||
-        "x${start_dir}" == "x" ||
+    if [[ \
+        "x${target}" == "x" || \
+        "x${start_dir}" == "x" || \
         "x${final_dir}" == "x"
         ]]
     then

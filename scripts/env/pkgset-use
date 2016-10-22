@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
+#
+# shellcheck shell=bash
+# vi: set ft=bash
+#
 . "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
+. "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
 # gvm_pkgset_use()
 # /*!
@@ -32,7 +37,9 @@
 #   (status 1) failure if an error was encountered.
 # */
 function gvm_pkgset_use() {
-    local options_hash=()
+    local options_hash; options_hash=()
+    local accumulator; accumulator=()
+
     # gvm pkgset regex patterns are specifically implement to output rematches
     # in a consistent format. Consider the following examples:
     #   my-pkgset
@@ -40,15 +47,15 @@ function gvm_pkgset_use() {
     #   /home/me/dev/project (a local pkgset)
     #
     # These rematches apply:
-    #   BASH_REMATCH[1]: pkgset name (e.g. my-pkgset, /home/me/dev/project)
+    #   GVM_REMATCH[1]: pkgset name (e.g. my-pkgset, /home/me/dev/project)
     #
     local pkgset_regex='^([A-Za-z0-9]+[A-Za-z0-9._#:%\/\+\-]+)$'
-    local local_pkgset_regex='^(\/[^:'$'\n'$'\0'']*)+$'
+    local local_pkgset_regex='^(\/[^:\\\n\\\0]*)+$'
+    local pkgset_rematch local_pkgset_rematch
 
-    local accumulator=()
     for _option in "${@}"
     do
-        [[ $GVM_DEBUG ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
 
         # if the accumulator has a trailing option flag (that is, the option
         # flag has been specified but no argument has been supplied) then make
@@ -59,31 +66,45 @@ function gvm_pkgset_use() {
             return 1
         fi
 
+        # scan pkgset_rematch checks exactly once each time through
+        pkgset_rematch=false
+        if __gvm_rematch "${_option}" "${pkgset_regex}"
+        then
+            pkgset_rematch=true
+        fi
+
+        # scan local_pkgset_rematch checks exactly once each time through
+        local_pkgset_rematch=false
+        if __gvm_rematch "${_option}" "${local_pkgset_regex}"
+        then
+            local_pkgset_rematch=true
+        fi
+
         # parse all freeform strings first according to regex patterns above
-        if [[ "${_option}" =~ ${pkgset_regex} && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        if [[ "${pkgset_rematch}" == true ]] && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
             # if the regex matches and the accumulator is even, we can add the
             # key/val pair.
-            accumulator+=( "--pkgset" "${BASH_REMATCH[1]}" )
-        elif [[ "${_option}" =~ ${pkgset_regex}
-            && "${#accumulator[@]}" -gt 0
-            && "${accumulator[${#accumulator[@]}-1]}" == "--pkgset" ]]
+            accumulator+=( "--pkgset" "${GVM_REMATCH[1]}" )
+        elif [[ "${pkgset_rematch}" == true ]] &&
+            [[ ${#accumulator[@]} -gt 0 &&
+                "${accumulator[${#accumulator[@]}-1]}" == "--pkgset" ]]
         then
             # if the regex matches and the accumulator is odd, the previous
             # element in the accumulator must be the option for which this
             # regex matches, we then just add the value.
-            accumulator+=( "${BASH_REMATCH[1]}" )
-        elif [[ "${_option}" =~ ${local_pkgset_regex} && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+            accumulator+=( "${GVM_REMATCH[1]}" )
+        elif [[ "${local_pkgset_rematch}" == true ]] && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
-            accumulator+=( "--local" "${BASH_REMATCH[1]}")
-        elif [[ "${_option}" =~ ${local_pkgset_regex}
-            && -n "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
+            accumulator+=( "--local" "${GVM_REMATCH[1]}")
+        elif [[ "${local_pkgset_rematch}" == true ]] &&
+            [[ -n "$(valueForKeyFakeAssocArray "--local" "${options_hash[*]}")" ]]
         then
             # --local is a special case: for legacy compatibility we need to
             # support the option without an argument (we do that later by always
             # setting a value of nil). But here we are checking if the option
             # has been set previously and then just adding an override if true.
-            accumulator+=( "--local" "${BASH_REMATCH[1]}" )
+            accumulator+=( "--local" "${GVM_REMATCH[1]}" )
         elif [[ "${_option}" == "--local" ]]
         then
             accumulator+=( "--local" "nil" )
@@ -118,7 +139,7 @@ function gvm_pkgset_use() {
         # flush accumulator when we reach an even number of key/value pairs
         if [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
-            for (( i=0; i<"${#accumulator[@]}"; i+=2 ))
+            for (( i=0; i<${#accumulator[@]}; i+=2 ))
             do
                 local __key __val
                 __key="${accumulator[i]}"
@@ -130,7 +151,7 @@ function gvm_pkgset_use() {
         fi
     done
 
-    if [[ $GVM_DEBUG -ne 0 && "${#accumulator[@]}" -gt 0 ]]
+    if [[ "${GVM_DEBUG}" -eq 1 && ${#accumulator[@]} -gt 0 ]]
     then
         printf "Accumulator wasn't flushed. Remaining elements:\n"
         local _item _index=0
@@ -144,7 +165,7 @@ function gvm_pkgset_use() {
     fi
     unset accumulator
 
-    if [[ $GVM_DEBUG ]]
+    if [[ "${GVM_DEBUG}" -eq 1 ]]
     then
         printf "Command (%s) options dump:\n" "${BASH_SOURCE[0]##*/}"
         local _item
@@ -175,7 +196,7 @@ function gvm_pkgset_use() {
             display_error "Cannot find local package set" || return 1
 
         local_pkgset="${local_pkgset}/.gvm_local"
-        [[ $GVM_DEBUG ]] && echo "Resolved local directory: ${local_pkgset}"
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Resolved local directory: ${local_pkgset}"
 
         fuzzy_match=$($LS_PATH "$local_pkgset/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Cannot find local package set" || return 1
@@ -191,8 +212,8 @@ function gvm_pkgset_use() {
             display_error "Failed to source the package set environment" || return 1
 
         # fix PATH to correct order
-        local fixed_path="$(munge_path)"
-        [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+        local fixed_path="$(__gvm_munge_path)"
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
         export PATH="${fixed_path}"
         unset fixed_path
 
@@ -215,8 +236,8 @@ function gvm_pkgset_use() {
             display_error "Failed to source the package set environment" || return 1
 
         # fix PATH to correct order
-        local fixed_path="$(munge_path)"
-        [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+        local fixed_path="$(__gvm_munge_path)"
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
         export PATH="${fixed_path}"
         unset fixed_path
 
@@ -238,6 +259,6 @@ function gvm_pkgset_use() {
     fi
 
     unset options_hash
-    unset pkgset_regex
-    unset local_pkgset_regex
+    unset pkgset_regex pkgset_rematch
+    unset local_pkgset_regex local_pkgset_rematch
 }

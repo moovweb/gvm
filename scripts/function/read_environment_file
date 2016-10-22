@@ -26,11 +26,11 @@
 #   or an empty string (status 1) on failure.
 # */
 read_environment_file() {
-    local path="${1}"
+    local filepath="${1}"
     local regex='^export ([^[:digit:]]+[[:alnum:]_]+);[[:space:]]*([^[:digit:]]+[[:alnum:]_]+=(.*))$'
-    local hash=()
+    local hash; hash=()
 
-    if [[ -z "${path}" || ! -r "${path}" ]]
+    if [[ -z "${filepath}" || ! -r "${filepath}" ]]
     then
         echo ""; return 1
     fi
@@ -52,11 +52,11 @@ read_environment_file() {
             hash=( $(setValueForKeyFakeAssocArray "${__key}" "${__val}" "${hash[*]}") )
         fi
         unset __key __val
-    done <<< "$(cat "${path}")"
+    done <<< "$(cat "${filepath}")"
 
     echo "${hash[@]}"
 
-    if [[ -z "${#hash[@]}" ]]
+    if [[ ${#hash[@]} -eq 0 ]]
     then
         return 1
     fi

@@ -4,6 +4,7 @@
 # -*- Shell-Unix-Generic -*-
 #
 . "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
+. "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
 # gvm_pkgset_use()
 # /*!
@@ -31,7 +32,9 @@
 #   (status 1) failure if an error was encountered.
 # */
 function gvm_use() {
-    local options_hash=()
+    local options_hash; options_hash=()
+    local accumulator; accumulator=()
+
     # Go version regex patterns are specifically implemented to output rematches
     # in a consistent format. Consider the following examples:
     #	go1
@@ -42,11 +45,11 @@ function gvm_use() {
     #   release.r60.2@my-second-pkgset
     #
     # These rematches apply:
-    #	BASH_REMATCH[1]: version name (e.g. go1, go1.7.1, release.r60.2, system)
-    #	BASH_REMATCH[2]: isolated version (e.g. 1, 1.7.1, 60.2, ' ')
+    #	GVM_REMATCH[1]: version name (e.g. go1, go1.7.1, release.r60.2, system)
+    #	GVM_REMATCH[2]: isolated version (e.g. 1, 1.7.1, 60.2, ' ')
     # In addition, if a pkgset has been provided as part of the version string,
     # the following additional rematch will apply:
-    #	BASH_REMATCH[5]: isolated pkgset (e.g. my-first-pkgset, etc.)
+    #	GVM_REMATCH[5]: isolated pkgset (e.g. my-first-pkgset, etc.)
     #
     # The regex patterns are implemented separately for the above patterns so
     # that specific matches can be discarded later. Patterns are built up in
@@ -61,11 +64,11 @@ function gvm_use() {
     goversion_regex="${goversion_regex/%\$/$at_pkgset_regex}\$"
     goversion_release_regex="${goversion_release_regex/%\$/$at_pkgset_regex}\$"
     goversion_system_regex="${goversion_system_regex/%\$/$at_pkgset_regex}\$"
+    local version_rematch
 
-    local accumulator=()
     for _option in "${@}"
     do
-        [[ $GVM_DEBUG ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
 
         # if the accumulator has a trailing option flag (that is, the option
         # flag has been specified but no argument has been supplied) then make
@@ -76,38 +79,43 @@ function gvm_use() {
             return 1
         fi
 
+        # scan version_rematch checks exactly once each time through
+        version_rematch=false
+        if __gvm_rematch "${_option}" "${goversion_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_release_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_system_regex}"
+        then
+            version_rematch=true
+        fi
+
         # parse all freeform strings first according to regex patterns above
-        if [[ "${_option}" =~ ${goversion_regex} ||
-            "${_option}" =~ ${goversion_release_regex} ||
-            "${_option}" =~ ${goversion_system_regex} ]] && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        if [[ "${version_rematch}" == true ]] && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
             # if the regex matches and the accumulator is even, we can add the
             # key/val pair.
-            accumulator+=( "--version" "${BASH_REMATCH[1]}" )
+            accumulator+=( "--version" "${GVM_REMATCH[1]}" )
             # if pkgset is present, add that to the accumulator as well
             # other --pkgset argument supplied.
-            if [[ -n "${BASH_REMATCH[5]}" ]]
+            if [[ -n "${GVM_REMATCH[5]}" ]]
             then
-                accumulator+=( "--pkgset" "${BASH_REMATCH[5]}" )
+                accumulator+=( "--pkgset" "${GVM_REMATCH[5]}" )
             fi
-        elif [[ "${_option}" =~ ${goversion_regex} ||
-            "${_option}" =~ ${goversion_release_regex} ||
-            "${_option}" =~ ${goversion_system_regex} ]] &&
-                [[ "${#accumulator[@]}" -gt 0 &&
+        elif [[ "${version_rematch}" == true ]] &&
+                [[ ${#accumulator[@]} -gt 0 &&
                     "${accumulator[${#accumulator[@]}-1]}" == "--version" ]]
         then
             # if the regex matches and the accumulator is odd, the previous
             # element in the accumulator must be the option for which this
             # regex matches, we then just add the value.
-            accumulator+=( "${BASH_REMATCH[1]}" )
-        elif [[ "${_option}" =~ ^${pkgset_regex}$ && $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+            accumulator+=( "${GVM_REMATCH[1]}" )
+        elif __gvm_rematch "${_option}" "^${pkgset_regex}$" && $(( ${#accumulator[@]}%2 ))
         then
-            accumulator+=( "--pkgset" "${BASH_REMATCH[1]}" )
+            accumulator+=( "--pkgset" "${GVM_REMATCH[1]}" )
         elif [[ "${_option}" =~ ^${pkgset_regex}$
-            && "${#accumulator[@]}" -gt 0
+            && ${#accumulator[@]} -gt 0
             && "${accumulator[${#accumulator[@]}-1]}" == "--pkgset" ]]
         then
-            accumulator+=( "${BASH_REMATCH[1]}" )
+            accumulator+=( "${GVM_REMATCH[1]}" )
         elif [[ "${_option}" == "--version" ]]
         then
             accumulator+=( "--version" )
@@ -142,7 +150,7 @@ function gvm_use() {
         # flush accumulator when we reach an even number of key/value pairs
         if [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
-            for (( i=0; i<"${#accumulator[@]}"; i+=2 ))
+            for (( i=0; i<${#accumulator[@]}; i+=2 ))
             do
                 local __key __val
                 __key="${accumulator[i]}"
@@ -155,7 +163,7 @@ function gvm_use() {
     done
     unset accumulator
 
-    if [[ $GVM_DEBUG ]]
+    if [[ "${GVM_DEBUG}" -eq 1 ]]
     then
         printf "Command (%s) options dump:\n" "${BASH_SOURCE[0]##*/}"
         local _item
@@ -200,8 +208,8 @@ function gvm_use() {
     gvm_environment_sanitize "$fuzzy_match"
 
     # fix PATH to correct order
-    local fixed_path="$(munge_path)"
-    [[ $GVM_DEBUG ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+    local fixed_path="$(__gvm_munge_path)"
+    [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
     export PATH="${fixed_path}"
     unset fixed_path
 
@@ -236,4 +244,5 @@ function gvm_use() {
     unset goversion_system_regex
     unset pkgset_regex
     unset at_pkgset_regex
+    unset version_rematch
 }

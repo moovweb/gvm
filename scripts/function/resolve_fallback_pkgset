@@ -1,7 +1,9 @@
 # resolve_fallback_pkgset
 #
-# -*- Shell-Unix-Generic -*-
+# shellcheck shell=bash
+# vi: set ft=bash
 #
+. "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
 # resolve_fallback_pkgset()
 # /*!
@@ -22,36 +24,36 @@ function resolve_fallback_pkgset() {
     local version="${1:-$gvm_go_name}"
     local pkgset=""
     local pkgset_regex='^([[:space:]]*[=>*]*[[:space:]]+)([A-Za-z0-9._#:%\/\+\-]+)$'
-    local local_pkgset_regex='^([[:space:]]*[=>*]*)(L[[:space:]]+)(\/[^:'$'\n'$'\0'']*)+$'
+    local local_pkgset_regex='^([[:space:]]*[=>*]*)(L[[:space:]]+)(\/[^:\\\n\\\0]*)+$'
     local goversion_regex='^([[:space:]]*[=>*]*)(G[[:space:]]+)(go([0-9]+(\.[0-9]+)*))$'
 
-    [[ -z "${version}" ]] && echo "" && return 1
+    [[ "x${version}" == "x" ]] && echo "" && return 1
 
     while IFS=$'\n' read -r _line; do
         # skip the G (go version) line
-        if [[ "${_line}" =~ ${goversion_regex} ]]
+        if __gvm_rematch "${_line}" "${goversion_regex}"
         then
-            # BASH_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
-            # BASH_REMATCH[2]: pkgset type (e.g. ' ', 'G')
-            # BASH_REMATCH[3]: version name (e.g. go1.7.1)
-            # BASH_REMATCH[4]: isolated version (e.g. 1.7.1)
+            # GVM_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
+            # GVM_REMATCH[2]: pkgset type (e.g. ' ', 'G')
+            # GVM_REMATCH[3]: version name (e.g. go1.7.1)
+            # GVM_REMATCH[4]: isolated version (e.g. 1.7.1)
             continue
         fi
 
         # if the current directory has a local pkgset, we should fallback to it
-        if [[ "${_line}" =~ ${local_pkgset_regex} && "${PWD}" == "${BASH_REMATCH[3]}" ]]
+        if __gvm_rematch "${_line}" "${local_pkgset_regex}" && [[ "${PWD}" == "${GVM_REMATCH[3]}" ]]
         then
-            # BASH_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
-            # BASH_REMATCH[2]: pkgset type (e.g. ' ', 'L')
-            # BASH_REMATCH[3]: pkgset name (e.g. /home/me/dev/go/test)
-            pkgset="${BASH_REMATCH[3]}"
+            # GVM_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
+            # GVM_REMATCH[2]: pkgset type (e.g. ' ', 'L')
+            # GVM_REMATCH[3]: pkgset name (e.g. /home/me/dev/go/test)
+            pkgset="${GVM_REMATCH[3]}"
             break
         fi
 
-        if [[ "${_line}" =~ ${pkgset_regex} && "global" == "${BASH_REMATCH[2]}" ]]
+        if __gvm_rematch "${_line}" "${pkgset_regex}" && [[ "global" == "${GVM_REMATCH[2]}" ]]
         then
-            # BASH_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
-            # BASH_REMATCH[2]: pkgset name (e.g. go1.7.1)
+            # GVM_REMATCH[1]: indicator (e.g. ' ', '*', '=>', '=*')
+            # GVM_REMATCH[2]: pkgset name (e.g. go1.7.1)
             pkgset="global"
             break
         fi

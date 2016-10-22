@@ -36,7 +36,7 @@ testPath+=":/bin"
 testPath+=":/usr/sbin"
 testPath+=":/sbin"
 
-mungedPath="$(munge_path "${testPath}")"
+mungedPath="$(__gvm_munge_path "${testPath}")"
 
 echo "testPath: ${testPath}"
 echo "expectedMungedPath: ${expectedMungedPath}"
@@ -79,7 +79,7 @@ testPath+=":/bin"
 testPath+=":/usr/sbin"
 testPath+=":/sbin"
 
-mungedPath="$(munge_path "${testPath}" true)"
+mungedPath="$(__gvm_munge_path "${testPath}" true)"
 
 ## Evaluate result
 [[ "${mungedPath}" == "${expectedMungedPath}" ]] # status=0

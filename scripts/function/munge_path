@@ -1,7 +1,9 @@
 # munge_path
 #
-# -*- Shell-Unix-Generic -*-
+# shellcheck shell=bash
+# vi: set ft=bash
 #
+. "$GVM_ROOT/scripts/function/_shell_compat" || return 1
 
 # /*!
 # @abstract Generate a new PATH with gvm and rvm elements in the correct order
@@ -21,23 +23,22 @@
 # @return Returns a string containing munged path (status 0) or an empty string
 #   (status 1) on failure.
 # */
-munge_path() {
+__gvm_munge_path() {
     local path_in="${1:-$PATH}"
-    local path_in_ary=()
+    local path_in_ary; path_in_ary=()
     local path_out=""
-    local path_out_ary=()
+    local path_out_ary; path_out_ary=()
     local path_dedupe_flag="${2:-true}"
-    local rvm_regex='([^:'$'\n'$'\0'']+\.rvm{1}[^:'$'\n'$'\0'']+)'
-    local rvm_ary=()
-    local gvm_regex='([^:'$'\n'$'\0'']+\.gvm{1}[^:'$'\n'$'\0'']+)'
-    local gvm_ary=()
-    local general_ary=()
+    local rvm_regex='([^:\\\n\\\0]+\.rvm{1}[^:\\\n\\\0]+)'
+    local rvm_ary; rvm_ary=()
+    local gvm_regex='([^:\\\n\\\0]+\.gvm{1}[^:\\\n\\\0]+)'
+    local gvm_ary; gvm_ary=()
+    local general_ary; general_ary=()
     local defaultIFS="$IFS"
     local IFS="$defaultIFS"
 
     [[ -z "${path_in}" ]] && echo "" && return 1
-
-    IFS=':' path_in_ary=( $path_in ) IFS="$defaultIFS"
+    IFS=': ' path_in_ary=( $(printf "%s" "${path_in}") ) IFS="$defaultIFS"
 
     # extract path elements
     local _path
@@ -63,13 +64,13 @@ munge_path() {
     # deduplicate path_out_ary if requested, do this just to be helpful :)
     if [[ "${path_dedupe_flag}" == true ]]
     then
-        local _dedupe_path_out_ary=()
-        for (( i=0; i<"${#path_out_ary[@]}"; i++ ))
+        local _dedupe_path_out_ary; _dedupe_path_out_ary=()
+        for (( i=0; i<${#path_out_ary[@]}; i++ ))
         do
             local __element="${path_out_ary[i]}"
             [[ -n "${__element}" ]] && _dedupe_path_out_ary+=( "${__element}" )
             # reset duplicates to an empty string so we can ignore them
-            for (( j="${#path_out_ary[@]}"-1; j>i; j-- ))
+            for (( j=${#path_out_ary[@]}-1; j>i; j-- ))
             do
                 [[ "${__element}" == "${path_out_ary[j]}" ]] && path_out_ary[j]=""
             done
