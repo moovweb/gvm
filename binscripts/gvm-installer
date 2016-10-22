@@ -8,6 +8,14 @@ display_error() {
 	exit 1
 }
 
+# @TODO: check if gvm is sourced before rvm
+# GVM needs to be sourced after RVM because the latter doesn't play nice. So,
+# we need to scan .bashrc, .bash_profile, etc., to see if:
+#		[ -s "$HOME/.rvm/scripts/rvm" ]]
+# appears after
+#		[[ -s "$HOME/.gvm/scripts/gvm" ]]
+# And if it does, warn the user. This is critical for cd() support!!
+#
 update_profile() {
 	[ -f "$1" ] || return 1
 
@@ -119,4 +127,10 @@ echo "Installed GVM v${GVM_VERSION}"
 echo
 echo "Please restart your terminal session or to get started right away run"
 echo " \`source ${source_file}\`"
+echo
+echo "Support for auto selection of Go version and GVM pkgset (via .go-version"
+echo "and .go-pkgset files) requires that GVM is loaded after RVM (if installed)."
+echo "For bash, you may need to manually update your .bashrc and/or .bash_profile"
+echo "files; for zsh, you may need to manually update .zshrc and/or .zlogin files."
+echo "See the README.md file for more information."
 echo
