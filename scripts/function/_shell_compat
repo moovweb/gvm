@@ -25,13 +25,10 @@ __gvm_is_function()
 
     [[ "x${func_name}" == "x" ]] && return 1
 
-    # sadly, zsh is so messed up that we have to do something like this...
-    if [[ $({ declare -f "${1}"; } >/dev/null && echo 1 || echo 0) == 1 ]]
-    then
-        return 0
-    fi
+    # using 'declare -f' is the most reliable way for both bash and zsh!
+    builtin declare -f "${1}" >/dev/null
 
-    return 1
+    return $?
 }
 
 __gvm_callstack()
