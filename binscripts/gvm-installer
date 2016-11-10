@@ -93,13 +93,9 @@ source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DE
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
-  if [ -n "$ZSH_NAME" ]; then
-    update_profile "$HOME/.zshrc"
-  elif [ "$(uname)" == "Linux" ]; then
-    update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
-  elif [ "$(uname)" == "Darwin" ]; then
-    update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
-  fi
+  [ -f "$HOME/.zshrc" ] && update_profile "$HOME/.zshrc"
+  [ "$(uname)" == "Linux" ] && (update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile")
+  [ "$(uname)" == "Darwin" ] && (update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile")
 fi
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] && [ "$?" != "0" ]; then
