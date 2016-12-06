@@ -198,7 +198,7 @@ function gvm_pkgset_use() {
         local_pkgset="${local_pkgset}/.gvm_local"
         [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Resolved local directory: ${local_pkgset}"
 
-        fuzzy_match=$($LS_PATH "$local_pkgset/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
+        fuzzy_match=$($LS_PATH -1 "$local_pkgset/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "local" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Cannot find local package set" || return 1
 
         if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
@@ -228,7 +228,7 @@ function gvm_pkgset_use() {
     then
         local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
 
-        fuzzy_match=$($LS_PATH "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "${pkgset}" | $HEAD_PATH -n 1)
+        fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/environments" | $SORT_PATH | $GREP_PATH "$gvm_go_name@" | $GREP_PATH "${pkgset}" | $HEAD_PATH -n 1)
         [[ -n "${fuzzy_match}" ]] || display_error "Invalid package set: ${pkgset}" || return 1
 
         gvm_export_path
