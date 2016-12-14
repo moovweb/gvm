@@ -16,7 +16,8 @@ task :default do
       bash -c '
         #{root_path}/binscripts/gvm-installer #{commit} #{tmpdir}
         source #{tmpdir}/gvm/scripts/gvm
-        tf --text #{tmpdir}/gvm/tests/*.sh
+        builtin cd #{tmpdir}/gvm/tests
+        tf --text *_comment_test.sh
       '
     EOSH
   end
@@ -31,7 +32,8 @@ task :scenario do
         bash -c '
           #{root_path}/binscripts/gvm-installer #{commit} #{tmpdir}
           source #{tmpdir}/gvm/scripts/gvm
-          tf --text #{tmpdir}/gvm/tests/scenario/#{name}
+          builtin cd #{tmpdir}/gvm/tests/scenario
+          tf --text #{name}
         '
       EOSH
     end
