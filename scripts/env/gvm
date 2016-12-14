@@ -7,16 +7,16 @@
 
 function gvm() {
 	if [[ "$GVM_ROOT" == "" ]]; then
-		display_error "GVM_ROOT not set. Please source \$GVM_ROOT/scripts/gvm"
-		return $?
+		display_error "GVM_ROOT not set. Try running: \'source \$GVM_ROOT/scripts/gvm\'."
+		return 1
 	fi
 	if [[ -d $GVM_ROOT/.git ]]; then
 		display_error "Looks like the .git directory is present. Please reinstall GVM."
 		return 1
 	fi
 	if [[ ! -d $GVM_ROOT ]]; then
-		display_error "GVM_ROOT does not exist. Please reinstall GVM"
-		return $?
+		display_error "GVM_ROOT does not exist. Please reinstall GVM."
+		return 1
 	fi
 
 	mkdir -p "$GVM_ROOT/logs" > /dev/null 2>&1
