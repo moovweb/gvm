@@ -89,10 +89,13 @@ then
   git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
 	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
 else
+	echo -n "Not cloning. "
   if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
   then
+		echo "Creating symlink: $GVM_DEST -> $GIT_ROOT"
     ln -s "$GIT_ROOT" "$GVM_DEST"
   else
+		echo "Copying: $GIT_ROOT -> $GVM_DEST/$GVM_NAME"
     cp -r "$GIT_ROOT" "$GVM_DEST/$GVM_NAME"
   fi
 fi
