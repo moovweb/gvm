@@ -10,7 +10,7 @@ function gvm() {
 		display_error "GVM_ROOT not set. Try running: \'source \$GVM_ROOT/scripts/gvm\'."
 		return 1
 	fi
-	if [[ -d $GVM_ROOT/.git ]]; then
+	if [[ -z "$GVM_NO_GIT_BAK" && -d $GVM_ROOT/.git ]]; then
 		display_error "Looks like the .git directory is present. Please reinstall GVM."
 		return 1
 	fi
