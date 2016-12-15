@@ -113,7 +113,7 @@ function gvm_use() {
             # element in the accumulator must be the option for which this
             # regex matches, we then just add the value.
             accumulator+=( "${GVM_REMATCH[1]}" )
-        elif __gvm_rematch "${_option}" "^${pkgset_regex}$" && $(( ${#accumulator[@]}%2 ))
+        elif __gvm_rematch "${_option}" "^${pkgset_regex}$" && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
         then
             accumulator+=( "--pkgset" "${GVM_REMATCH[1]}" )
         elif [[ "${_option}" =~ ^${pkgset_regex}$
