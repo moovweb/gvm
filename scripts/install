@@ -64,12 +64,12 @@ download_source() {
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+    version=$(builtin cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
 	display_message "Updating Go source..."
-	(cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
+	(builtin cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
@@ -87,8 +87,8 @@ compile_go() {
 	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
-	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
+	builtin cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
 		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
@@ -258,7 +258,7 @@ install_goprotobuf() {
 			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
-		cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
+		builtin cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
 		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
@@ -294,7 +294,7 @@ install_from_source() {
 	command -v goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	x="$(builtin cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
@@ -305,7 +305,7 @@ install_from_source() {
 		fi
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main() {
@@ -328,7 +328,7 @@ main() {
 		install_from_source
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main "$@"
