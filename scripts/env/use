@@ -42,6 +42,7 @@ function gvm_use() {
     #	go1.7.1
     #	release.r60.2
     #	system
+    #   master
     #   go1.7.1@my-first-pkgset
     #   release.r60.2@my-second-pkgset
     #
@@ -59,12 +60,14 @@ function gvm_use() {
     local goversion_regex='^(go([0-9]+(\.[0-9]+[a-z0-9]*)*))$'
     local goversion_release_regex='^(release\.r([0-9]+(\.[0-9]+[a-z0-9]*)*))$'
     local goversion_system_regex='^(system(()))$'
+    local goversion_master_regex='^(master(()))$'
     # append pkgset_regex to the end of each pattern
     local pkgset_regex='([A-Za-z0-9]+[A-Za-z0-9._#:%\/\+\-]+)'
     local at_pkgset_regex="(@${pkgset_regex})?"
     goversion_regex="${goversion_regex/%\$/$at_pkgset_regex}\$"
     goversion_release_regex="${goversion_release_regex/%\$/$at_pkgset_regex}\$"
     goversion_system_regex="${goversion_system_regex/%\$/$at_pkgset_regex}\$"
+    goversion_master_regex="${goversion_master_regex/%\$/$at_pkgset_regex}\$"
     local version_rematch
 
     for _option in "${@}"
@@ -84,7 +87,8 @@ function gvm_use() {
         version_rematch=false
         if __gvm_rematch "${_option}" "${goversion_regex}" ||
            __gvm_rematch "${_option}" "${goversion_release_regex}" ||
-           __gvm_rematch "${_option}" "${goversion_system_regex}"
+           __gvm_rematch "${_option}" "${goversion_system_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_master_regex}"
         then
             version_rematch=true
         fi
@@ -243,6 +247,7 @@ function gvm_use() {
     unset goversion_regex
     unset goversion_release_regex
     unset goversion_system_regex
+    unset goversion_master_regex
     unset pkgset_regex
     unset at_pkgset_regex
     unset version_rematch
