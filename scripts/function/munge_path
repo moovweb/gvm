@@ -19,7 +19,7 @@
 #  The purpose of mungeing is to generate a new path dynamically so that user
 #  changes to a PATH can be incorporated immediately.
 # @param path [optional] Path to munge, defaults to $PATH
-# @param dedupe [optonal] Remove duplicates from the resulting output (true) or
+# @param dedupe [optional] Remove duplicates from the resulting output (true) or
 #   leave them in place (false), defaults to true
 # @return Returns a string containing munged path (status 0) or an empty string
 #   (status 1) on failure.

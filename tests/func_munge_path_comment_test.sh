@@ -36,7 +36,7 @@ testPath+=":/bin"
 testPath+=":/usr/sbin"
 testPath+=":/sbin"
 
-mungedPath="$(__gvm_munge_path "${testPath}")"
+mungedPath="$(__gvm_munge_path "${testPath}" false)"
 
 echo "testPath: ${testPath}"
 echo "expectedMungedPath: ${expectedMungedPath}"
