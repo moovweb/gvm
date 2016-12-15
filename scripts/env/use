@@ -139,7 +139,7 @@ function gvm_use() {
             echo "       gvm use <version-name>@<pkgset-name> [--default]"
             echo
             echo "Options:"
-            echo "  --version value       version name"
+            echo "  --version value       go version name"
             echo "  --pkgset value        standard pkgset name"
             echo "  --default             make selected pkgset default"
             echo "  --quiet               suppress 'now using' acknowledgements"
