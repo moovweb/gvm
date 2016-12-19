@@ -61,6 +61,8 @@ function gvm_use() {
     local goversion_release_regex='^(release\.r([0-9]+(\.[0-9]+[a-z0-9]*)*))$'
     local goversion_system_regex='^(system(()))$'
     local goversion_master_regex='^(master(()))$'
+    # system and master could be handled by alias pattern but it separate for now
+    local goversion_alias_regex='^([a-zA-Z]+(()))$'
     # append pkgset_regex to the end of each pattern
     local pkgset_regex='([A-Za-z0-9]+[A-Za-z0-9._#:%\/\+\-]+)'
     local at_pkgset_regex="(@${pkgset_regex})?"
@@ -68,6 +70,7 @@ function gvm_use() {
     goversion_release_regex="${goversion_release_regex/%\$/$at_pkgset_regex}\$"
     goversion_system_regex="${goversion_system_regex/%\$/$at_pkgset_regex}\$"
     goversion_master_regex="${goversion_master_regex/%\$/$at_pkgset_regex}\$"
+    goversion_alias_regex="${goversion_alias_regex/%\$/$at_pkgset_regex}\$"
     local version_rematch
 
     for _option in "${@}"
@@ -88,7 +91,8 @@ function gvm_use() {
         if __gvm_rematch "${_option}" "${goversion_regex}" ||
            __gvm_rematch "${_option}" "${goversion_release_regex}" ||
            __gvm_rematch "${_option}" "${goversion_system_regex}" ||
-           __gvm_rematch "${_option}" "${goversion_master_regex}"
+           __gvm_rematch "${_option}" "${goversion_master_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_alias_regex}"
         then
             version_rematch=true
         fi
@@ -139,7 +143,7 @@ function gvm_use() {
             echo "       gvm use <version-name>@<pkgset-name> [--default]"
             echo
             echo "Options:"
-            echo "  --version value       go version name"
+            echo "  --version value       go version name or alias"
             echo "  --pkgset value        standard pkgset name"
             echo "  --default             make selected pkgset default"
             echo "  --quiet               suppress 'now using' acknowledgements"
@@ -248,6 +252,7 @@ function gvm_use() {
     unset goversion_release_regex
     unset goversion_system_regex
     unset goversion_master_regex
+    unset goversion_alias_regex
     unset pkgset_regex
     unset at_pkgset_regex
     unset version_rematch
