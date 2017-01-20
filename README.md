@@ -54,6 +54,7 @@ Go 1.5+ removed the C compilers from the toolchain and [replaced][compiler_note]
 gvm install go1.4 -B
 gvm use go1.4
 export GOROOT_BOOTSTRAP=$GOROOT
+export CGO_ENABLED=0
 gvm install go1.5
 ```
 
