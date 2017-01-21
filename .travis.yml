@@ -6,6 +6,8 @@ env:
     - SRC_REPO=$TRAVIS_BUILD_DIR
     - GVM_NO_GIT_BAK=1
     - GVM_NO_UPDATE_PROFILE=1
+git:
+  depth: 9999999
 # addons:
 #   artifacts: true
 before_install:
