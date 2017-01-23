@@ -82,12 +82,25 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
+if [[ "${GVM_DEBUG}" -eq 1 ]]
+then
+	echo "Vars dump:"
+	echo "  BRANCH   -> ${BRANCH}"
+	echo "  GVM_DEST -> ${GVM_DEST}"
+	echo "  GVM_NAME -> ${GVM_NAME}"
+	echo "  SRC_REPO -> ${SRC_REPO}"
+	echo "  GIT_ROOT -> ${GIT_ROOT}"
+fi
+
 if [[ -z "$GIT_ROOT" || "$(basename "$GIT_ROOT")" != "gvm" ]]
 then
   echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
 
-  git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
-	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+	_git_clone_cmd="git clone --quiet"
+	[[ "${GVM_DEBUG}" -eq 1 ]] && _git_clone_cmd="${_git_clone_cmd// --quiet/}"
+	${_git_clone_cmd} "$SRC_REPO" "$GVM_DEST/$GVM_NAME"
+	[[ $? -ne 0 ]] && display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+	unset _git_clone_cmd
 else
 	echo -n "Not cloning. "
   if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
