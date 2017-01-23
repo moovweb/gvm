@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
+# const
+GO_BOOTSTRAP_BRANCH="release-branch.go1.4"
+
 function show_usage() {
 	echo "Usage: gvm install [version] [options]"
 	echo "    -s,  --source=SOURCE      Install Go from specified source."
@@ -59,8 +62,19 @@ download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
-	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
+	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
+	# clone the bootstrap branch, switch to the branch to create it locally,
+	# then switch back to master branch.
+	_pwd="${PWD}"
+	{ builtin cd "$GO_CACHE_PATH" &&
+		git remote set-branches origin "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git fetch origin "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git checkout "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git checkout master &&
+		builtin cd "${_pwd}"; } ||
+			display_fatal "Couldn't download Go bootstrap branch. Check the logs $GVM_ROOT/logs/go-bootstrap.log"
+	unset _pwd
 }
 
 check_tag() {
@@ -74,8 +88,21 @@ update_source() {
 }
 
 copy_source() {
-	git clone -b "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
+	# @TODO: Bootstrap support should be moved into a separate function!
+	# MacOS Sierra (10.12) can no longer build binaries previous to 1.7 and that
+	# includes go1.4. When targetting go1.4, fix $version to refer to the special
+	# release build that should remain buildable.
+	#
+	# refer to: https://github.com/golang/go/issues/16352
+	#
+	# Perhaps we should just install go1.4 proactively before anything else?
+	#
+	local _version="${version}"
+	[[ "$_version" == "go1.4" ]] && _version="${GO_BOOTSTRAP_BRANCH}"
+	display_message "Copying Go source... (version: ${_version})"
+	git clone -b "${_version}" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
 		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
+	unset _version
 }
 
 
@@ -89,7 +116,7 @@ compile_go() {
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
 	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
 	builtin cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
-		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
+		{ rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log"; }
 }
 
 create_enviroment() {
