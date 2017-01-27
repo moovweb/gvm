@@ -4,7 +4,42 @@
 # const
 GO_BOOTSTRAP_BRANCH="release-branch.go1.4"
 
-function show_usage() {
+detect_run_os() {
+	local _run_os _uname_str _uname_arc
+	_run_os="unknown,"
+	_uname_str="$(uname)"
+	_uname_arc="$(uname -m)"
+
+	if [ "${_uname_str}" == "Darwin" ]; then
+		local _macos_version
+		_run_os="darwin"
+		_macos_version="$(sw_vers -productVersion | cut -d "." -f 2)"
+		if [ "${_macos_version}" -ge 8 ]; then
+			_run_os="${_run_os},osx10.8"
+		elif [ "${_macos_version}" -ge 6 ]; then
+			_run_os="${_run_os},osx10.6"
+		else
+			display_error "Binary Go unavailable for this platform"
+			rm -rf $GO_INSTALL_ROOT
+			rm -f $GO_BINARY_PATH
+			exit 1
+		fi
+		unset _macos_version
+	elif [ "${_uname_str}" == "Linux" ]; then
+		_run_os="linux,"
+	fi
+
+	if [ "${_uname_arc}" == "x86_64" ]; then
+		_run_os="${_run_os},amd64"
+	else
+		_run_os="${_run_os},386"
+	fi
+
+	echo "${_run_os}"
+	unset _run_os _uname_str _uname_arc
+}
+
+show_usage() {
 	echo "Usage: gvm install [version] [options]"
 	echo "    -s,  --source=SOURCE      Install Go from specified source."
 	echo "    -n,  --name=NAME          Override the default name for this version."
@@ -119,6 +154,47 @@ compile_go() {
 		{ rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log"; }
 }
 
+# patch old go versions to build on MacOS Sierra (10.12)
+patch_go() {
+	display_message " * Patching..."
+	local _patch_applied _version _src_directory _run_os
+
+	_patch_applied=0
+	_version="${1}"
+	_src_directory="${2:-$PWD}"
+
+	if [[ "${GVM_DEBUG}" -eq 1 ]]
+	then
+		echo "scripts/install - patch_go() called with:"
+		echo "  _version       -> ${_version}"
+		echo "  _src_directory -> ${_src_directory}"
+	fi
+
+	[[ "x${_version}" == "x" ]] && display_fatal "Couldn't patch source, invalid version specified:  \"${1}\""
+
+	_run_os="$(detect_run_os)"
+
+	local _version_major _version_minor
+	_version_major="${_version%%.*}"
+	_version_minor="${_version#$_version_major.}"
+	_version_minor="${_version_minor%%.*}"      # handle 1.2
+	_version_minor="${_version_minor%%beta*}"   # handle 1beta2
+	_version_minor="${_version_minor%%rc*}"     # handle 1rc3
+	if [[ "${_run_os%%,*}" == "darwin" && "${_version_major%%.*}" == "go1" && ${_version_minor} -lt 5 ]]; then
+		[[ -z "${_src_directory}" || ! -d "${_src_directory}" ]] && display_fatal "Couldn't patch source, invalid directory specified: \"${2}\""
+		# patch src/cmd/dist/build.c
+		if [[ -f "${_src_directory}/cmd/dist/build.c" ]]
+		then
+			sed -i".bak" "/\"-Werror\",/d" "${_src_directory}/cmd/dist/build.c"
+			_patch_applied=1
+		fi
+	fi
+
+	[[ "${_patch_applied}" -eq 0 ]] && display_message " ** Patching skipped (not needed)"
+
+	unset _run_os _src_directory _version _patch_applied
+}
+
 create_enviroment() {
 	new_env_file=$GVM_ROOT/environments/$GO_NAME
 	echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > "$new_env_file"
@@ -172,6 +248,7 @@ install_go() {
 
 	create_global_package_set
 	copy_source
+	patch_go "${GO_NAME}" "${GO_INSTALL_ROOT}/src"
 	compile_go
 	create_enviroment
 
@@ -180,36 +257,42 @@ install_go() {
 
 download_binary() {
 	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
-	if [ "$(uname)" == "Darwin" ]; then
-		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
-			GVM_OS_VERSION="-osx10.8"
-		elif [ "${osx_major_version}" -ge 6 ]; then
-			GVM_OS_VERSION="-osx10.6"
-		else
-			display_error "Binary Go unavailable for this platform"
-			rm -rf $GO_INSTALL_ROOT
-			rm -f $GO_BINARY_PATH
-			exit 1
-		fi
-	else
-		GVM_OS="linux"
+
+	local _run_os
+	local _os _os_version _os_arch
+	_run_os="$(detect_run_os)"
+	_os="${_run_os%%,*}"
+	_os_version="${_run_os#*,}"; _os_version="${_os_version%,*}"
+	_os_arch="${_run_os##*,}"
+
+	if [[ "${GVM_DEBUG}" -eq 1 ]]
+	then
+		echo "scripts/install - download_binary() vars:"
+		echo "  _run_os       -> ${_run_os}"
+		echo "  _os           -> ${_os}"
+		echo "  _os_version   -> ${_os_version}"
+		echo "  _os_arch      -> ${_os_arch}"
 	fi
 
-	if [ "$(uname -m)" == "x86_64" ]; then
-		GVM_ARCH="amd64"
-	else
-		GVM_ARCH="386"
+	if [[ "${_os}" == "unknown" ]]; then
+		display_error "Binary Go unavailable for this platform"
+		rm -rf $GO_INSTALL_ROOT
+		rm -f $GO_BINARY_PATH
+		exit 1
 	fi
 
+	# go binaries previous to 1.4.3 have a different naming convention
 	SEMVER=$(extract_version $VERSION)
 	compare_version $SEMVER "1.4.3"
 	if [ $? -eq 2 ]; then
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
+		local _binary_os_version
+		_binary_os_version="${_os_version:+-}${_os_version}"
+		GO_BINARY_FILE=${VERSION}.${_os}-${_os_arch}${_binary_os_version}.tar.gz
+		unset _binary_os_version
 	else
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
+		GO_BINARY_FILE=${VERSION}.${_os}-${_os_arch}.tar.gz
 	fi
+
 	GO_BINARY_URL="http://golang.org/dl/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
@@ -239,6 +322,9 @@ download_binary() {
 		rm -f $GO_BINARY_PATH
 		exit 1
 	fi
+
+	unset _os _os_version _os_arch
+	unset _run_os
 }
 
 install_go_binary() {
