@@ -1,7 +1,45 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-function show_usage() {
+# const
+GO_BOOTSTRAP_BRANCH="release-branch.go1.4"
+
+detect_run_os() {
+	local _run_os _uname_str _uname_arc
+	_run_os="unknown,"
+	_uname_str="$(uname)"
+	_uname_arc="$(uname -m)"
+
+	if [ "${_uname_str}" == "Darwin" ]; then
+		local _macos_version
+		_run_os="darwin"
+		_macos_version="$(sw_vers -productVersion | cut -d "." -f 2)"
+		if [ "${_macos_version}" -ge 8 ]; then
+			_run_os="${_run_os},osx10.8"
+		elif [ "${_macos_version}" -ge 6 ]; then
+			_run_os="${_run_os},osx10.6"
+		else
+			display_error "Binary Go unavailable for this platform"
+			rm -rf $GO_INSTALL_ROOT
+			rm -f $GO_BINARY_PATH
+			exit 1
+		fi
+		unset _macos_version
+	elif [ "${_uname_str}" == "Linux" ]; then
+		_run_os="linux,"
+	fi
+
+	if [ "${_uname_arc}" == "x86_64" ]; then
+		_run_os="${_run_os},amd64"
+	else
+		_run_os="${_run_os},386"
+	fi
+
+	echo "${_run_os}"
+	unset _run_os _uname_str _uname_arc
+}
+
+show_usage() {
 	echo "Usage: gvm install [version] [options]"
 	echo "    -s,  --source=SOURCE      Install Go from specified source."
 	echo "    -n,  --name=NAME          Override the default name for this version."
@@ -59,23 +97,47 @@ download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
-	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
+	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
+	# clone the bootstrap branch, switch to the branch to create it locally,
+	# then switch back to master branch.
+	_pwd="${PWD}"
+	{ builtin cd "$GO_CACHE_PATH" &&
+		git remote set-branches origin "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git fetch origin "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git checkout "${GO_BOOTSTRAP_BRANCH}" >> "$GVM_ROOT/logs/go-bootstrap.log" 2>&1 &&
+		git checkout master &&
+		builtin cd "${_pwd}"; } ||
+			display_fatal "Couldn't download Go bootstrap branch. Check the logs $GVM_ROOT/logs/go-bootstrap.log"
+	unset _pwd
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+    version=$(builtin cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
 	display_message "Updating Go source..."
-	(cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
+	(builtin cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
 copy_source() {
-	git clone -b "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
+	# @TODO: Bootstrap support should be moved into a separate function!
+	# MacOS Sierra (10.12) can no longer build binaries previous to 1.7 and that
+	# includes go1.4. When targetting go1.4, fix $version to refer to the special
+	# release build that should remain buildable.
+	#
+	# refer to: https://github.com/golang/go/issues/16352
+	#
+	# Perhaps we should just install go1.4 proactively before anything else?
+	#
+	local _version="${version}"
+	[[ "$_version" == "go1.4" ]] && _version="${GO_BOOTSTRAP_BRANCH}"
+	display_message "Copying Go source... (version: ${_version})"
+	git clone -b "${_version}" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
 		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
+	unset _version
 }
 
 
@@ -87,9 +149,50 @@ compile_go() {
 	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
-	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
-		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
+	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
+	builtin cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+		{ rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log"; }
+}
+
+# patch old go versions to build on MacOS Sierra (10.12)
+patch_go() {
+	display_message " * Patching..."
+	local _patch_applied _version _src_directory _run_os
+
+	_patch_applied=0
+	_version="${1}"
+	_src_directory="${2:-$PWD}"
+
+	if [[ "${GVM_DEBUG}" -eq 1 ]]
+	then
+		echo "scripts/install - patch_go() called with:"
+		echo "  _version       -> ${_version}"
+		echo "  _src_directory -> ${_src_directory}"
+	fi
+
+	[[ "x${_version}" == "x" ]] && display_fatal "Couldn't patch source, invalid version specified:  \"${1}\""
+
+	_run_os="$(detect_run_os)"
+
+	local _version_major _version_minor
+	_version_major="${_version%%.*}"
+	_version_minor="${_version#$_version_major.}"
+	_version_minor="${_version_minor%%.*}"      # handle 1.2
+	_version_minor="${_version_minor%%beta*}"   # handle 1beta2
+	_version_minor="${_version_minor%%rc*}"     # handle 1rc3
+	if [[ "${_run_os%%,*}" == "darwin" && "${_version_major%%.*}" == "go1" && ${_version_minor} -lt 5 ]]; then
+		[[ -z "${_src_directory}" || ! -d "${_src_directory}" ]] && display_fatal "Couldn't patch source, invalid directory specified: \"${2}\""
+		# patch src/cmd/dist/build.c
+		if [[ -f "${_src_directory}/cmd/dist/build.c" ]]
+		then
+			sed -i".bak" "/\"-Werror\",/d" "${_src_directory}/cmd/dist/build.c"
+			_patch_applied=1
+		fi
+	fi
+
+	[[ "${_patch_applied}" -eq 0 ]] && display_message " ** Patching skipped (not needed)"
+
+	unset _run_os _src_directory _version _patch_applied
 }
 
 create_enviroment() {
@@ -145,6 +248,7 @@ install_go() {
 
 	create_global_package_set
 	copy_source
+	patch_go "${GO_NAME}" "${GO_INSTALL_ROOT}/src"
 	compile_go
 	create_enviroment
 
@@ -153,36 +257,42 @@ install_go() {
 
 download_binary() {
 	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
-	if [ "$(uname)" == "Darwin" ]; then
-		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
-			GVM_OS_VERSION="-osx10.8"
-		elif [ "${osx_major_version}" -ge 6 ]; then
-			GVM_OS_VERSION="-osx10.6"
-		else
-			display_error "Binary Go unavailable for this platform"
-			rm -rf $GO_INSTALL_ROOT
-			rm -f $GO_BINARY_PATH
-			exit 1
-		fi
-	else
-		GVM_OS="linux"
+
+	local _run_os
+	local _os _os_version _os_arch
+	_run_os="$(detect_run_os)"
+	_os="${_run_os%%,*}"
+	_os_version="${_run_os#*,}"; _os_version="${_os_version%,*}"
+	_os_arch="${_run_os##*,}"
+
+	if [[ "${GVM_DEBUG}" -eq 1 ]]
+	then
+		echo "scripts/install - download_binary() vars:"
+		echo "  _run_os       -> ${_run_os}"
+		echo "  _os           -> ${_os}"
+		echo "  _os_version   -> ${_os_version}"
+		echo "  _os_arch      -> ${_os_arch}"
 	fi
 
-	if [ "$(uname -m)" == "x86_64" ]; then
-		GVM_ARCH="amd64"
-	else
-		GVM_ARCH="386"
+	if [[ "${_os}" == "unknown" ]]; then
+		display_error "Binary Go unavailable for this platform"
+		rm -rf $GO_INSTALL_ROOT
+		rm -f $GO_BINARY_PATH
+		exit 1
 	fi
 
+	# go binaries previous to 1.4.3 have a different naming convention
 	SEMVER=$(extract_version $VERSION)
 	compare_version $SEMVER "1.4.3"
 	if [ $? -eq 2 ]; then
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
+		local _binary_os_version
+		_binary_os_version="${_os_version:+-}${_os_version}"
+		GO_BINARY_FILE=${VERSION}.${_os}-${_os_arch}${_binary_os_version}.tar.gz
+		unset _binary_os_version
 	else
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
+		GO_BINARY_FILE=${VERSION}.${_os}-${_os_arch}.tar.gz
 	fi
+
 	GO_BINARY_URL="http://golang.org/dl/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
@@ -212,6 +322,9 @@ download_binary() {
 		rm -f $GO_BINARY_PATH
 		exit 1
 	fi
+
+	unset _os _os_version _os_arch
+	unset _run_os
 }
 
 install_go_binary() {
@@ -258,7 +371,7 @@ install_goprotobuf() {
 			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
-		cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
+		builtin cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
 		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
@@ -294,7 +407,7 @@ install_from_source() {
 	command -v goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	x="$(builtin cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
@@ -305,7 +418,7 @@ install_from_source() {
 		fi
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main() {
@@ -328,7 +441,7 @@ main() {
 		install_from_source
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main "$@"

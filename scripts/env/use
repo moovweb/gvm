@@ -1,45 +1,259 @@
 #!/usr/bin/env bash
+# use
+#
+# shellcheck shell=bash
+# vi: set ft=bash
+#
+. "$GVM_ROOT/scripts/function/_bash_pseudo_hash" || return 1
+. "$GVM_ROOT/scripts/function/_shell_compat" || return 1
+
+# gvm_pkgset_use()
+# /*!
+# @abstract Select a gvm version
+# @discussion
+# For basic usage, this function select the version specified as a string
+#   argument. The argument list is parsed...
+#
+# For more advanced usage the following options are supported:
+# <pre>@textblock</pre>
+#   Usage: gvm use [--version] <value> [--pkgset <value>] [--default]
+#          gvm use <version-name>@<pkgset-name> [--default]
+#
+#   Options:
+#     --version value       version name
+#     --pkgset value        standard pkgset name
+#     --default             make selected pkgset default
+#     --quiet               suppress 'now using' acknowledgements
+#     -h, --help            show this message
+#
+#   When using --pkgset, you must also specify a go version name.
+# @/textblock</pre>
+# @param args Variable list of options and values
+# @return Returns success (status 0) if a pkgset was selected successfully or
+#   (status 1) failure if an error was encountered.
+# */
 function gvm_use() {
-	if [[ "$1" == "-h" ]]; then
-		display_message "Usage: gvm use VERSION[@PKGSET] [--default]"
-		return 1
-	fi
+    local options_hash; options_hash=()
+    local accumulator; accumulator=()
 
-	if [[ "x$1" == x ]]; then
-		display_error "Please specify the version"
-		return 1
-	fi
+    # Go version regex patterns are specifically implemented to output rematches
+    # in a consistent format. Consider the following examples:
+    #	go1
+    #	go1.7.1
+    #	release.r60.2
+    #	system
+    #   master
+    #   go1.7.1@my-first-pkgset
+    #   release.r60.2@my-second-pkgset
+    #
+    # These rematches apply:
+    #	GVM_REMATCH[1]: version name (e.g. go1, go1.7.1, release.r60.2, system)
+    #	GVM_REMATCH[2]: isolated version (e.g. 1, 1.7.1, 60.2, ' ')
+    # In addition, if a pkgset has been provided as part of the version string,
+    # the following additional rematch will apply:
+    #	GVM_REMATCH[5]: isolated pkgset (e.g. my-first-pkgset, etc.)
+    #
+    # The regex patterns are implemented separately for the above patterns so
+    # that specific matches can be discarded later. Patterns are built up in
+    # steps for clarity.
+    #
+    local goversion_regex='^(go([0-9]+(\.[0-9]+[a-z0-9]*)*))$'
+    local goversion_release_regex='^(release\.r([0-9]+(\.[0-9]+[a-z0-9]*)*))$'
+    local goversion_system_regex='^(system(()))$'
+    local goversion_master_regex='^(master(()))$'
+    # system and master could be handled by alias pattern but it separate for now
+    local goversion_alias_regex='^([a-zA-Z]+(()))$'
+    # append pkgset_regex to the end of each pattern
+    local pkgset_regex='([A-Za-z0-9]+[A-Za-z0-9._#:%\/\+\-]+)'
+    local at_pkgset_regex="(@${pkgset_regex})?"
+    goversion_regex="${goversion_regex/%\$/$at_pkgset_regex}\$"
+    goversion_release_regex="${goversion_release_regex/%\$/$at_pkgset_regex}\$"
+    goversion_system_regex="${goversion_system_regex/%\$/$at_pkgset_regex}\$"
+    goversion_master_regex="${goversion_master_regex/%\$/$at_pkgset_regex}\$"
+    goversion_alias_regex="${goversion_alias_regex/%\$/$at_pkgset_regex}\$"
+    local version_rematch
 
-	if [[ "$1" =~ ^(.+)@(.+)$ ]]; then
-		local VERSION="${BASH_REMATCH[1]}"
-		local PKGSET="${BASH_REMATCH[2]}"
-	else
-		local VERSION=$1
+    for _option in "${@}"
+    do
+        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
+
+        # if the accumulator has a trailing option flag (that is, the option
+        # flag has been specified but no argument has been supplied) then make
+        # sure the next _option value is not another option flag.
+        if [[ $(( ${#accumulator[@]}%2 )) -eq 1 && "${_option}" =~ ^[\-]+ ]]
+        then
+            echo "Missing argument for: '${accumulator[${#accumulator[@]}-1]}'"
+            return 1
         fi
 
-	fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
-	if [[ "$?" != "0" ]]; then
-		GO_CACHE_PATH=$GVM_ROOT/archive/go
-		version=$(cd "$GO_CACHE_PATH" && git tag -l "$VERSION")
-		if [[ "x$version" == "x" ]]; then
-			display_error "Version not found locally. Try 'gvm install $VERSION'" || return 1
-		else
-			display_warning "$version is not installed. Install it by running 'gvm install $version'" || return 1
-		fi
-	fi
+        # scan version_rematch checks exactly once each time through
+        version_rematch=false
+        if __gvm_rematch "${_option}" "${goversion_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_release_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_system_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_master_regex}" ||
+           __gvm_rematch "${_option}" "${goversion_alias_regex}"
+        then
+            version_rematch=true
+        fi
 
-	gvm_export_path
-	. "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null || display_error "Couldn't source environment" || return 1
-	gvm_environment_sanitize "$fuzzy_match"
-	if [[ "$2" == "--default" ]]; then
-		cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default" || display_error "Couldn't make $fuzzy_match default"
-	fi
+        # parse all freeform strings first according to regex patterns above
+        if [[ "${version_rematch}" == true ]] && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        then
+            # if the regex matches and the accumulator is even, we can add the
+            # key/val pair.
+            accumulator+=( "--version" "${GVM_REMATCH[1]}" )
+            # if pkgset is present, add that to the accumulator as well
+            # other --pkgset argument supplied.
+            if [[ -n "${GVM_REMATCH[5]}" ]]
+            then
+                accumulator+=( "--pkgset" "${GVM_REMATCH[5]}" )
+            fi
+        elif [[ "${version_rematch}" == true ]] &&
+                [[ ${#accumulator[@]} -gt 0 &&
+                    "${accumulator[${#accumulator[@]}-1]}" == "--version" ]]
+        then
+            # if the regex matches and the accumulator is odd, the previous
+            # element in the accumulator must be the option for which this
+            # regex matches, we then just add the value.
+            accumulator+=( "${GVM_REMATCH[1]}" )
+        elif __gvm_rematch "${_option}" "^${pkgset_regex}$" && [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        then
+            accumulator+=( "--pkgset" "${GVM_REMATCH[1]}" )
+        elif [[ "${_option}" =~ ^${pkgset_regex}$
+            && ${#accumulator[@]} -gt 0
+            && "${accumulator[${#accumulator[@]}-1]}" == "--pkgset" ]]
+        then
+            accumulator+=( "${GVM_REMATCH[1]}" )
+        elif [[ "${_option}" == "--version" ]]
+        then
+            accumulator+=( "--version" )
+        elif [[ "${_option}" == "--pkgset" ]]
+        then
+            accumulator+=( "--pkgset" )
+        elif [[ "${_option}" == "--default" ]]
+        then
+            accumulator+=( "--default" "true" )
+        elif [[ "${_option}" == "--quiet" ]]
+        then
+            accumulator+=( "--quiet" "true" )
+        elif [[ "${_option}" == "-h" || "${_option}" == "--help" ]]
+        then
+            echo "Usage: gvm use [--version] <value> [--pkgset <value>] [--default]"
+            echo "       gvm use <version-name>@<pkgset-name> [--default]"
+            echo
+            echo "Options:"
+            echo "  --version value       go version name or alias"
+            echo "  --pkgset value        standard pkgset name"
+            echo "  --default             make selected pkgset default"
+            echo "  --quiet               suppress 'now using' acknowledgements"
+            echo "  -h, --help            show this message"
+            echo
+            echo "When using --pkgset, you must also specify a go version name."
+            echo
+            return 0
+        else
+            display_warning "Unrecognized command line argument: '${_option}'"
+            return 1
+        fi
+        # flush accumulator when we reach an even number of key/value pairs
+        if [[ $(( ${#accumulator[@]}%2 )) -eq 0 ]]
+        then
+            for (( i=0; i<${#accumulator[@]}; i+=2 ))
+            do
+                local __key __val
+                __key="${accumulator[i]}"
+                __val="${accumulator[i+1]}"
+                options_hash=( $(setValueForKeyFakeAssocArray "${__key}" "${__val}" "${options_hash[*]}") )
+                unset __key __val
+            done
+            accumulator=()
+        fi
+    done
+    unset accumulator
 
+    if [[ "${GVM_DEBUG}" -eq 1 ]]
+    then
+        printf "Command (%s) options dump:\n" "${BASH_SOURCE[0]##*/}"
+        local _item
+        for _item in "${options_hash[@]}"
+        do
+            local __key="${_item%%:*}"
+            local __val="$(valueForKeyFakeAssocArray "${__key}" "${options_hash[*]}")"
+            printf "  [%s]: %s\n" "${__key}" "${__val}"
+            unset __key __val
+        done
+        unset _item
+    fi
 
-	if [[ "x$PKGSET" != "x" ]]; then
-		gvm_pkgset_use $PKGSET &> /dev/null || display_error "Couldn't find pkgset $PKGSET for $VERSION" || return 1
-	fi
-	display_message "Now using version $fuzzy_match"
+    local version="$(valueForKeyFakeAssocArray "--version" "${options_hash[*]}")"
 
+    if [[ -z "${version}" ]]
+    then
+        display_error "Please specify the version. Execute 'gvm use --help' for command help."
+        return 1
+    fi
+
+    fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$version" | $HEAD_PATH -n 1 | $GREP_PATH "${version}")
+    if [[ -z "${fuzzy_match}" ]]
+    then
+        local go_archive_path="$GVM_ROOT/archive/go"
+        if [[ ! -d "${go_archive_path}" ]]
+        then
+            display_error "$(locale_text_for_key "go_install_prompt")"
+            return 1
+        fi
+        if [[ -z "$(builtin cd "${go_archive_path}" && git tag -l "${version}")" ]]
+        then
+            display_error "Version not found locally. Try 'gvm install ${version}'" || return 1
+        else
+            display_warning "${version} is not installed. Install it by running 'gvm install ${version}'" || return 1
+        fi
+        unset go_archive_path
+    fi
+
+    gvm_export_path
+    . "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null || display_error "Couldn't source environment" || return 1
+    gvm_environment_sanitize "$fuzzy_match"
+
+    # fix PATH to correct order
+    local fixed_path="$(__gvm_munge_path)"
+    [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+    export PATH="${fixed_path}"
+    unset fixed_path
+
+    if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+    then
+        cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
+        [[ $? -ne 0 ]] && display_error "Couldn't make $fuzzy_match default"
+    fi
+
+    local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"
+    if [[ -n "${pkgset}" ]]
+    then
+        local pkgset_args=( "$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")" )
+        if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
+        then
+            pkgset_args+=( "--default" )
+        fi
+
+        \gvm pkgset use --quiet "${pkgset_args[@]}" || return 1
+        unset pkgset_args
+    fi
+    unset pkgset
+
+    if [[ -z "$(valueForKeyFakeAssocArray "--quiet" "${options_hash[*]}")" ]]
+    then
+        display_message "Now using version $fuzzy_match"
+    fi
+
+    unset options_hash
+    unset goversion_regex
+    unset goversion_release_regex
+    unset goversion_system_regex
+    unset goversion_master_regex
+    unset goversion_alias_regex
+    unset pkgset_regex
+    unset at_pkgset_regex
+    unset version_rematch
 }
-

@@ -1,0 +1,86 @@
+# find_path_upwards
+#
+# shellcheck shell=bash
+# vi: set ft=bash
+#
+
+# __gvm_find_path_upwards()
+# /*!
+# @abstract Search upwards through the directory tree for a target file or
+#   directory and return the path to the first instance found
+# @discussione
+# Searches upwards through the directory tree starting at start_dir for a target
+#   file or directory basename.
+# @param target Basename of file or directory to find
+# @param start_dir [optional] Path to starting directory of search, defaults to
+#   present working directory.
+# @param final_dir [optional] Path to ending directory of search (that is the
+#   highest directory in the tree that will be checked), defaults to user home
+#   directory.
+# @return Returns a string containing path of found file or directory (status 0)
+#   or an empty string (status 1) on failure.
+# */
+__gvm_find_path_upwards()
+{
+    local target="${1}"
+    local start_dir="${2:-$PWD}"
+    local final_dir="${3:-$HOME}"
+
+    if [[ \
+        "x${target}" == "x" || \
+        "x${start_dir}" == "x" || \
+        "x${final_dir}" == "x"
+        ]]
+    then
+        echo "" && return 1
+    fi
+
+    local found_file="$(__gvmp_find_path_for_target "${target}" "${start_dir}" "${final_dir}")"
+    echo "${found_file}"
+
+    if [[ -z "${found_file}" ]]
+    then
+        return 1
+    fi
+
+    return 0
+}
+
+__gvmp_find_path_for_target()
+{
+    local target="${1}"
+    local start_dir="${2}"
+    local final_dir="${3}"
+
+    if [[ ${#target} -eq 0 ]]
+    then
+        echo ""; return 1
+    fi
+
+    # resolve tilde for HOME
+    start_dir="${start_dir/#\~/$HOME}"
+
+    # resolve dot for PWD
+    if [[ "${start_dir}" == "." ]]
+    then
+        start_dir="$PWD"
+    fi
+
+    local current_dir="${start_dir}"
+    local highest_dir="${final_dir}"
+
+    builtin cd "${current_dir}"
+    while [[ "${current_dir}" != "${highest_dir}" && "${current_dir}" != "/" ]];
+    do
+        if [[ -f "${current_dir}/${target}" ||  -d "${current_dir}/${target}" ]]
+        then
+            echo "${current_dir}/${target}"; return 0
+            break
+        fi
+
+        builtin cd ..
+        current_dir="$(pwd)"
+    done
+
+    echo ""; return 1
+}

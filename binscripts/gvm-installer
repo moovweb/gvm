@@ -8,6 +8,14 @@ display_error() {
 	exit 1
 }
 
+# @TODO: check if gvm is sourced before rvm
+# GVM needs to be sourced after RVM because the latter doesn't play nice. So,
+# we need to scan .bashrc, .bash_profile, etc., to see if:
+#		[ -s "$HOME/.rvm/scripts/rvm" ]]
+# appears after
+#		[[ -s "$HOME/.gvm/scripts/gvm" ]]
+# And if it does, warn the user. This is critical for cd() support!!
+#
 update_profile() {
 	[ -f "$1" ] || return 1
 
@@ -20,7 +28,7 @@ update_profile() {
 check_existing_go() {
 
 	if [ "$GOROOT" = "" ]; then
-		if which go > /dev/null; then
+		if which go > /dev/null 2>&1; then
 			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
 		else
 			echo "No existing Go versions detected"
@@ -40,6 +48,16 @@ export GOROOT; GOROOT="$GOROOT"
 export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global"
 export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
 EOF
+
+	# create system@global pkgset
+	cp $GVM_DEST/$GVM_NAME/environments/system $GVM_DEST/$GVM_NAME/environments/system@global
+	# @TODO: This is here for consistency with 'gvm pkgset create' which adds
+	# some duplicated entries when the pkgset is 'global'. Need to fix it!
+	cat << EOF >> $GVM_DEST/$GVM_NAME/environments/system@global
+export gvm_pkgset_name="global"
+export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:\$GOPATH"
+export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:\$PATH"
+EOF
 }
 
 BRANCH=${1:-master}
@@ -53,9 +71,9 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 [ -d "$GVM_DEST" ] || mkdir -p "$GVM_DEST" > /dev/null 2>&1 || display_error "Failed to create $GVM_DEST"
 [ -z "$(which git)" ] && display_error "Could not find git
 
-  debian/ubuntu: apt-get install git
-  redhat/centos: yum install git
-  mac:   brew install git
+  Debian/Ubuntu: apt-get install git
+  Redhat/Centos: yum install git
+  MacOS:         brew install git
 "
 
 # Is gvm-installer being called from the origin repo?
@@ -64,17 +82,33 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
+if [[ "${GVM_DEBUG}" -eq 1 ]]
+then
+	echo "Vars dump:"
+	echo "  BRANCH   -> ${BRANCH}"
+	echo "  GVM_DEST -> ${GVM_DEST}"
+	echo "  GVM_NAME -> ${GVM_NAME}"
+	echo "  SRC_REPO -> ${SRC_REPO}"
+	echo "  GIT_ROOT -> ${GIT_ROOT}"
+fi
+
 if [[ -z "$GIT_ROOT" || "$(basename "$GIT_ROOT")" != "gvm" ]]
 then
   echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
 
-  git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
-	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+	_git_clone_cmd="git clone --quiet"
+	[[ "${GVM_DEBUG}" -eq 1 ]] && _git_clone_cmd="${_git_clone_cmd// --quiet/}"
+	${_git_clone_cmd} "$SRC_REPO" "$GVM_DEST/$GVM_NAME"
+	[[ $? -ne 0 ]] && display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
+	unset _git_clone_cmd
 else
+	echo -n "Not cloning. "
   if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
   then
+		echo "Creating symlink: $GVM_DEST -> $GIT_ROOT"
     ln -s "$GIT_ROOT" "$GVM_DEST"
   else
+		echo "Copying: $GIT_ROOT -> $GVM_DEST/$GVM_NAME"
     cp -r "$GIT_ROOT" "$GVM_DEST/$GVM_NAME"
   fi
 fi
@@ -119,4 +153,10 @@ echo "Installed GVM v${GVM_VERSION}"
 echo
 echo "Please restart your terminal session or to get started right away run"
 echo " \`source ${source_file}\`"
+echo
+echo "Support for auto selection of Go version and GVM pkgset (via .go-version"
+echo "and .go-pkgset files) requires that GVM is loaded after RVM (if installed)."
+echo "For bash, you may need to manually update your .bashrc and/or .bash_profile"
+echo "files; for zsh, you may need to manually update .zshrc and/or .zlogin files."
+echo "See the README.md file for more information."
 echo

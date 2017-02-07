@@ -1,29 +1,72 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-echo
-display_message "gvm go package sets ($gvm_go_name)"
-echo
+usage() {
+cat <<EOF
+Usage: gvm pkgset list [option]
 
-if [[ -d $GVM_ROOT/pkgsets/$gvm_go_name ]]; then
-	pkgset_local=$(find_local_pkgset)
-	if [[ -d $pkgset_local ]]; then
-		if [[ "$gvm_pkgset_name" == "__local__" ]]; then
-			echo "=>L $pkgset_local"
-		else
-			echo "  L $pkgset_local"
-		fi
-	fi
+Options:
+  --porcelain    - machine-readable output
+  -h, --help     - show this message
 
-	for cur_dir in $GVM_ROOT/pkgsets/$gvm_go_name/*; do
-		[[ "$cur_dir" == "$GVM_ROOT/pkgsets/$gvm_go_name/*" ]] && exit
-    pkgset=$(basename "$cur_dir")
-		if [[ "$gvm_pkgset_name" == "$pkgset" ]]; then
-			echo "=>  $pkgset"
-		else
-			echo "    $pkgset"
-		fi
-	done
+EOF
+
+    return 0
+}
+
+list() {
+    local porcelain="${1:-false}"
+
+    if [[ "${porcelain}" == false ]]
+    then
+        echo
+        display_message "gvm go package sets ($gvm_go_name)"
+        echo
+    else
+        echo "  G ${gvm_go_name}"
+    fi
+    if [[ -d "${GVM_ROOT}/pkgsets/${gvm_go_name}" ]]; then
+        local pkgset_local="$(find_local_pkgset)"
+        if [[ -d "${pkgset_local}" ]]; then
+            if [[ "${gvm_pkgset_name}" == "__local__" ]]; then
+                echo "=>L ${pkgset_local}"
+            else
+                echo "  L ${pkgset_local}"
+            fi
+        fi
+        unset pkgset_local
+
+        for cur_dir in "${GVM_ROOT}/pkgsets/${gvm_go_name}/"*; do
+            [[ "${cur_dir}" == "${GVM_ROOT}/pkgsets/${gvm_go_name}/*" ]] && exit
+            local pkgset=$(basename "${cur_dir}")
+            if [[ "${gvm_pkgset_name}" == "${pkgset}" ]]; then
+                echo "=>  ${pkgset}"
+            else
+                echo "    ${pkgset}"
+            fi
+            unset pkgset
+        done
+    fi
+    [[ "${porcelain}" == false ]] && echo
+
+    return 0
+}
+
+option="${1}"
+if [[ "x${option}" != "x" ]]
+then
+    case "${option}" in
+        --help|-h)
+            usage; exit 0
+            ;;
+        --porcelain)
+            list true; exit $?
+            ;;
+        *)
+            display_warning "Unrecognized command line argument: '$option'"
+            usage; exit 1
+            ;;
+    esac
+else
+    list
 fi
-echo
-

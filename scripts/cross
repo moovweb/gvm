@@ -13,9 +13,9 @@ display_list() {
 	echo
 	display_message "Installed platforms:"
 	echo
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH windows_ | sed 's/^/   /g'
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH darwin_ | sed 's/^/   /g'
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH linux_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH windows_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH darwin_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH linux_ | sed 's/^/   /g'
 	echo
 	exit 1
 }

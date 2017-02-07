@@ -18,4 +18,4 @@ export PATH="$GVM_ROOT/bin:$PATH"
 export GVM_PATH_BACKUP="$PATH"
 [ -f "$GVM_ROOT/environments/default" ] && . "$GVM_ROOT/environments/default"
 . "$GVM_ROOT/scripts/env/gvm"
-
+. "$GVM_ROOT/scripts/env/cd" && cd .

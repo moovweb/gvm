@@ -9,3 +9,5 @@ tmp/
 scripts/gvm
 Gemfile.lock
 .vagrant/
+.ruby-version
+.ruby-gemset
