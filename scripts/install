@@ -187,13 +187,13 @@ download_binary() {
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
 	if [ ! -f $GO_BINARY_PATH ]; then
-		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+		curl -s -f -L -# $GO_BINARY_URL | tee ${GO_BINARY_PATH}
 
 		if [[ $? -ne 0 ]]; then
 			display_error "Failed to download binary go from http://golang.org. Trying https://go.googlecode.com"
 			GO_BINARY_URL="https://go.googlecode.com/files/${GO_BINARY_FILE}"
 
-			curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+			curl -s -f -L -# $GO_BINARY_URL | tee ${GO_BINARY_PATH}
 
 			if [[ $? -ne 0 ]]; then
 				display_error "Failed to download binary go"
