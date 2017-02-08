@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+function setup_goroot_path() {
+        # Check if it's not already defined
+        if [ -z "$GOROOT" ]; then
+    	    export GOROOT=`go env GOROOT`
+        fi
+}
+
