@@ -32,7 +32,9 @@ read_command_line "$@"
 echo
 display_message "gvm gos (available)"
 echo
-versions=$(git ls-remote -t https://go.googlesource.com/go | awk -F/ '{ print $NF }' | $SORT_PATH)
+
+GO_SOURCE_URL=${GO_SOURCE_URL:-https://go.googlesource.com/go}
+versions=$(git ls-remote -t ${GO_SOURCE_URL} | awk -F/ '{ print $NF }' | $SORT_PATH)
 if [[ $? -ne 0 ]]; then
 	display_fatal "Failed to get version list from Google"
 fi
