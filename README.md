@@ -28,7 +28,9 @@ To install:
 
     bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
 
-Or if you are using zsh just change `bash` with `zsh`
+Or if you are using zsh:
+
+    zsh < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
 
 Installing Go
 =============
