@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$GVM_ROOT/scripts/functions"
+pkgset_name="$(basename "$PWD")"
+
+target="$GVM_ROOT/pkgsets/$gvm_go_name/$pkgset_name/src"
+
+gvm pkgset create $pkgset_name
+ln -sv "$PWD" "$target"
