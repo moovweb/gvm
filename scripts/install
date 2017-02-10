@@ -248,7 +248,7 @@ install_gb() {
 install_goprotobuf() {
 	command -v protoc &> /dev/null || display_warning "Could not find protocol buffer compiler
 
-  linux: apt-get install protobuf-compiler
+  ubuntu: apt-get install protobuf-compiler
   mac:   brew install protobuf
 "
 	display_message " * Installing goprotobuf..."
