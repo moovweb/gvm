@@ -23,3 +23,5 @@ rm -rf "$target_top/pkgsets/$gvm_go_name/$target_set_name" ||
 rm -rf "$target_top/environments/$gvm_go_name@$target_set_name" ||
     display_fatal "Could not delete package set"
 
+. "$GVM_ROOT/scripts/env/pkgset-use"
+gvm_pkgset_use "global"
