@@ -172,6 +172,8 @@ download_binary() {
 
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
+	elif [ "$(uname -m)" == "ppc64le" ]; then
+		GVM_ARCH="ppc64le"
 	else
 		GVM_ARCH="386"
 	fi
