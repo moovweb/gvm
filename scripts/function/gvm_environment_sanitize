@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function gvm_environment_sanitize() {
-	local ACTIVE_GO="$(which go)"
+	local ACTIVE_GO="$(command -v go)"
 	if [[ "${ACTIVE_GO/${GOROOT}}" != "/bin/go" ]]; then
 		OLD_GOROOT="$GOROOT" && unset GOROOT
 		GOROOT="$(go env GOROOT)"
