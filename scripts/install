@@ -81,7 +81,7 @@ copy_source() {
 
 compile_go() {
 	display_message " * Compiling..."
-	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$GOROOT
+	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT)
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
 	export PATH=$GOBIN:$PATH &&
