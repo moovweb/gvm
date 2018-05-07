@@ -4,6 +4,7 @@
 function show_usage() {
 	echo "Usage: gvm linkthis [package-name] [options]"
 	echo "    -h, --help     Display this message."
+	echo "    -f, --force    Remove existing destination and create symlink again."
 	echo
 	echo "If the [package-name] is provided, it will be used in the path based"
 	echo "at \${GOPATH%%:*}/src, e.g.:"
@@ -21,6 +22,9 @@ function read_command_line() {
 				show_usage
 				exit 0
 			;;
+			-f|--force*)
+				force="-f"
+			;;
 			-*|--*)
 				echo "Invalid option $i"
 				show_usage
@@ -35,10 +39,11 @@ function read_command_line() {
 
 package_name="$(basename "$PWD")"
 package_name_basename="$package_name"
+force=""
 
 read_command_line "$@"
 
 target="${GOPATH%%:*}/src/$package_name"
 
 mkdir -p "$(dirname "$target")"
-ln -sv "$PWD" "$target"
+ln -sv $force "$PWD" "$target"
