@@ -8,7 +8,7 @@ command -v git &> /dev/null ||
 	error_message="${error_message}
 Could not find git
 
-  linux: apt-get install mercurial
+  ubuntu: apt-get install mercurial
   mac:   brew install mercurial
 "
 # Check for ar
@@ -16,35 +16,36 @@ command -v ar &> /dev/null ||
 	error_message="${error_message}
 Could not find binutils
 
-  linux: apt-get install binutils
+  ubuntu: apt-get install binutils
 "
 # Check for bison
 command -v bison &> /dev/null ||
 	error_message="${error_message}
 Could not find bison
 
-  linux: apt-get install bison
+  ubuntu: apt-get install bison
+  fedora: dnf install bison bison-devel
 "
 # Check for gcc
 command -v gcc &> /dev/null ||
 	error_message="${error_message}
 Could not find gcc
 
-  linux: apt-get install gcc
+  ubuntu: apt-get install gcc
 "
 # Check for make
 command -v make &> /dev/null ||
 	error_message="${error_message}
 Could not find make
 
-  linux: apt-get install make
+  ubuntu: apt-get install make
 "
 # Check for curl
 command -v curl &> /dev/null ||
 	error_message="${error_message}
 Could not find curl
 
-  linux: apt-get install curl
+  ubuntu: apt-get install curl
   mac:   brew install curl
 "
 
