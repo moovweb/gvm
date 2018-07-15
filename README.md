@@ -46,7 +46,7 @@ Additional options can be specified when installing Go:
         -B,  --binary             Only install from binary.
              --prefer-binary      Attempt a binary install, falling back to source.
         -h,  --help               Display this message.
-        
+
 ### A Note on Compiling Go 1.5+
 Go 1.5+ removed the C compilers from the toolchain and [replaced][compiler_note] them with one written in Go. Obviously, this creates a bootstrapping problem if you don't already have a working Go install. In order to compile Go 1.5+, make sure Go 1.4 is installed first.
 
@@ -86,6 +86,7 @@ Mac OS X Requirements
 xcode-select --install
 brew update
 brew install mercurial
+brew install go
 ```
 
 Linux Requirements
