@@ -1,0 +1,20 @@
+version: 2
+
+build: &build
+  docker:
+    - image: circleci/ruby:2
+  steps:
+    - checkout
+    - run: binscripts/gvm-installer ${CIRCLE_SHA1} ${CIRCLE_WORKING_DIRECTORY}/tmp
+    - run: gem install tf -v '>=0.4.1' --no-document
+    - run: source ${CIRCLE_WORKING_DIRECTORY}/tmp/gvm/scripts/gvm; rake default scenario
+
+jobs:
+  build:
+    <<: *build
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
