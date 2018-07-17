@@ -46,6 +46,6 @@ for version in $versions; do
 	else
 		echo "   $version"
 	fi
-done
+done | sort -V
 echo
 
