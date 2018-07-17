@@ -5,6 +5,9 @@ build: &build
     - image: circleci/ruby:2
   environment:
     TERM: xterm
+    SRC_REPO: /home/circleci/project
+    GVM_NO_GIT_BAK: 1
+    GVM_NO_UPDATE_PROFILE: 1
   steps:
     - checkout
     - run: sudo apt-get -y install --no-install-recommends curl git mercurial make binutils bison gcc build-essential
