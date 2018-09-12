@@ -21,7 +21,7 @@ read_command_line() {
 		show_usage
 		exit 1
 	fi
-	GO_SOURCE_URL=https://go.googlesource.com/go
+	GO_SOURCE_URL=https://github.com/golang/go
 	for i in "$@"; do
 		case $i in
 			-s=*|--source=*)
