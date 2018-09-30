@@ -59,6 +59,7 @@ SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
 
   debian/ubuntu: apt-get install git
   redhat/centos: yum install git
+  archlinux: pacman -S git
   mac:   brew install git
 "
 
