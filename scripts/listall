@@ -46,6 +46,6 @@ for version in $versions; do
 	else
 		echo "   $version"
 	fi
-done | sort -V
+done | $SED_PATH -E -e 's/([^0-9]+)/ \1 /g' | $SORT_PATH -k1,1 -k2,2n -k3,3 -k4,4n -k5,5 -k6,6n | $SED_PATH -E -e 's/ ([^0-9]+) /\1/g'
 echo
 
