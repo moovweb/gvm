@@ -6,15 +6,20 @@ function gvm_use() {
 	fi
 
 	if [[ "x$1" == x ]]; then
-		display_error "Please specify the version"
-		return 1
+		if [[ -s "$PWD/.go-version" ]]; then
+			local _go_version=$(cat .go-version | tr -d '\n')
+			display_message "Using version $_go_version from .go-version"
+		else
+			display_error "Please specify the version"
+			return 1
+		fi
 	fi
 
-	if [[ "$1" =~ ^(.+)@(.+)$ ]]; then
+	if [[ "$_go_version" =~ ^(.+)@(.+)$ ]]; then
 		local VERSION="${BASH_REMATCH[1]}"
 		local PKGSET="${BASH_REMATCH[2]}"
 	else
-		local VERSION=$1
+		local VERSION=$_go_version
         fi
 
 	fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
@@ -31,7 +36,7 @@ function gvm_use() {
 	gvm_export_path
 	. "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null || display_error "Couldn't source environment" || return 1
 	gvm_environment_sanitize "$fuzzy_match"
-	if [[ "$2" == "--default" ]]; then
+	if [[ "$2" == "--default" ]] || [[ "$1" == "--default" && "$#" == "1" ]]; then
 		cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default" || display_error "Couldn't make $fuzzy_match default"
 	fi
 
