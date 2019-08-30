@@ -14,9 +14,9 @@ function gvm_use() {
 			display_error "Please specify the version"
 			return 1
 		fi
+	else
+		local _go_version="$1"
 	fi
-
-	local _go_version="$1"
 
 	if [[ "$_go_version" =~ ^(.+)@(.+)$ ]]; then
 		local VERSION="${BASH_REMATCH[1]}"
