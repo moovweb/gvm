@@ -5,6 +5,7 @@ function gvm_use() {
 		return 1
 	fi
 
+
 	if [[ "x$1" == x ]]; then
 		if [[ -s "$PWD/.go-version" ]]; then
 			local _go_version=$(cat .go-version | tr -d '\n')
@@ -14,6 +15,8 @@ function gvm_use() {
 			return 1
 		fi
 	fi
+
+	local _go_version="$1"
 
 	if [[ "$_go_version" =~ ^(.+)@(.+)$ ]]; then
 		local VERSION="${BASH_REMATCH[1]}"
