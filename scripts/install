@@ -185,7 +185,8 @@ download_binary() {
 	else
 		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
 	fi
-	# please set `GO_BINARY_BASE_URL` to `https://dl.google.com/go` in China.
+	# `GO_BINARY_BASE_URL` env allow user setting base URL for binaries
+	# download, e.g. "https://dl.google.com/go".
 	GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL:-"https://storage.googleapis.com/golang"}
 	GO_BINARY_URL="${GO_BINARY_BASE_URL}/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
