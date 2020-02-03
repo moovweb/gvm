@@ -2,7 +2,11 @@
 
 [![Build Status](https://travis-ci.org/moovweb/gvm.svg?branch=master)](https://travis-ci.org/moovweb/gvm)
 
-by Josh Bussdieker (jbuss, jaja, jbussdieker) while working at [Moovweb](https://www.moovweb.com)
+By Josh Bussdieker (jbuss, jaja, jbussdieker) while working at [Moovweb](https://www.moovweb.com)
+
+Currently lovingly maintained by [Benjamin Knigge](https://github.com/BenKnigge)
+
+Pull requests and other any other contributions would be very much appreciated.
 
 GVM provides an interface to manage Go versions.
 
