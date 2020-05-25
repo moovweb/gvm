@@ -13,9 +13,9 @@ display_list() {
 	echo
 	display_message "Installed platforms:"
 	echo
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH windows_ | sed 's/^/   /g'
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH darwin_ | sed 's/^/   /g'
-	$LS_PATH "$GOROOT/pkg" | $GREP_PATH linux_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH windows_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH darwin_ | sed 's/^/   /g'
+	$LS_PATH -1 "$GOROOT/pkg" | $GREP_PATH linux_ | sed 's/^/   /g'
 	echo
 	exit 1
 }
@@ -47,7 +47,7 @@ if [ ! -d "$GOROOT/pkg/${GOOS}_${GOARCH}" ]; then
 		export CGO_ENABLED=0
 	fi
 
-	cd "$GOROOT/src"
+	builtin cd "$GOROOT/src"
 	if [ -d pkg/runtime ]; then
 		runtime='pkg/runtime'
 	else

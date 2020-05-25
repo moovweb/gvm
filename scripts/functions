@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+
 for function in $GVM_ROOT/scripts/function/*; do
+	# function names preceded by an underscore should be loaded by other
+	# scripts explicitly as needed.
+	if [[ "${function##*/}" =~ ^_ ]]; then
+		continue
+	fi
+
 	. "$function"
 done

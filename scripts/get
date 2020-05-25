@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+
 . "$GVM_ROOT/scripts/functions"
 
 [[ -d $GVM_ROOT/.git ]] || mv "$GVM_ROOT/git.bak" "$GVM_ROOT/.git" &> /dev/null ||
 	display_fatal "Couldn't find git info"
 
-cd "$GVM_ROOT"
+builtin cd "$GVM_ROOT"
 
 if [[ -n $1 ]]; then
   git checkout "$1" -f || display_fatal "Failed to checkout $1 branch"
