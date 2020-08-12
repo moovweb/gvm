@@ -69,7 +69,7 @@ check_tag() {
 
 update_source() {
 	display_message "Updating Go source..."
-	(cd "$GO_CACHE_PATH" && git pull >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
+	(cd "$GO_CACHE_PATH" && git pull --tags >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
