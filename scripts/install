@@ -4,6 +4,7 @@
 function show_usage() {
 	echo "Usage: gvm install [version] [options]"
 	echo "    -s,  --source=SOURCE      Install Go from specified source."
+	echo "    -u,  --update-source      Fetch latest source."
 	echo "    -n,  --name=NAME          Override the default name for this version."
 	echo "    -pb, --with-protobuf      Install Go protocol buffers."
 	echo "    -b,  --with-build-tools   Install package build tools."
@@ -24,6 +25,9 @@ read_command_line() {
 	GO_SOURCE_URL=https://github.com/golang/go
 	for i in "$@"; do
 		case $i in
+			-u|--update-source)
+				UPDATE_SOURCE="true"
+			;;
 			-s=*|--source=*)
 				GO_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
 			;;
@@ -65,6 +69,12 @@ download_source() {
 
 check_tag() {
     version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+}
+
+check_branch() {
+    # create a local branch pointing at the given remote branch if possible
+    (cd "$GO_CACHE_PATH" && git branch -f "$VERSION" "origin/${VERSION}" >/dev/null 2>/dev/null) || return 1
+    version=${VERSION}
 }
 
 update_source() {
@@ -280,10 +290,10 @@ install_goprotobuf() {
 
 install_from_source() {
 	download_source
-	check_tag
-	if [[ "$?" == "1" ]]; then
+	check_tag || check_branch
+	if [[ "$?" == "1" || "$UPDATE_SOURCE" == "true" ]]; then
 		update_source
-		check_tag || display_fatal "Unrecognized Go version"
+		check_tag || check_branch || display_fatal "Unrecognized Go version"
 	fi
 	if [[ "$GO_NAME" == "" ]]; then
 		GO_NAME=$version

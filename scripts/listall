@@ -36,6 +36,16 @@ versions=$(git ls-remote -t https://github.com/golang/go | awk -F/ '{ print $NF 
 if [[ $? -ne 0 ]]; then
 	display_fatal "Failed to get version list from Google"
 fi
+
+# include dev branches if listing all available versions
+dev_versions=()
+if [[ "$tag_filter" == "" ]]; then
+	dev_versions=$(git ls-remote --heads https://github.com/golang/go | grep /dev. | awk -F/dev. '{ print "dev." $NF }')
+	if [[ $? -ne 0 ]]; then
+		display_fatal "Failed to get dev branch list from Google"
+	fi
+fi
+
 for version in $versions; do
 	if [[ "$tag_filter" == "release" ]]; then
 		if [[ "${version:0:7}" == "release" ]]; then
@@ -47,5 +57,10 @@ for version in $versions; do
 		echo "   $version"
 	fi
 done | sort -V
+
+for version in $dev_versions; do
+	echo "   $version"
+done | sort -V
+
 echo
 
