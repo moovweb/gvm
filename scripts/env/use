@@ -17,7 +17,7 @@ function gvm_use() {
 		local VERSION=$1
         fi
 
-	fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
+	fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH --color=never "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH --color=never "$VERSION")
 	if [[ "$?" != "0" ]]; then
 		GO_CACHE_PATH=$GVM_ROOT/archive/go
 		version=$(cd "$GO_CACHE_PATH" && git tag -l "$VERSION")
