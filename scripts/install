@@ -64,7 +64,7 @@ download_source() {
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH --color=never "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH --color=never -w "$VERSION")
 }
 
 update_source() {
@@ -294,7 +294,7 @@ install_from_source() {
 	command -v goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH --color=never "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
