@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+. "$GVM_ROOT/scripts/functions"
+
+function gvm_applymod(){
+
+	mod_file=go.mod
+	if [ ! -f $mod_file ]; then
+		return $(display_error "can not find go.mod")
+	fi
+
+	mod_ver=$(cat go.mod | grep -E 'go [[:digit:]]+.[[:digit:]]+' | tr -d ' ' | tr -d '\n')
+    mod_name=$(cat go.mod | grep 'module ' | tr -d '\n')
+	display_message "$mod_name use go version: $mod_ver"
+
+	if [ $(gvm list | grep $mod_ver | wc -l | tr -d '\n') -lt 1 ]; then
+		if [ $(gvm listall -a| grep $mod_ver | wc -l | tr -d '\n') -lt 1 ]; then
+			return $(display_error "can not find a go version match $mod_ver") 
+		fi
+
+		display_message "$mod_ver does not exist, try to install..."
+		$GVM_ROOT/scripts/install $mod_ver
+
+		if [ $? -ne 0 ]; then
+			return $(display_error "gvm install $mod_ver error")
+		fi
+	fi
+
+	gvm_use "$mod_ver"
+
+}
