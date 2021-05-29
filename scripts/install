@@ -64,7 +64,7 @@ download_source() {
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+	version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
@@ -173,9 +173,9 @@ download_binary() {
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
-	        GVM_ARCH="ppc64le"
+		GVM_ARCH="ppc64le"
 	elif [ "$(uname -m)" == "aarch64" ]; then
-      	        GVM_ARCH="arm64"
+		GVM_ARCH="arm64"
 	else
 		GVM_ARCH="386"
 	fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 [ -n "$GVM_DEBUG" ] && {
-  set -x
+	set -x
 }
 
 if [ -z "$GVM_ROOT" ]; then
@@ -19,7 +19,7 @@ fi
 
 command=$1
 if [[ $command == "implode" ]]; then
-  gvm_implode
+	gvm_implode
 	exit 0
 fi
 
