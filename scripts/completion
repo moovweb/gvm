@@ -78,6 +78,8 @@ _gvm()
 			return 0
 		;;
 	esac
+
+	return 0
 }
 complete -F _gvm gvm
 
