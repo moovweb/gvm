@@ -81,5 +81,5 @@ _gvm()
 
 	return 0
 }
-complete -F _gvm gvm
+complete -o default -F _gvm gvm
 
