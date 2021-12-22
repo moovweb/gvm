@@ -155,16 +155,10 @@ download_binary() {
 	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
-			GVM_OS_VERSION="-osx10.8"
-		elif [ "${osx_major_version}" -ge 6 ]; then
+		if [ "$(sw_vers -productVersion)" < "10.8" ]; then
 			GVM_OS_VERSION="-osx10.6"
 		else
-			display_error "Binary Go unavailable for this platform"
-			rm -rf $GO_INSTALL_ROOT
-			rm -f $GO_BINARY_PATH
-			exit 1
+			GVM_OS_VERSION="-osx10.8"
 		fi
 	else
 		GVM_OS="linux"
@@ -173,9 +167,9 @@ download_binary() {
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
-	        GVM_ARCH="ppc64le"
-	elif [ "$(uname -m)" == "aarch64" ]; then
-      	        GVM_ARCH="arm64"
+		GVM_ARCH="ppc64le"
+	elif [[ "$(uname -m)" == "arm64" || "$(uname -m)" == "aarch64" ]]; then
+		GVM_ARCH="arm64"
 	else
 		GVM_ARCH="386"
 	fi
