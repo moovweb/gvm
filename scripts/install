@@ -155,8 +155,11 @@ download_binary() {
 	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
+		while IFS=. read -a prod; do
+			osx_major_version=${prod[0]}
+			osx_minor_version=${prod[1]}
+		done <<<$(sw_vers -productVersion)
+		if [ "${osx_major_version}" -ge 11 ] || [ "${osx_minor_version}" -ge 8 ]; then
 			GVM_OS_VERSION="-osx10.8"
 		elif [ "${osx_major_version}" -ge 6 ]; then
 			GVM_OS_VERSION="-osx10.6"
