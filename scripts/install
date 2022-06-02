@@ -81,6 +81,15 @@ copy_source() {
 
 compile_go() {
 	display_message " * Compiling..."
+	# Test for Windows
+	case "$(uname)" in
+	*MINGW* | *WIN32* | *CYGWIN*)
+		MAKE_SCRIPT=make.bat
+		;;
+	*)
+		MAKE_SCRIPT=make.bash
+		;;
+	esac
 	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT) 
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
@@ -88,7 +97,7 @@ compile_go() {
 	export GOROOT=$GO_INSTALL_ROOT &&
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
 	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	builtin cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+	builtin cd "$GO_INSTALL_ROOT/src" && ./$MAKE_SCRIPT &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
 		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
