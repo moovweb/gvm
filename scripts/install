@@ -156,10 +156,14 @@ download_binary() {
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
 		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
+		osx_master_version="$(sw_vers -productVersion | cut -d "." -f 1)"
 		if [ "${osx_major_version}" -ge 8 ]; then
 			GVM_OS_VERSION="-osx10.8"
 		elif [ "${osx_major_version}" -ge 6 ]; then
 			GVM_OS_VERSION="-osx10.6"
+		elif [ "${osx_master_version}" -ge 12 ]; then
+			GVM_OS_VERSION="-osx12.x"
+			display_message "support osx12"
 		else
 			display_error "Binary Go unavailable for this platform"
 			rm -rf $GO_INSTALL_ROOT
@@ -173,9 +177,12 @@ download_binary() {
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
-	        GVM_ARCH="ppc64le"
+	    GVM_ARCH="ppc64le"
 	elif [ "$(uname -m)" == "aarch64" ]; then
-      	        GVM_ARCH="arm64"
+        GVM_ARCH="arm64"
+	elif [ "$(uname -m)" == "arm64" ]; then
+        GVM_ARCH="arm64"
+		display_message "Apple silicon architecture is supported"
 	else
 		GVM_ARCH="386"
 	fi
