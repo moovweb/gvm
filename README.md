@@ -37,7 +37,7 @@ Or if you are using zsh just change `bash` with `zsh`
 Installing Go
 =============
     gvm install go1.4
-    gvm use go1.4 [--default]
+    gvm use go1.4 --default
 Once this is done Go will be in the path and ready to use. $GOROOT and $GOPATH are set automatically.
 
 Additional options can be specified when installing Go:
