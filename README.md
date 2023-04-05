@@ -61,6 +61,20 @@ export GOROOT_BOOTSTRAP=$GOROOT
 gvm install go1.5
 ```
 
+#### To install Go 1.20+
+Go 1.20+ requires go1.17.3+. Use the below:
+
+```
+gvm install go1.4 -B
+gvm use go1.4
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.17.13
+gvm use go1.17.13
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.20
+gvm use go1.20
+```
+
 [compiler_note]: https://docs.google.com/document/d/1OaatvGhEAq7VseQ9kkavxKNAfepWy2yhPUBs96FGV28/edit
 
 List Go Versions
