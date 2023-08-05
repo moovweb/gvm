@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
+
 . "$GVM_ROOT/scripts/functions"
 
 [[ "$1" == "" ]] &&
 	display_fatal "Please specify the version"
 
-fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
+fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
 	display_fatal "Invalid version $1"
 
 if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
 	rm -rf "$GVM_ROOT/pkgsets/$fuzzy_match" &> /dev/null ||
-		display_fatal "Couldn't remove pkgsets"
+		display_fatal "Couldn't remove pkgsets. Please run 'gvm use $1 && go clean -modcache' and retry uninstall."
 	rm -f "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null ||
 		display_fatal "Couldn't remove environment files"
 	rm -f "$GVM_ROOT/environments/$fuzzy_match@"* &> /dev/null ||

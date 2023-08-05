@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 extract_version(){
 	# Go versions can either be go* or release*
 	# They can also have the suffix rc or betaN

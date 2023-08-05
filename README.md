@@ -21,7 +21,7 @@ Features
 
 Background
 ==========
-When we started developing in Go mismatched dependencies and API changes plauged our build process and made it extremely difficult to merge with other peoples changes.
+When we started developing in Go mismatched dependencies and API changes plagued our build process and made it extremely difficult to merge with other peoples changes.
 
 After nuking my entire GOROOT several times and rebuilding I decided to come up with a tool to oversee the process. It eventually evolved into what gvm is today.
 
@@ -30,7 +30,17 @@ Installing
 
 To install:
 
+1.  Install [Bison](https://www.gnu.org/software/bison/):
+
+    ```
+    sudo apt-get install bison
+    ```
+
+1.  Install gvm:
+
+    ```
     bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+    ```
 
 Or if you are using zsh just change `bash` with `zsh`
 
@@ -59,6 +69,20 @@ gvm install go1.4 -B
 gvm use go1.4
 export GOROOT_BOOTSTRAP=$GOROOT
 gvm install go1.5
+```
+
+#### To install Go 1.20+
+Go 1.20+ requires go1.17.3+. Use the below:
+
+```
+gvm install go1.4 -B
+gvm use go1.4
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.17.13
+gvm use go1.17.13
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.20
+gvm use go1.20
 ```
 
 [compiler_note]: https://docs.google.com/document/d/1OaatvGhEAq7VseQ9kkavxKNAfepWy2yhPUBs96FGV28/edit

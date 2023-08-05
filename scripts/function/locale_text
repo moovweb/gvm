@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# locale_text_for_key()
+# /*!
+# @abstract Retrieve the locale text for the specified key
+# @discussion
+# Retrieves the locale text for the specified key from the text files located
+#  in the 'locales' directory. Files in the directory are plain text and are
+#  named according to the following pattern:
+# <pre>@textblock
+#   [locale name]_[KEY].txt
+# @/textblock</pre>
+# For example, text for the key "go_install_promopt" in US english would be
+# located in a locale file with the name:
+# <pre>@textblock
+#   en-US_go_install_prompt.txt
+# @/textblock</pre>
+# Files are limited to 10 lines of text maximum, text beyond this point will be
+# truncated and an error status will be returned. Files that consist of only
+# blank lines will be truncated and an error status will be returned so that the
+# caller can use an alternate translation.
+# <b>NOTE:</b> Only the "en-US" locale is currently implemented througout gvm.
+# @param key Key for the text to retrieve
+# @param locale Local code for the text to retrieve
+# @return Returns a string containing the locale text (status 0) or an empty
+#   string (status 1) on failure.
+# */
+
+locale_text_for_key() {
+    local text_key="${1}"
+    local text_locale="${2:-en-US}"
+    local text_path="${GVM_ROOT}/locales"
+    local text_key_path="${text_path}/${text_locale}_${text_key}.txt"
+
+    [[ "x${text_key}" == "x" || ! -r "${text_key_path}" ]] && echo "" && return 1
+
+    local line_count=0
+    local text=""
+    while IFS= read -r _line; do
+        (( line_count++ ))
+        [[ "${line_count}" -gt 10 ]] && break
+        text+="${_line}"$'\n'
+    done <<< "$(cat "${text_key_path}")"
+
+    [[ -z "${line_count// }" ]] && text=""
+
+    echo "${text}"
+
+    if [[ "${line_count}" -gt 10 || -z "${text}" ]]
+    then
+        return 1
+    fi
+
+    return 0
+}
