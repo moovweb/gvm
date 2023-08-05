@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+
 . "$GVM_ROOT/scripts/functions"
 
 [[ "$1" == "" ]] &&
 	display_fatal "Please specify the version"
 
-fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
+fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
 	display_fatal "Invalid version $1"
 
 if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
