@@ -28,6 +28,10 @@ gvm() {
 		. "$GVM_ROOT/scripts/env/use"
 		shift
 		gvm_use "$@"
+	elif [[ "$1" == "applymod" ]]; then
+		. "$GVM_ROOT/scripts/env/use"
+		. "$GVM_ROOT/scripts/env/applymod"
+		gvm_applymod
 	elif [[ "$1" == "implode" ]]; then
 		. "$GVM_ROOT/scripts/env/implode"
 		gvm_implode
