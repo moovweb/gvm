@@ -113,7 +113,13 @@ if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
   elif [ "$(uname)" == "Linux" ]; then
     update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
   elif [ "$(uname)" == "Darwin" ]; then
-    update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+    LOGIN_SHELL=$(finger $(id -F) | grep Shell | cut -d : -f 3)
+    echo "macOS detected. User shell is:" $LOGIN_SHELL
+    if [ $LOGIN_SHELL == "/bin/zsh" ]; then 		# macOS moved to ZSH after macOS Catalina
+      update_profile "$HOME/.zshrc"
+    else
+      update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+    fi
   fi
 fi
 
