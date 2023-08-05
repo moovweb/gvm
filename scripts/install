@@ -179,10 +179,12 @@ download_binary() {
 		GVM_ARCH="arm64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
 	        GVM_ARCH="ppc64le"
-	elif [ "$(uname -m)" == "aarch64" ]; then
+	elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
       	        GVM_ARCH="arm64"
+	elif [[ "$(uname -m)" == "i386" || "$(uname -m)" == "i686" ]]; then
+		GVM_ARCH="i386"
 	else
-		GVM_ARCH="386"
+		GVM_ARCH="s390x"
 	fi
 
 	SEMVER=$(extract_version $VERSION)
