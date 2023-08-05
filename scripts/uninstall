@@ -10,7 +10,7 @@ fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD
 
 if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
 	rm -rf "$GVM_ROOT/pkgsets/$fuzzy_match" &> /dev/null ||
-		display_fatal "Couldn't remove pkgsets"
+		display_fatal "Couldn't remove pkgsets. Please run 'gvm use $1 && go clean -modcache' and retry uninstall."
 	rm -f "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null ||
 		display_fatal "Couldn't remove environment files"
 	rm -f "$GVM_ROOT/environments/$fuzzy_match@"* &> /dev/null ||
