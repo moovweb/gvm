@@ -108,9 +108,10 @@ source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DE
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
-  if [ -n "$ZSH_NAME" ]; then
+  if [ -f "$HOME/.zshrc" ]; then
     update_profile "$HOME/.zshrc"
-  elif [ "$(uname)" == "Linux" ]; then
+  fi
+  if [ "$(uname)" == "Linux" ]; then
     update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
   elif [ "$(uname)" == "Darwin" ]; then
     LOGIN_SHELL=$(finger $(id -u -n) | grep Shell | cut -d : -f 3)
