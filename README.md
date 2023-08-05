@@ -30,7 +30,17 @@ Installing
 
 To install:
 
+1.  Install [Bison](https://www.gnu.org/software/bison/):
+
+    ```
+    sudo apt-get install bison
+    ```
+
+1.  Install gvm:
+
+    ```
     bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+    ```
 
 Or if you are using zsh just change `bash` with `zsh`
 
