@@ -20,7 +20,7 @@ update_profile() {
 check_existing_go() {
 
 	if [ "$GOROOT" = "" ]; then
-		if which go > /dev/null; then
+		if which go > /dev/null 2>&1; then
 			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
 		else
 			echo "No existing Go versions detected"
@@ -39,6 +39,16 @@ export gvm_pkgset_name; gvm_pkgset_name="global"
 export GOROOT; GOROOT="$GOROOT"
 export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global"
 export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
+EOF
+
+	# create system@global pkgset
+	cp $GVM_DEST/$GVM_NAME/environments/system $GVM_DEST/$GVM_NAME/environments/system@global
+	# @TODO: This is here for consistency with 'gvm pkgset create' which adds
+	# some duplicated entries when the pkgset is 'global'. Need to fix it!
+	cat << EOF >> $GVM_DEST/$GVM_NAME/environments/system@global
+export gvm_pkgset_name="global"
+export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:\$GOPATH"
+export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:\$PATH"
 EOF
 }
 
@@ -88,7 +98,7 @@ fi
 # i.e: gvm-installer master foo
 pushd . > /dev/null
 
-cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	display_error "Failed to checkout $BRANCH branch"
+builtin cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	display_error "Failed to checkout $BRANCH branch"
 
 popd > /dev/null
 
@@ -98,12 +108,19 @@ source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DE
 source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
 
 if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
-  if [ -n "$ZSH_NAME" ]; then
+  if [ -f "$HOME/.zshrc" ]; then
     update_profile "$HOME/.zshrc"
-  elif [ "$(uname)" == "Linux" ]; then
+  fi
+  if [ "$(uname)" == "Linux" ]; then
     update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
   elif [ "$(uname)" == "Darwin" ]; then
-    update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+    LOGIN_SHELL=$(finger $(id -u -n) | grep Shell | cut -d : -f 3)
+    echo "macOS detected. User shell is:" $LOGIN_SHELL
+    if [ $LOGIN_SHELL == "/bin/zsh" ]; then 		# macOS moved to ZSH after macOS Catalina
+      update_profile "$HOME/.zshrc"
+    else
+      update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+    fi
   fi
 fi
 

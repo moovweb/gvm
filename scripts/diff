@@ -4,7 +4,7 @@
 version=$1
 
 if [ "$version" != "" ]; then
-  fuzzy_match=$($LS_PATH "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$version" | $HEAD_PATH -n 1 | $GREP_PATH "$version") ||
+  fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$version" | $HEAD_PATH -n 1 | $GREP_PATH "$version") ||
 		display_fatal "Invalid version $version"
 
 	foldername=$GVM_ROOT/gos/$fuzzy_match
@@ -17,7 +17,7 @@ else
 fi
 
 if [[ -d $foldername ]]; then
-	cd "$foldername"
+	builtin cd "$foldername"
 	find . > /tmp/manifest.test
 	diff manifest /tmp/manifest.test
 	if [[ "$?" == "0" ]]; then

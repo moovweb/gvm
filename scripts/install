@@ -64,12 +64,12 @@ download_source() {
 }
 
 check_tag() {
-    version=$(cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+    version=$(builtin cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
 }
 
 update_source() {
 	display_message "Updating Go source..."
-	(cd "$GO_CACHE_PATH" && git pull --tags >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
+	(builtin cd "$GO_CACHE_PATH" && git pull --tags >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
 		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
@@ -87,8 +87,8 @@ compile_go() {
 	export PATH=$GOBIN:$PATH &&
 	export GOROOT=$GO_INSTALL_ROOT &&
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
-	#cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
+	builtin cd "$GO_INSTALL_ROOT/src" && ./make.bash &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
 		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
@@ -101,8 +101,8 @@ create_enviroment() {
 	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global\"" >> "$new_env_file"
 	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay\"" >> "$new_env_file"
 	echo "export PATH; PATH=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/bin:\${GVM_ROOT}/gos/${GO_NAME}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}\"" >> "$new_env_file"
-	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${LD_LIBRARY_PATH}\"" >> "$new_env_file"
-	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib:\${DYLD_LIBRARY_PATH}\"" >> "$new_env_file"
+	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\"" >> "$new_env_file"
+	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}\"" >> "$new_env_file"
 	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> "$new_env_file"
 	. "$GVM_ROOT/scripts/env/use"
 	. "$GVM_ROOT/scripts/env/implode"
@@ -155,16 +155,19 @@ download_binary() {
 	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
 	if [ "$(uname)" == "Darwin" ]; then
 		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -ge 8 ]; then
-			GVM_OS_VERSION="-osx10.8"
-		elif [ "${osx_major_version}" -ge 6 ]; then
-			GVM_OS_VERSION="-osx10.6"
-		else
-			display_error "Binary Go unavailable for this platform"
-			rm -rf $GO_INSTALL_ROOT
-			rm -f $GO_BINARY_PATH
-			exit 1
+		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 1)"
+		osx_minor_version="$(sw_vers -productVersion | cut -d "." -f 2)"
+		if [ "${osx_major_version}" -le 10 ]; then
+			if [ "${osx_minor_version}" -ge 8 ]; then
+				GVM_OS_VERSION="-osx10.8"
+			elif [ "${osx_minor_version}" -ge 6 ]; then
+				GVM_OS_VERSION="-osx10.6"
+			else
+				display_error "Binary Go unavailable for this platform"
+				rm -rf $GO_INSTALL_ROOT
+				rm -f $GO_BINARY_PATH
+				exit 1
+			fi
 		fi
 	else
 		GVM_OS="linux"
@@ -172,12 +175,16 @@ download_binary() {
 
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
+	elif [ "$(uname -m)" == "arm64" ]; then
+		GVM_ARCH="arm64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
 	        GVM_ARCH="ppc64le"
-	elif [ "$(uname -m)" == "aarch64" ]; then
+	elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
       	        GVM_ARCH="arm64"
+	elif [[ "$(uname -m)" == "i386" || "$(uname -m)" == "i686" ]]; then
+		GVM_ARCH="i386"
 	else
-		GVM_ARCH="386"
+		GVM_ARCH="s390x"
 	fi
 
 	SEMVER=$(extract_version $VERSION)
@@ -189,7 +196,7 @@ download_binary() {
 	fi
 	# `GO_BINARY_BASE_URL` env allow user setting base URL for binaries
 	# download, e.g. "https://dl.google.com/go".
-	GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL:-"https://storage.googleapis.com/golang"}
+	GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL:-"https://go.dev/dl"}
 	GO_BINARY_URL="${GO_BINARY_BASE_URL}/${GO_BINARY_FILE}"
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
@@ -258,7 +265,7 @@ install_goprotobuf() {
 			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
 			return 1
 		fi
-		cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
+		builtin cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
 		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
 		if [[ $? -ne 0 ]]; then
 			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
@@ -294,7 +301,7 @@ install_from_source() {
 	command -v goinstall &> /dev/null ||
 		GVM_GOINSTALL="go get"
 
-	x="$(cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
+	x="$(builtin cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
 	if [[ "$?" == "1" ]]; then
 		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 			install_gb || display_warning "Failed to install gb"
@@ -305,7 +312,7 @@ install_from_source() {
 		fi
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main() {
@@ -328,7 +335,7 @@ main() {
 		install_from_source
 	fi
 
-	cd "$GO_INSTALL_ROOT" && find . > manifest
+	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
 }
 
 main "$@"
