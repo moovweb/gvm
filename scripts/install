@@ -184,12 +184,10 @@ download_binary() {
 
 	if [ "$(uname -m)" == "x86_64" ]; then
 		GVM_ARCH="amd64"
-	elif [ "$(uname -m)" == "arm64" ]; then
-		GVM_ARCH="arm64"
 	elif [ "$(uname -m)" == "ppc64le" ]; then
-	        GVM_ARCH="ppc64le"
+		GVM_ARCH="ppc64le"
 	elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
-      	        GVM_ARCH="arm64"
+		GVM_ARCH="arm64"
 	elif [[ "$(uname -m)" == "i386" || "$(uname -m)" == "i686" ]]; then
 		GVM_ARCH="i386"
 	elif [ "$(uname -m)" == "armv7l" || "$(uname -m)" == "armv6l" ]; then
