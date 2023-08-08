@@ -97,7 +97,7 @@ compile_go() {
 	export GOROOT=$GO_INSTALL_ROOT &&
 	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
 	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	builtin cd "$GO_INSTALL_ROOT/src" && ./$MAKE_SCRIPT &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
+	builtin cd "$GO_INSTALL_ROOT/src" && chmod -f +x $MAKE_SCRIPT && ./$MAKE_SCRIPT &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
 		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
 }
 
