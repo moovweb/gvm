@@ -71,6 +71,20 @@ export GOROOT_BOOTSTRAP=$GOROOT
 gvm install go1.7
 ```
 
+### A Note on ARMv6 and ARMv7 architectures (32 bit)
+Binary versions for ARMv6 architecture are available [starting from Go 1.6](https://go.dev/dl/#go1.6). So, it is necessary to bootstrap with an existing binary version, then it will be possible compiling other versions. For instance, to bootstrap a setup, version `1.21.0` may be used:
+
+```
+gvm install go1.21.0 -B
+gvm use go1.21.0
+```
+
+And then, compile any other version:
+
+```
+gvm install go1.20.7
+```
+
 #### To install Go 1.20+
 Go 1.20+ requires go1.17.3+. Use the below:
 
