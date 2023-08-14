@@ -182,15 +182,15 @@ download_binary() {
 		GVM_OS="linux"
 	fi
 
-	if [ "$(uname -m)" == "x86_64" ]; then
+	if [[ "$(uname -m)" == "x86_64" ]]; then
 		GVM_ARCH="amd64"
-	elif [ "$(uname -m)" == "ppc64le" ]; then
+	elif [[ "$(uname -m)" == "ppc64le" ]]; then
 		GVM_ARCH="ppc64le"
 	elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
 		GVM_ARCH="arm64"
 	elif [[ "$(uname -m)" == "i386" || "$(uname -m)" == "i686" ]]; then
 		GVM_ARCH="i386"
-	elif [ "$(uname -m)" == "armv7l" || "$(uname -m)" == "armv6l" ]; then
+	elif [[ "$(uname -m)" == "armv7l" || "$(uname -m)" == "armv6l" ]]; then
 		GVM_ARCH="armv6l"
 	else
 		GVM_ARCH="s390x"
