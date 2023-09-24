@@ -128,6 +128,7 @@ Mac OS X Requirements
 xcode-select --install
 brew update
 brew install mercurial
+brew install util-linux
 ```
 
 Linux Requirements
@@ -135,7 +136,7 @@ Linux Requirements
 
 Debian/Ubuntu
 ==================
-    sudo apt-get install curl git mercurial make binutils bison gcc build-essential
+    sudo apt-get install curl git mercurial make binutils bison gcc build-essential bsdmainutils
 
 Redhat/Centos
 ==================
@@ -146,6 +147,7 @@ Redhat/Centos
     sudo yum install bison
     sudo yum install gcc
     sudo yum install glibc-devel
+    sudo yum install util-linux
 
  * Install Mercurial from http://pkgs.repoforge.org/mercurial/
 
@@ -155,6 +157,7 @@ FreeBSD Requirements
     sudo pkg_add -r bash
     sudo pkg_add -r git
     sudo pkg_add -r mercurial
+    
 
 Vendoring Native Code and Dependencies
 ==================================================
