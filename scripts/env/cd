@@ -12,12 +12,12 @@
 if __gvm_is_function __gvm_oldcd; then
     # output from declare -f on zsh omits a newline before opening brace, so
     # we need to add the newline for consistency with bash.
-    eval "$(echo "cd()"; declare -f __gvm_oldcd | sed '1 s/{/\'$'\n''{/' | tail -n +2)"
+    eval "$(echo "cd()"; declare -f __gvm_oldcd | sed '1 s/{/\'$'\n''{/' | $TAIL_PATH -n +2)"
     unset -f __gvm_oldcd
 fi
 
 if __gvm_is_function cd; then
-    eval "$(echo "__gvm_oldcd()"; declare -f cd | sed '1 s/{/\'$'\n''{/' | tail -n +2)"
+    eval "$(echo "__gvm_oldcd()"; declare -f cd | sed '1 s/{/\'$'\n''{/' | $TAIL_PATH -n +2)"
 elif [[ "$(builtin type cd)" == "cd is a shell builtin" ]]; then
     eval "$(echo "__gvm_oldcd() { builtin cd \$*; return \$?; }")"
 fi

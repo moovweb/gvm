@@ -6,6 +6,7 @@ GREP_ERROR="GVM couldn't find grep"
 EGREP_ERROR="GVM couldn't find egrep"
 SORT_ERROR="GVM couldn't find sort"
 HEAD_ERROR="GVM couldn't find head"
+TAIL_ERROR="GVM couldn't find tail"
 HEXDUMP_ERROR="GVM couldn't find hexdump"
 
 LS_PATH=$(unalias ls &> /dev/null; command -v ls) || display_error "$LS_ERROR" || return 1
@@ -15,4 +16,5 @@ GREP_PATH=$(unalias grep &> /dev/null; command -v grep) || display_error "$GREP_
 EGREP_PATH=$(unalias egrep &> /dev/null; command -v egrep) || display_error "$EGREP_ERROR" || return 1
 SORT_PATH=$(unalias sort &> /dev/null; command -v sort) || display_error "$SORT_ERROR" || return 1
 HEAD_PATH=$(unalias head &> /dev/null; command -v head) || display_error "$HEAD_ERROR" || return 1
+TAIL_PATH=$(unalias tail &> /dev/null; command -v tail) || display_error "$TAIL_ERROR" || return 1
 HEXDUMP_PATH=$(unalias hexdump &> /dev/null; command -v hexdump) || display_error "$HEXDUMP_ERROR" || return 1
