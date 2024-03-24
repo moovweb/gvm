@@ -45,7 +45,7 @@ __gvm_read_environment_file() {
     while IFS=$'\n' read -r _line; do
         local __key __val
         # skip comment lines
-        [[ "${_line}" =~ \#.* ]] && continue
+        [[ ! "${_line}" =~ \#.* ]] || continue
 
         # each parseable line follows this format:
         #   export VAR; VAR="VALUE"

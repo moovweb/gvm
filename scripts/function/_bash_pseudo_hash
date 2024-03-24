@@ -76,7 +76,7 @@ setValueForKeyFakeAssocArray() {
     unset i _target_ary_length
 
     # key not found, append
-    [[ "${found}" == false ]] && target_ary+=( "${target_key}:${_encoded_new_value}" )
+    [[ "${found}" != false ]] || target_ary+=( "${target_key}:${_encoded_new_value}" )
 
     printf "%s" "${target_ary[*]}"
 

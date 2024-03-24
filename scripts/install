@@ -57,7 +57,7 @@ read_command_line() {
 
 download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
-	[[ -d $GO_CACHE_PATH ]] && return
+	[[ ! -d $GO_CACHE_PATH ]] || return
 	display_message "Downloading Go source..."
 	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
 		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
@@ -90,7 +90,7 @@ compile_go() {
 		MAKE_SCRIPT=make.bash
 		;;
 	esac
-	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT) 
+	[ -n "$GOROOT_BOOTSTRAP" ] || export GOROOT_BOOTSTRAP=$(go env GOROOT) 
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
 	export PATH=$GOBIN:$PATH &&
@@ -327,7 +327,7 @@ install_from_source() {
 main() {
 	trap 'display_fatal "Canceled!"' INT
 	read_command_line "$@"
-	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
+	[[ "$VERSION" != "" ]] || display_fatal "No version specified"
 
 	if [[ "$GO_NAME" == "" ]]; then
 		GO_NAME=$VERSION

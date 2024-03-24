@@ -78,11 +78,11 @@ __gvm_munge_path() {
         for (( i=0; i<${#path_out_ary[@]}; i++ ))
         do
             local __element="${path_out_ary[i]}"
-            [[ -n "${__element}" ]] && _dedupe_path_out_ary+=( "${__element}" )
+            [[ -z "${__element}" ]] || _dedupe_path_out_ary+=( "${__element}" )
             # reset duplicates to an empty string so we can ignore them
             for (( j=${#path_out_ary[@]}-1; j>i; j-- ))
             do
-                [[ "${__element}" == "${path_out_ary[j]}" ]] && path_out_ary[j]=""
+                [[ "${__element}" != "${path_out_ary[j]}" ]] || path_out_ary[j]=""
             done
             unset __element
         done

@@ -22,7 +22,7 @@ display_list() {
 
 command -v go &> /dev/null || display_fatal "Only available in versions after Go 1"
 
-[ -z "$1" ] && display_list
+[ -n "$1" ] || display_list
 
 if [ ! -f "$GOROOT/pkg/tool/cross" ]; then
 	display_message "Installing x86, x86-64, and ARM commands"
@@ -38,7 +38,7 @@ fi
 
 export GOOS=$1
 shift
-[ -z "$1" ] && display_usage && display_fatal "arch is not specified"
+[ -n "$1" ] || display_usage && display_fatal "arch is not specified"
 export GOARCH=$1
 
 if [ ! -d "$GOROOT/pkg/${GOOS}_${GOARCH}" ]; then
