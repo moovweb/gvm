@@ -72,7 +72,7 @@ gvm_use() {
 
     for _option in "${@}"
     do
-        [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
+        [[ "${GVM_DEBUG}" -ne 1 ]] || echo "Parsing ${FUNCNAME[0]}() argument: ${_option:-[EMPTY]}"
 
         # if the accumulator has a trailing option flag (that is, the option
         # flag has been specified but no argument has been supplied) then make
@@ -220,14 +220,14 @@ gvm_use() {
 
     # fix PATH to correct order
     local fixed_path="$(__gvm_munge_path)"
-    [[ "${GVM_DEBUG}" -eq 1 ]] && echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
+    [[ "${GVM_DEBUG}" -ne 1 ]] || echo "Original path: $PATH" && echo "Munged path: ${fixed_path}"
     export PATH="${fixed_path}"
     unset fixed_path
 
     if [[ -n "$(valueForKeyFakeAssocArray "--default" "${options_hash[*]}")" ]]
     then
         cp "$GVM_ROOT/environments/$fuzzy_match" "$GVM_ROOT/environments/default"
-        [[ $? -ne 0 ]] && display_error "Couldn't make $fuzzy_match default"
+        [[ $? -eq 0 ]] || display_error "Couldn't make $fuzzy_match default"
     fi
 
     local pkgset="$(valueForKeyFakeAssocArray "--pkgset" "${options_hash[*]}")"

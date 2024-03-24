@@ -25,7 +25,10 @@ __gvm_resolve_fallback_pkgset() {
     local local_pkgset_regex='^([[:space:]]*[=>*]*)(L[[:space:]]+)(\/[^:\\\n\\\0]*)+$'
     local goversion_regex='^([[:space:]]*[=>*]*)(G[[:space:]]+)(go([0-9]+(\.[0-9]+)*))$'
 
-    [[ "x${version}" == "x" ]] && echo "" && return 1
+    if [[ "x${version}" == "x" ]]; then
+        echo ""
+        return 1
+    fi
 
     while IFS=$'\n' read -r _line; do
         # skip the G (go version) line

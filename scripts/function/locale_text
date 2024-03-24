@@ -32,17 +32,20 @@ locale_text_for_key() {
     local text_path="${GVM_ROOT}/locales"
     local text_key_path="${text_path}/${text_locale}_${text_key}.txt"
 
-    [[ "x${text_key}" == "x" || ! -r "${text_key_path}" ]] && echo "" && return 1
+    if [[ "x${text_key}" == "x" || ! -r "${text_key_path}" ]]; then
+        echo ""
+        return 1
+    fi
 
     local line_count=0
     local text=""
     while IFS= read -r _line; do
         (( line_count++ ))
-        [[ "${line_count}" -gt 10 ]] && break
+        [[ "${line_count}" -lt 11 ]] || break
         text+="${_line}"$'\n'
     done <<< "$(cat "${text_key_path}")"
 
-    [[ -z "${line_count// }" ]] && text=""
+    [[ -n "${line_count// }" ]] || text=""
 
     echo "${text}"
 
