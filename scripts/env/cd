@@ -19,7 +19,7 @@ fi
 if __gvm_is_function cd; then
     eval "$(echo "__gvm_oldcd()"; declare -f cd | sed '1 s/{/\'$'\n''{/' | tail -n +2)"
 elif [[ "$(builtin type cd)" == "cd is a shell builtin" ]]; then
-    eval "$(echo "__gvm_oldcd() { builtin cd \$*; return \$?; }")"
+    eval "$(echo "__gvm_oldcd() { if [[ -z \"\$*\" ]]; then builtin cd; return \$?; else builtin cd \"\$*\"; return \$?; fi }")"
 fi
 
 # Path cleanup
