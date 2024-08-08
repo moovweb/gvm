@@ -48,7 +48,7 @@ __gvm_munge_path() {
         return 1
     fi
 
-    IFS=': ' path_in_ary=( $(printf "%s" "${path_in}") ) IFS="$defaultIFS"
+    IFS=': ' path_in_ary=( "$(printf "%s" "${path_in}")" ) IFS="$defaultIFS"
 
     # extract path elements
     local _path
@@ -57,19 +57,19 @@ __gvm_munge_path() {
         if [[ "${_path}" =~ $gvm_regex ]]
         then
             # echo "matched (gvm): ${_path}"
-            gvm_ary+=(${_path})
+            gvm_ary+=("${_path}")
         elif [[ "${_path}" =~ $rvm_regex ]]
         then
             # echo "matched (rvm): ${_path}"
-            rvm_ary+=(${_path})
+            rvm_ary+=("${_path}")
         else
-            general_ary+=(${_path})
+            general_ary+=("${_path}")
         fi
     done
     unset _path
 
     # assemble path array
-    path_out_ary=( ${rvm_ary[@]} ${gvm_ary[@]} ${general_ary[@]} )
+    path_out_ary=( "${rvm_ary[@]}" "${gvm_ary[@]}" "${general_ary[@]}" )
 
     # deduplicate path_out_ary if requested, do this just to be helpful :)
     if [[ "${path_dedupe_flag}" == true ]]
@@ -86,7 +86,7 @@ __gvm_munge_path() {
             done
             unset __element
         done
-        path_out_ary=( ${_dedupe_path_out_ary[@]} )
+        path_out_ary=( "${_dedupe_path_out_ary[@]}" )
         unset _dedupe_path_out_ary
     fi
 
