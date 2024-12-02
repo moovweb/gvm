@@ -181,7 +181,7 @@ __gvmp_find_closest_dot_go_pkgset() {
 __gvmp_read_dot_go_version() {
     local filepath="${1}"
     local version=""
-    local regex='^(go([0-9]+(\.[0-9]+)*))$'
+    local regex='^((go)?([0-9]+(\.[0-9]+)*))$'
 
     while IFS=$'\n' read -r _line; do
         # skip comment lines
@@ -189,7 +189,12 @@ __gvmp_read_dot_go_version() {
 
         # looking for pattern "go1.2[.3]"
         if [[ "${_line}" =~ ${regex} ]]; then
-            version="${_line}"
+            if [[ "${_line}" = go* ]]; then
+                version="${_line}"
+            else
+                # if the version is not prefixed with "go" add it
+                version="go${_line}"
+            fi
             break
         fi
     done <<< "$(cat "${filepath}")"
