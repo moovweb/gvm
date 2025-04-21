@@ -203,6 +203,10 @@ download_binary() {
 	else
 		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
 	fi
+	# Prepend "go" if not specified
+	if [ "${GO_BINARY_FILE:0:2}" != "go" ]; then
+		GO_BINARY_FILE="go${GO_BINARY_FILE}"
+	fi
 	# `GO_BINARY_BASE_URL` env allow user setting base URL for binaries
 	# download, e.g. "https://dl.google.com/go".
 	GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL:-"https://go.dev/dl"}
@@ -210,7 +214,7 @@ download_binary() {
 	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
 
 	if [ ! -f $GO_BINARY_PATH ]; then
-		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
+		curl --progress-bar -f -L $GO_BINARY_URL -o ${GO_BINARY_PATH}
 
 		if [[ $? -ne 0 ]]; then
 			display_error "Failed to download binary go"
@@ -348,3 +352,4 @@ main() {
 }
 
 main "$@"
+
