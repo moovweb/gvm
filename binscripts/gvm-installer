@@ -124,7 +124,8 @@ if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
   fi
 fi
 
-if [ -z "$GVM_NO_UPDATE_PROFILE" ] && [ "$?" != "0" ]; then
+# check $? first, otherwise may ref the test condition
+if [ "$?" != "0" ] && [ -z "$GVM_NO_UPDATE_PROFILE" ]; then
 	echo "Unable to locate profile settings file(Something like $HOME/.bashrc or $HOME/.bash_profile)"
 	echo
 	echo " You will have to manually add the following line:"
