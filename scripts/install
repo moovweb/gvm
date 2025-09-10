@@ -59,8 +59,10 @@ download_source() {
 	GO_CACHE_PATH=$GVM_ROOT/archive/go
 	[[ -d $GO_CACHE_PATH ]] && return
 	display_message "Downloading Go source..."
-	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
-		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
+	git clone --progress "$GO_SOURCE_URL" "$GO_CACHE_PATH" 2>&1 | tee "$GVM_ROOT/logs/go-download.log"
+	if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        display_fatal "Couldn't download Go source. Check the logs: $GVM_ROOT/logs/go-download.log"
+    fi
 }
 
 check_tag() {
