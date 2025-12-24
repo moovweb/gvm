@@ -18,6 +18,9 @@ fi
 
 if __gvm_is_function cd; then
     eval "$(echo "__gvm_oldcd()"; declare -f cd | sed '1 s/{/\'$'\n''{/' | tail -n +2)"
+elif [[ "$(builtin type cd)" == *"aliased to"* ]]; then
+    eval "__gvm_oldcd() { $(alias cd | sed "s/^alias cd=['\"]//; s/['\"]$//") \"\$@\"; }"
+    unalias cd
 elif [[ "$(builtin type cd)" == "cd is a shell builtin" ]]; then
     eval "$(echo "__gvm_oldcd() { builtin cd \$*; return \$?; }")"
 fi
@@ -47,6 +50,8 @@ cd() {
     # @FIXME: gvm_oldcd is broken on re-sourcing .bashrc!
     if __gvm_is_function __gvm_oldcd; then
         __gvm_oldcd $*
+    else
+        builtin cd "$@"
     fi
 
     local dot_go_version dot_go_pkgset rslt
