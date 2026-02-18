@@ -97,6 +97,12 @@ gvm use go1.17.13
 export GOROOT_BOOTSTRAP=$GOROOT
 gvm install go1.20
 gvm use go1.20
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.22.6
+gvm use go1.22.6
+export GOROOT_BOOTSTRAP=$GOROOT
+gvm install go1.25.4
+gvm use go1.25.4
 ```
 
 [compiler_note]: https://docs.google.com/document/d/1OaatvGhEAq7VseQ9kkavxKNAfepWy2yhPUBs96FGV28/edit
