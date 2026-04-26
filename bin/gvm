@@ -23,7 +23,7 @@ if [[ $command == "implode" ]]; then
 	exit 0
 fi
 
-"$GVM_ROOT/scripts/gvm-check"
+"$GVM_ROOT/scripts/gvm-check" "$@"
 if [[ "$?" != "0" ]]; then
 	display_fatal "Missing requirements."
 fi
