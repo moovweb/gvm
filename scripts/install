@@ -345,6 +345,7 @@ main() {
 	fi
 
 	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
+	display_message "Run 'gvm use $GO_NAME' to start using this Go version."
 }
 
 main "$@"
