@@ -286,7 +286,16 @@ _encode() {
                 new_string+="$__char"
                 ;;
             *)
-                hex="$(echo -n "$__char" | $HEXDUMP_PATH -e '1 1 "!%02x"')"
+                if [[ -n "$HEXDUMP_PATH" ]]; then
+                    hex="$(printf "%s" "$__char" | "$HEXDUMP_PATH" -e '1 1 "!%02x"')"
+                elif [[ -n "$OD_PATH" ]]; then
+                    hex="$(printf "%s" "$__char" | "$OD_PATH" -An -tx1 | "$TR_PATH" -d ' \n' | "$SED_PATH" 's/../!&/g')"
+                elif [[ -n "$XXD_PATH" ]]; then
+                    hex="$(printf "%s" "$__char" | "$XXD_PATH" -p -c 1 | "$SED_PATH" 's/../!&/g' | "$TR_PATH" -d '\n')"
+                else
+                    display_error "$HEX_ENCODER_ERROR"
+                    return 1
+                fi
                 new_string+="${hex//!/%}"
                 ;;
         esac

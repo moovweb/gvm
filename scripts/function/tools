@@ -6,7 +6,7 @@ GREP_ERROR="GVM couldn't find grep"
 EGREP_ERROR="GVM couldn't find egrep"
 SORT_ERROR="GVM couldn't find sort"
 HEAD_ERROR="GVM couldn't find head"
-HEXDUMP_ERROR="GVM couldn't find hexdump"
+HEX_ENCODER_ERROR="GVM couldn't find hexdump, od, or xxd"
 
 LS_PATH=$(unalias ls &> /dev/null; command -v ls) || display_error "$LS_ERROR" || return 1
 TR_PATH=$(unalias tr &> /dev/null; command -v tr) || display_error "$TR_ERROR" || return 1
@@ -15,4 +15,10 @@ GREP_PATH=$(unalias grep &> /dev/null; command -v grep) || display_error "$GREP_
 EGREP_PATH=$(unalias egrep &> /dev/null; command -v egrep) || display_error "$EGREP_ERROR" || return 1
 SORT_PATH=$(unalias sort &> /dev/null; command -v sort) || display_error "$SORT_ERROR" || return 1
 HEAD_PATH=$(unalias head &> /dev/null; command -v head) || display_error "$HEAD_ERROR" || return 1
-HEXDUMP_PATH=$(unalias hexdump &> /dev/null; command -v hexdump) || display_error "$HEXDUMP_ERROR" || return 1
+HEXDUMP_PATH=$(unalias hexdump &> /dev/null; command -v hexdump)
+OD_PATH=$(unalias od &> /dev/null; command -v od)
+XXD_PATH=$(unalias xxd &> /dev/null; command -v xxd)
+
+if [[ -z "$HEXDUMP_PATH" && -z "$OD_PATH" && -z "$XXD_PATH" ]]; then
+	display_error "$HEX_ENCODER_ERROR" || return 1
+fi
