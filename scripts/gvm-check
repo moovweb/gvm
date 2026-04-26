@@ -2,51 +2,98 @@
 . "$GVM_ROOT/scripts/functions"
 
 error_message=""
+command=$1
+shift || true
+
+platform="$(uname)"
+
+install_hint() {
+	case "$platform" in
+		*MINGW* | *MSYS* | *WIN32* | *CYGWIN*)
+			case "$1" in
+				git) echo "  windows: install Git for Windows from https://git-scm.com/download/win" ;;
+				curl) echo "  windows: install curl with Git for Windows or a recent Windows release" ;;
+				binutils | bison | gcc | make)
+					echo "  windows: install MSYS2 from https://www.msys2.org/ and run this in the MSYS2 MinGW64 shell:"
+					echo "           pacman -S mingw-w64-x86_64-binutils mingw-w64-x86_64-bison mingw-w64-x86_64-gcc make"
+				;;
+			esac
+		;;
+		Darwin)
+			case "$1" in
+				git) echo "  mac:   xcode-select --install" ;;
+				curl) echo "  mac:   brew install curl" ;;
+				binutils) echo "  mac:   xcode-select --install" ;;
+				bison) echo "  mac:   brew install bison" ;;
+				gcc | make) echo "  mac:   xcode-select --install" ;;
+			esac
+		;;
+		*)
+			case "$1" in
+				git) echo "  linux: apt-get install git" ;;
+				curl) echo "  linux: apt-get install curl" ;;
+				binutils) echo "  linux: apt-get install binutils" ;;
+				bison) echo "  linux: apt-get install bison" ;;
+				gcc) echo "  linux: apt-get install gcc" ;;
+				make) echo "  linux: apt-get install make" ;;
+			esac
+		;;
+	esac
+}
+
+append_missing_requirement() {
+	error_message="${error_message}
+Could not find $1
+
+$(install_hint "$1")
+"
+}
+
+requires_build_tools() {
+	if [[ -z "$command" ]]; then
+		return 0
+	fi
+
+	if [[ "$command" != "install" && "$command" != "cross" ]]; then
+		return 1
+	fi
+
+	if [[ "$command" == "cross" ]]; then
+		return 0
+	fi
+
+	for option in "$@"; do
+		case "$option" in
+			-B | --binary)
+				return 1
+			;;
+		esac
+	done
+
+	return 0
+}
 
 # Check for git
 command -v git &> /dev/null ||
-	error_message="${error_message}
-Could not find git
-
-  linux: apt-get install mercurial
-  mac:   brew install mercurial
-"
-# Check for ar
-command -v ar &> /dev/null ||
-	error_message="${error_message}
-Could not find binutils
-
-  linux: apt-get install binutils
-"
-# Check for bison
-command -v bison &> /dev/null ||
-	error_message="${error_message}
-Could not find bison
-
-  linux: apt-get install bison
-"
-# Check for gcc
-command -v gcc &> /dev/null ||
-	error_message="${error_message}
-Could not find gcc
-
-  linux: apt-get install gcc
-"
-# Check for make
-command -v make &> /dev/null ||
-	error_message="${error_message}
-Could not find make
-
-  linux: apt-get install make
-"
+	append_missing_requirement "git"
 # Check for curl
 command -v curl &> /dev/null ||
-	error_message="${error_message}
-Could not find curl
+	append_missing_requirement "curl"
 
-  linux: apt-get install curl
-  mac:   brew install curl
-"
+if requires_build_tools "$@"; then
+	# Check for ar
+	command -v ar &> /dev/null ||
+		append_missing_requirement "binutils"
+	# Check for bison
+	command -v bison &> /dev/null ||
+		append_missing_requirement "bison"
+	# Check for gcc
+	command -v gcc &> /dev/null ||
+		append_missing_requirement "gcc"
+	# Check for make
+	command -v make &> /dev/null ||
+		append_missing_requirement "make"
+fi
 
 if [ -n "$error_message" ]; then
 	display_warning "$error_message"
