@@ -20,6 +20,9 @@ if __gvm_is_function cd; then
     eval "$(echo "__gvm_oldcd()"; declare -f cd | sed '1 s/{/\'$'\n''{/' | tail -n +2)"
 elif [[ "$(builtin type cd)" == "cd is a shell builtin" ]]; then
     eval "$(echo "__gvm_oldcd() { builtin cd \$*; return \$?; }")"
+else
+    # cd is aliased (e.g. by oh-my-bash) — fall back to builtin cd
+    eval "$(echo "__gvm_oldcd() { builtin cd \$*; return \$?; }")"
 fi
 
 # Path cleanup
