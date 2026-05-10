@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+__gvm_get_required_bootstrap_version() {
+    local version=$1
+    if [[ "$version" == "master" ]]; then
+        echo "1.22.6"
+        return 0
+    fi
+    
+    local semver=$(extract_version "$version")
+    
+    # Check for non-numeric versions (like tip, etc)
+    if [[ ! "$semver" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+        # Default to latest bootstrap for unknown versions
+        echo "1.22.6"
+        return 0
+    fi
+
+    # Go 1.24+ needs Go 1.22.6+
+    compare_version "$semver" "1.24"
+    if [[ $? -ne 2 ]]; then
+        echo "1.22.6"
+        return 0
+    fi
+    
+    # Go 1.22+ needs Go 1.20+
+    compare_version "$semver" "1.22"
+    if [[ $? -ne 2 ]]; then
+        echo "1.20.14"
+        return 0
+    fi
+    
+    # Go 1.20+ needs Go 1.17.13+
+    compare_version "$semver" "1.20"
+    if [[ $? -ne 2 ]]; then
+        echo "1.17.13"
+        return 0
+    fi
+    
+    # Go 1.5+ needs Go 1.4+
+    compare_version "$semver" "1.5"
+    if [[ $? -ne 2 ]]; then
+        echo "1.4.3"
+        return 0
+    fi
+    
+    echo ""
+    return 1
+}
+
+__gvm_find_best_installed_bootstrap() {
+    local min_version=$1
+    local best_version=""
+    local best_semver=""
+    
+    if [[ ! -d "$GVM_ROOT/gos" ]]; then
+        return 1
+    fi
+
+    for v_dir in "$GVM_ROOT/gos"/*; do
+        [[ -d "$v_dir" ]] || continue
+        [[ -x "$v_dir/bin/go" ]] || continue
+        local v_name=$(basename "$v_dir")
+        local v_semver=$(extract_version "$v_name")
+        
+        # Only consider numeric versions
+        if [[ ! "$v_semver" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            continue
+        fi
+        
+        compare_version "$v_semver" "$min_version"
+        if [[ $? -ne 2 ]]; then # v_semver >= min_version
+            if [[ -z "$best_version" ]]; then
+                best_version=$v_name
+                best_semver=$v_semver
+            else
+                compare_version "$v_semver" "$best_semver"
+                if [[ $? -eq 1 ]]; then # v_semver > best_semver
+                    best_version=$v_name
+                    best_semver=$v_semver
+                fi
+            fi
+        fi
+    done
+    
+    if [[ -n "$best_version" ]]; then
+        echo "$best_version"
+        return 0
+    fi
+    return 1
+}
+
+__gvm_is_bootstrap_compatible() {
+    local target=$1
+    local bootstrap_path=$2
+    
+    local req_version=$(__gvm_get_required_bootstrap_version "$target")
+    if [[ -z "$req_version" ]]; then
+        return 0 # No bootstrap needed
+    fi
+    
+    if [[ -z "$bootstrap_path" ]]; then
+        return 1 # No bootstrap path provided
+    fi
+    
+    if [[ ! -x "$bootstrap_path/bin/go" ]]; then
+        return 1 # Bootstrap path doesn't have a working go
+    fi
+
+    # Try to get the version of the bootstrap Go
+    local bootstrap_version_out=$("$bootstrap_path/bin/go" version 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+    
+    # Extract version from "go version go1.22.6 linux/amd64"
+    local bootstrap_version=$(echo "$bootstrap_version_out" | awk '{print $3}')
+    local bootstrap_semver=$(extract_version "$bootstrap_version")
+    
+    compare_version "$bootstrap_semver" "$req_version"
+    if [[ $? -ne 2 ]]; then
+        return 0 # Compatible (>=)
+    fi
+    
+    return 1 # Incompatible (<)
+}
+
+__gvm_ensure_bootstrap() {
+    local target_version=$1
+    local req_version=$(__gvm_get_required_bootstrap_version "$target_version")
+    
+    if [[ -z "$req_version" ]]; then
+        return 0
+    fi
+    
+    local bootstrap_version=$(__gvm_find_best_installed_bootstrap "$req_version")
+    
+    if [[ -n "$bootstrap_version" ]]; then
+        export GOROOT_BOOTSTRAP="$GVM_ROOT/gos/$bootstrap_version"
+        display_message "Using $bootstrap_version as bootstrap"
+        return 0
+    fi
+    
+    display_message "No suitable bootstrap Go version found. Installing go$req_version binary..."
+    
+    # Use the absolute path to gvm to ensure we use the right one
+    "$GVM_ROOT/bin/gvm" install "go$req_version" --binary || {
+        display_error "Failed to install bootstrap Go version go$req_version"
+        return 1
+    }
+    
+    export GOROOT_BOOTSTRAP="$GVM_ROOT/gos/go$req_version"
+    return 0
+}
