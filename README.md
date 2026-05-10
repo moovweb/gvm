@@ -62,42 +62,17 @@ Additional options can be specified when installing Go:
         -h,  --help               Display this message.
         
 ### A Note on Compiling Go 1.5+
-Go 1.5+ removed the C compilers from the toolchain and [replaced][compiler_note] them with one written in Go. Obviously, this creates a bootstrapping problem if you don't already have a working Go install. In order to compile Go 1.5+, make sure Go 1.4 is installed first. If Go 1.4 won't install try a later version (e.g. go1.5), just make sure you have the `-B` option after the version number. 
+Go 1.5+ removed the C compilers from the toolchain and replaced them with one written in Go. GVM handles this bootstrapping problem automatically. When you install a version of Go from source that requires a bootstrap compiler, GVM will:
 
-```
-gvm install go1.4 -B
-gvm use go1.4
-export GOROOT_BOOTSTRAP=$GOROOT
-gvm install go1.7
-```
+1.  Search your installed versions for a compatible bootstrap Go.
+2.  If none is found, it will automatically download and install the required bootstrap version as a binary.
+3.  Use that binary to compile your target version.
+
+This allows you to install any version of Go (including `master`) on a clean system without any pre-existing Go installation.
 
 ### A Note on ARMv6 and ARMv7 architectures (32 bit)
-Binary versions for ARMv6 architecture are available [starting from Go 1.6](https://go.dev/dl/#go1.6). So, it is necessary to bootstrap with an existing binary version, then it will be possible compiling other versions. For instance, to bootstrap a setup, version `1.21.0` may be used:
+Binary versions for ARMv6 architecture are available [starting from Go 1.6](https://go.dev/dl/#go1.6). GVM will automatically pull a compatible binary to bootstrap source installations on ARM platforms as well.
 
-```
-gvm install go1.21.0 -B
-gvm use go1.21.0
-```
-
-And then, compile any other version:
-
-```
-gvm install go1.20.7
-```
-
-#### To install Go 1.20+
-Go 1.20+ requires go1.17.3+. Use the below:
-
-```
-gvm install go1.4 -B
-gvm use go1.4
-export GOROOT_BOOTSTRAP=$GOROOT
-gvm install go1.17.13
-gvm use go1.17.13
-export GOROOT_BOOTSTRAP=$GOROOT
-gvm install go1.20
-gvm use go1.20
-```
 
 [compiler_note]: https://docs.google.com/document/d/1OaatvGhEAq7VseQ9kkavxKNAfepWy2yhPUBs96FGV28/edit
 

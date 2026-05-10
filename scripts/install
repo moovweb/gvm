@@ -90,7 +90,13 @@ compile_go() {
 		MAKE_SCRIPT=make.bash
 		;;
 	esac
-	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT) 
+
+	[ -z "$GOROOT_BOOTSTRAP" ] && [ "$(command -v go)" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT)
+
+	if ! __gvm_is_bootstrap_compatible "$GO_NAME" "$GOROOT_BOOTSTRAP"; then
+		__gvm_ensure_bootstrap "$GO_NAME" || display_fatal "Failed to ensure bootstrap Go version"
+	fi
+
 	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
 	export GOBIN=$GO_INSTALL_ROOT/bin &&
 	export PATH=$GOBIN:$PATH &&
@@ -196,8 +202,8 @@ download_binary() {
 		GVM_ARCH="s390x"
 	fi
 
-	SEMVER=$(extract_version $VERSION)
-	compare_version $SEMVER "1.4.3"
+	SEMVER=$(extract_version "$VERSION")
+	compare_version "$SEMVER" "1.4.3"
 	if [ $? -eq 2 ]; then
 		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
 	else
