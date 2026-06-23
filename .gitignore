@@ -5,6 +5,7 @@ pkgsets/
 archive/
 environments/
 tmp/
+logs/
 *.log
 scripts/gvm
 Gemfile.lock

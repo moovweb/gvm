@@ -8,8 +8,8 @@ command -v git &> /dev/null ||
 	error_message="${error_message}
 Could not find git
 
-  linux: apt-get install mercurial
-  mac:   brew install mercurial
+  linux: apt-get install git
+  mac:   brew install git
 "
 # Check for ar
 command -v ar &> /dev/null ||

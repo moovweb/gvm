@@ -73,9 +73,14 @@ update_source() {
 		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
 }
 
-copy_source() {
-	git clone -b "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
+create_worktree() {
+    # $GO_CACHE_PATH – shared repository (created by download_source)
+    # $GO_INSTALL_ROOT – target directory under $GVM_ROOT/gos/<name>
+    # $version – exact tag matching the requested version
+    # Create the worktree and log any problem.
+    git -C "$GO_CACHE_PATH" worktree add "$GO_INSTALL_ROOT" "$version" \
+        >> "$GVM_ROOT/logs/go-${GO_NAME}-worktree.log" 2>&1 \
+        || display_fatal "Failed to create worktree for $version. See $GVM_ROOT/logs/go-${GO_NAME}-worktree.log"
 }
 
 
@@ -153,7 +158,7 @@ install_go() {
 	fi
 
 	create_global_package_set
-	copy_source
+	create_worktree
 	compile_go
 	create_enviroment
 
