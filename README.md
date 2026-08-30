@@ -44,6 +44,38 @@ To install:
 
 Or if you are using zsh just change `bash` with `zsh`
 
+Installing from source
+======================
+
+The installer clones a repository, so it can install any fork or branch. Point
+`SRC_REPO` at the repository and pass the branch or tag as the first argument
+(it defaults to `master`):
+
+```
+SRC_REPO=https://github.com/danish-a1/gvm.git \
+  bash < <(curl -s -S -L https://raw.githubusercontent.com/danish-a1/gvm/master/binscripts/gvm-installer) master
+```
+
+To install from a clone you already have, run the installer from inside it —
+it copies the working tree instead of cloning:
+
+```
+git clone https://github.com/danish-a1/gvm.git
+cd gvm
+./binscripts/gvm-installer
+```
+
+The installer refuses to overwrite an existing install, so remove the old one
+first and open a new shell afterwards:
+
+```
+rm -rf ~/.gvm
+```
+
+Your Go versions live in `~/.gvm/gos` and are deleted with it. To keep them,
+move the directory aside and move `gos`, `pkgsets` and `environments` back
+after installing.
+
 Installing Go
 =============
     gvm install go1.4

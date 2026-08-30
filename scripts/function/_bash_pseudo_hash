@@ -286,7 +286,7 @@ _encode() {
                 new_string+="$__char"
                 ;;
             *)
-                hex="$(echo -n "$__char" | $HEXDUMP_PATH -e '1 1 "!%02x"')"
+                hex="$(echo -n "$__char" | ${HEXDUMP_PATH:-hexdump} -e '1 1 "!%02x"')"
                 new_string+="${hex//!/%}"
                 ;;
         esac
