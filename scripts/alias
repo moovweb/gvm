@@ -1,29 +1,102 @@
 #!/usr/bin/env bash
+#
+# gvm alias - one command for everything, the way nvm does it.
+#
+#   gvm alias                    list aliases
+#   gvm alias <name>             print what <name> resolves to
+#   gvm alias create <n> <t>     create
+#   gvm alias delete <n>         delete
+#   gvm alias <n> <t>            create (shorthand)
+
 . "$GVM_ROOT/scripts/functions"
 
-command=$1
-if [[ -f $GVM_ROOT/scripts/alias-$command ]]; then
-	shift
-  "$GVM_ROOT/scripts/alias-$command" "$@"
-elif [[ -n $command ]]; then
-  display_fatal "Unrecognized command line argument: '$command'"
-else
-  echo "= gvm alias
+show_usage() {
+	cat <<'EOF'
+Usage: gvm alias [command] [<args>]
 
-* http://github.com/moovweb/gvm
+  gvm alias                        List every alias and what it points at
+  gvm alias <name>                 Resolve <name> and print the version
+  gvm alias create <name> <target> Create an alias; <target> may be another alias
+  gvm alias delete <name>          Remove an alias
 
-== DESCRIPTION:
+  gvm alias <name> <target>        Shorthand for create
 
-GVM alias is used to manage go version aliases
+  Built-in aliases, which cannot be redefined or deleted:
+    default     whatever `gvm use --default` last selected
+    stable      the newest stable release
+    latest      the newest stable release, same as stable
+    unstable    the newest release candidate or beta
+    newest      the newest release, release candidates included
+    oldest      the oldest stable release still published
+EOF
+}
 
-== Usage
+list_aliases() {
+	echo
+	display_message "gvm go aliases"
+	echo
 
-  gvm alias Command
+	local found=0 name target resolved
+	for name in $(gvm_alias_list); do
+		target="$(gvm_alias_raw "$name")"
+		resolved="$(gvm_alias_resolve "$name" 2> /dev/null)" || resolved="(dangling)"
+		printf "   %-16s -> %-16s %s\n" "$name" "$target" "$resolved"
+		found=1
+	done
 
-== Command
+	for name in default stable latest oldest; do
+		resolved="$(gvm_alias_resolve "$name" 2> /dev/null)"
+		if [ -n "$resolved" ]; then
+			printf "   %-16s -> %-16s(built-in)\n" "$name" "$resolved"
+			found=1
+		fi
+	done
 
-  create     - create a new alias
-  delete     - delete an alias
-  list       - list aliases"
-fi
+	[ "$found" = "0" ] && printf "   (none)\n"
+	echo
+}
 
+command="${1:-}"
+
+case "$command" in
+	-h | --help | help)
+		show_usage
+		;;
+	create)
+		shift
+		gvm_alias_create "${1:-}" "${2:-}" || exit 1
+		display_message "Alias ${1:-} -> ${2:-}"
+		;;
+	delete | del | rm | remove)
+		shift
+		[ -n "${1:-}" ] || {
+			show_usage
+			exit 65
+		}
+		gvm_alias_delete "$1" || exit 1
+		display_message "Alias $1 deleted"
+		;;
+	list | ls)
+		shift
+		list_aliases
+		;;
+	"")
+		list_aliases
+		;;
+	*)
+		# Two arguments means create, otherwise this is a lookup.
+		if [ -n "${2:-}" ]; then
+			gvm_alias_create "$command" "$2" || exit 1
+			display_message "Alias $command -> $2"
+		else
+			resolved="$(gvm_alias_resolve "$command" 2> /dev/null)"
+			if [ -n "$resolved" ]; then
+				echo "$resolved"
+			else
+				display_error "'$command' is not an alias"
+				display_message "Create it with: gvm alias $command <version>"
+				exit 1
+			fi
+		fi
+		;;
+esac

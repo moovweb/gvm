@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+#
+# gvm ls - installed versions, in the shape nvm users expect.
+#
+#   -> v1.24.13       the active version
+#      v1.24.12
+#   -> default -> v1.24.13
+
+. "$GVM_ROOT/scripts/functions"
+
+show_usage() {
+	cat <<'EOF'
+Usage: gvm ls [options]
+
+  -v, --version       Print the gvm version and exit.
+      --no-colors     Disable colorized output (also honours TERM=dumb).
+  -h, --help          Show this message.
+EOF
+}
+
+NO_COLORS=""
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-v | --version) exec "$GVM_ROOT/bin/gvm" version ;;
+		--no-colors) NO_COLORS=1 ;;
+		-h | --help)
+			show_usage
+			exit 0
+			;;
+		*)
+			display_warning "Invalid option: $1"
+			show_usage
+			exit 65
+			;;
+	esac
+	shift
+done
+
+# Colours, when the terminal will take them. nvm's --no-colors and TERM=dumb
+# both suppress this; gvm historically ignored colour entirely.
+if [ -z "$NO_COLORS" ] && [ "${TERM:-dumb}" != "dumb" ] && [ -t 1 ] && [ -z "${GVM_NO_COLORS:-}" ]; then
+	C_RESET=$'\033[0m'
+	C_GREEN=$'\033[0;32m'
+	C_YELLOW=$'\033[0;33m'
+	C_CYAN=$'\033[0;36m'
+else
+	C_RESET="" C_GREEN="" C_YELLOW="" C_CYAN=""
+fi
+
+active="$gvm_go_name"
+
+echo
+display_message "gvm gos (installed)"
+echo
+
+installed=0
+for version in $(gvm_versions_installed); do
+	installed=$((installed + 1))
+	if [ "$version" = "$active" ]; then
+		printf "  ${C_GREEN}-> %s${C_RESET}\n" "$version"
+	elif [ -z "${gvm_pkgset_name:-}" ] || [ "$gvm_pkgset_name" = "global" ]; then
+		printf "     %s\n" "$version"
+	else
+		printf "     ${C_CYAN}%s${C_RESET} (%s)\n" "$version" "$gvm_pkgset_name"
+	fi
+done
+
+if [ "$installed" = "0" ]; then
+	printf "     ${C_YELLOW}(none)${C_RESET}\n"
+	printf "     Install one with: %sgvm install%s\n" "$C_GREEN" "$C_RESET"
+fi
+
+# Show what the implicit aliases point at, so `gvm use stable` is never a
+# mystery.
+echo
+display_message "Aliases"
+echo
+listed=0
+for name in $(gvm_alias_list); do
+	target="$(gvm_alias_raw "$name")"
+	printf "     %-14s -> %s\n" "$name" "$target"
+	listed=1
+done
+for name in stable latest unstable oldest; do
+	resolved="$(gvm_alias_resolve "$name" 2> /dev/null)"
+	if [ -n "$resolved" ]; then
+		printf "     ${C_CYAN}%-14s${C_RESET} -> %-14s${C_YELLOW}(built-in)${C_RESET}\n" "$name" "$resolved"
+		listed=1
+	fi
+done
+recorded="$(gvm_default_recorded 2> /dev/null)"
+if [ -n "$recorded" ]; then
+	printf "     %-14s -> %s\n" "default" "$recorded"
+	listed=1
+fi
+[ "$listed" = "0" ] && printf "     ${C_YELLOW}(none)${C_RESET}\n"
+
+echo

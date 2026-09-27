@@ -1,350 +1,620 @@
 #!/usr/bin/env bash
+#
+# gvm install
+#
+# Historically this cloned the entire golang/go repository with git, which
+# costs well over a gigabyte of history and minutes of wall clock just to
+# obtain a ~30MB source tarball that go.dev already publishes. Both the
+# binary and the source path now come from the official artifacts, verified
+# against the SHA256 in the release index, and nothing is cloned unless you
+# explicitly ask for a git checkout with --from-git.
+
 . "$GVM_ROOT/scripts/functions"
 
-function show_usage() {
-	echo "Usage: gvm install [version] [options]"
-	echo "    -s,  --source=SOURCE      Install Go from specified source."
-	echo "    -n,  --name=NAME          Override the default name for this version."
-	echo "    -pb, --with-protobuf      Install Go protocol buffers."
-	echo "    -b,  --with-build-tools   Install package build tools."
-	echo "    -B,  --binary             Only install from binary."
-	echo "         --prefer-binary      Attempt a binary install, falling back to source."
-	echo "    -h,  --help               Display this message."
+INSTALL_METHOD="prefer-binary"
+GO_NAME=""
+GO_VERSION=""
+GIT_SOURCE_URL="https://github.com/golang/go"
+GIT_REF=""
+BUILT_VERSION=""
+FORCE=""
+SET_DEFAULT=""
+NO_CACHE=""
+REQUESTED=""
+
+# Progress and diagnostics go to stderr, for the whole installer.
+#
+# This script captures the output of helpers such as fetch_artifact with
+# "$(...)", and the display functions defined in scripts/function write to
+# stdout. A "Downloading go1.27.1.linux-amd64.tar.gz" line would therefore end
+# up inside the path that fetch_artifact is supposed to return, and every
+# install would fail in tar. Only real data may go to stdout, so the display
+# functions are shadowed here; every other command keeps the old convention.
+function display_message() {
+	if command -v tput &> /dev/null && [[ "$TERM" == "xterm" ]]; then
+		tput sgr0
+		tput setaf 2
+		printf '%s\n' "$*" >&2
+		tput sgr0
+	else
+		printf '%s\n' "$*" >&2
+	fi
 }
 
-read_command_line() {
-	VERSION=$1
-	if [[ "${VERSION:0:1}" != "-" ]]; then
-		shift
+function display_error() {
+	if command -v tput &> /dev/null && [[ "$TERM" == "xterm" ]]; then
+		tput sgr0
+		tput setaf 1
+		printf '%s\n' "$*" >&2
+		tput sgr0
 	else
-		display_warning "Invalid version: $1"
-		show_usage
-		exit 1
+		printf '%s\n' "$*" >&2
 	fi
-	GO_SOURCE_URL=https://github.com/golang/go
-	for i in "$@"; do
-		case $i in
-			-s=*|--source=*)
-				GO_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
-			;;
-			-n=*|--name=*)
-				GO_NAME=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
-			;;
-			-pb|--with-protobuf)
-				INSTALL_PB="true"
-			;;
-			-b|--with-build-tools)
-				INSTALL_BUILD_TOOLS="true"
-			;;
-			-B|--binary)
-				INSTALL_SOURCE="binary"
-			;;
-			--prefer-binary)
-			  INSTALL_SOURCE="prefer-binary"
-			;;
-			-h|--help)
+}
+
+function display_warning() {
+	if command -v tput &> /dev/null && [[ "$TERM" == "xterm" ]]; then
+		tput sgr0
+		tput setaf 3
+		printf '%s\n' "$*" >&2
+		tput sgr0
+	else
+		printf '%s\n' "$*" >&2
+	fi
+}
+
+function show_usage() {
+	cat <<'EOF'
+Usage: gvm install [<version>] [options]
+
+  Installs Go from the official go.dev artifacts. <version> accepts a full
+  version (go1.24.13), a partial one (1.24 -> the newest go1.24.x), a glob
+  (1.24.*), or an alias (stable). Defaults to the newest stable release.
+
+Source options:
+  -b, --binary           Only install a prebuilt binary. Default.
+  -s, --source           Build from the official source tarball.
+      --prefer-binary    Try a binary, fall back to source. Default.
+      --prefer-source    Try a source build, fall back to a binary.
+      --from-git         Clone golang/go and build <ref> from the checkout.
+                         Also accepts "master" / "tip" for unreleased trees.
+
+Other options:
+  -n, --name <name>      Install under a different name, e.g. "work".
+      --force            Reinstall even if the version is already installed.
+      --no-set-default   Do not make this the default version afterwards.
+      --no-cache         Ignore the cached release index.
+      --verbose          Show compiler output while building from source.
+  -h, --help             Show this message.
+
+Examples:
+  gvm install                        newest stable release
+  gvm install 1.24                   newest go1.24.x
+  gvm install go1.24.13              an exact release
+  gvm install stable                 the newest stable release
+  gvm install 1.27 --source          build it yourself
+  gvm install master --from-git      build the development tree
+EOF
+}
+
+function read_command_line() {
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-b | --binary) INSTALL_METHOD="binary" ;;
+			-s | --source) INSTALL_METHOD="source" ;;
+			--prefer-binary) INSTALL_METHOD="prefer-binary" ;;
+			--prefer-source) INSTALL_METHOD="prefer-source" ;;
+			--from-git) INSTALL_METHOD="git" ;;
+			-n | --name)
+				shift
+				[ $# -gt 0 ] || {
+					display_error "$1 requires a name"
+					exit 65
+				}
+				GO_NAME="$1"
+				;;
+			-n=* | --name=*) GO_NAME="${1#*=}" ;;
+			--force) FORCE=1 ;;
+			--no-set-default) SET_DEFAULT="" ;;
+			--set-default) SET_DEFAULT=1 ;;
+			--no-cache) NO_CACHE=1 ;;
+			--verbose) VERBOSE=1 ;;
+			--source-url=*) GIT_SOURCE_URL="${1#*=}" ;;
+			-h | --help)
 				show_usage
 				exit 0
-			;;
-			*)
-				display_warning "Invalid option $i"
+				;;
+			-*)
+				display_warning "Invalid option: $1"
 				show_usage
-				exit 65 # Bad arguments
-			;;
+				exit 65
+				;;
+			*)
+				[ -n "$GO_VERSION" ] && {
+					display_warning "Only one version may be given"
+					exit 65
+				}
+				GO_VERSION="$1"
+				;;
 		esac
+		shift
 	done
+
+	[ -n "$NO_CACHE" ] && GVM_INDEX_TTL=0
+
+	# A git checkout is built from whatever ref was named; there is no
+	# published version to resolve it against.
+	if [ "$INSTALL_METHOD" = "git" ]; then
+		GIT_REF="$GO_VERSION"
+		[ -n "$GIT_REF" ] || GIT_REF="master"
+		[ -n "$GO_NAME" ] || GO_NAME="$GIT_REF"
+		GO_VERSION=""
+		return 0
+	fi
+
+	[ -n "$GO_VERSION" ] || GO_VERSION="stable"
 }
 
-download_source() {
-	GO_CACHE_PATH=$GVM_ROOT/archive/go
-	[[ -d $GO_CACHE_PATH ]] && return
-	display_message "Downloading Go source..."
-	git clone "$GO_SOURCE_URL" "$GO_CACHE_PATH" >> "$GVM_ROOT/logs/go-download.log"  2>&1 ||
-		display_fatal "Couldn't download Go source. Check the logs $GVM_ROOT/logs/go-download.log"
+# Where a downloaded artifact is kept between installs.
+function artifact_path() {
+	echo "$GVM_ROOT/cache/downloads/${1:-}"
 }
 
-check_tag() {
-    version=$(builtin cd "$GO_CACHE_PATH" && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH -w "$VERSION")
+# fetch_artifact <version> <os> <arch> <archive|source>
+# Downloads (or reuses) the official tarball and verifies its SHA256.
+# Echoes the local path on success.
+function fetch_artifact() {
+	local version="${1:-}" os="${2:-}" arch="${3:-}" kind="${4:-archive}"
+	local info filename size sha dest
+
+	info="$(gvm_index_file_for "$version" "$os" "$arch" "$kind")"
+	if [ -z "$info" ]; then
+		return 1
+	fi
+	# shellcheck disable=SC2086
+	set -- $info
+	filename="${1:-}"
+	size="${2:-}"
+	sha="${3:-}"
+
+	if [ -z "$filename" ]; then
+		return 1
+	fi
+
+	dest="$(artifact_path "$filename")"
+	if [ -f "$dest" ]; then
+		# A cached file is only reused if it still matches, so an
+		# interrupted download can never poison later installs.
+		if gvm_verify_checksum "$dest" "$sha" "$filename" 2> /dev/null; then
+			echo "$dest"
+			return 0
+		fi
+		rm -f "$dest"
+	fi
+
+	display_message "Downloading $filename"
+	if [ -n "$size" ] && [ "$size" != "0" ] && ! gvm_flag_is_set GVM_QUIET && [ -t 2 ]; then
+		display_message "  $(gvm_human_size "$size")"
+	fi
+
+	if ! gvm_download "$GVM_DL_BASE_URL/$filename" "$dest"; then
+		display_error "Failed to download $filename"
+		display_message "If you are behind a proxy, export http_proxy/https_proxy and retry."
+		rm -f "$dest"
+		return 1
+	fi
+
+	if ! gvm_verify_checksum "$dest" "$sha" "$filename"; then
+		rm -f "$dest"
+		return 1
+	fi
+
+	echo "$dest"
 }
 
-update_source() {
-	display_message "Updating Go source..."
-	(builtin cd "$GO_CACHE_PATH" && git pull --tags >> "$GVM_ROOT/logs/go-download.log" 2>&1 ||
-		display_fatal "Couldn't get latest Go version info. Check the logs $GVM_ROOT/logs/go-download.log")
+function gvm_human_size() {
+	local bytes="${1:-0}"
+	if [ "$bytes" -ge 1048576 ] 2> /dev/null; then
+		echo "$((bytes / 1048576))MB"
+	elif [ "$bytes" -ge 1024 ] 2> /dev/null; then
+		echo "$((bytes / 1024))KB"
+	else
+		echo "${bytes}B"
+	fi
 }
 
-copy_source() {
-	git clone -b "$version" "$GO_CACHE_PATH" "$GO_INSTALL_ROOT" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't copy source to target folder. Check the logs $GVM_ROOT/logs/go-$GO_NAME-install.log"
+# Both official tarballs unpack into a single top-level `go/` directory, so one
+# strip is correct for every release from go1.0 onwards.
+function extract_artifact() {
+	local archive="${1:-}" dest="${2:-}"
+	[ -f "$archive" ] || return 1
+	mkdir -p "$dest" || return 1
+
+	if ! tar -xzf "$archive" -C "$dest" --strip-components 1; then
+		display_error "Failed to extract $(basename -- "$archive")"
+		return 1
+	fi
+
+	# Guard against an archive that unpacked into something unexpected.
+	if [ ! -x "$dest/bin/go" ] && [ ! -d "$dest/src" ]; then
+		display_error "$(basename -- "$archive") did not contain a Go tree"
+		return 1
+	fi
+	return 0
 }
 
+# install_from_binary
+function install_from_binary() {
+	local os arch tarball tarball_path
 
-compile_go() {
-	display_message " * Compiling..."
-	# Test for Windows
-	case "$(uname)" in
-	*MINGW* | *WIN32* | *CYGWIN*)
-		MAKE_SCRIPT=make.bat
-		;;
-	*)
-		MAKE_SCRIPT=make.bash
-		;;
+	if ! os="$(gvm_platform_os)" || [ -z "$os" ]; then
+		display_error "Unrecognised operating system: $(uname -s)"
+		display_message "Go publishes no binaries for it; use --source instead."
+		return 2
+	fi
+	if ! arch="$(gvm_platform_arch)" || [ -z "$arch" ]; then
+		display_error "Unrecognised architecture: $(uname -m)"
+		display_message "Go publishes no binaries for it; use --source instead."
+		return 2
+	fi
+
+	tarball_path="$(fetch_artifact "$GO_VERSION" "$os" "$arch" archive)" || {
+		display_error "No $os/$arch binary is published for $GO_VERSION"
+		local available
+		available="$(gvm_index_platforms "$GO_VERSION")"
+		if [ -n "$available" ]; then
+			display_message "Published platforms: $available"
+		fi
+		return 2
+	}
+
+	extract_artifact "$tarball_path" "$GO_INSTALL_ROOT" || return 1
+	return 0
+}
+
+# install_from_source
+function install_from_source() {
+	local tarball_path bootstrap log
+
+	log="$GVM_ROOT/logs/go-$GO_NAME-compile.log"
+	mkdir -p "$GVM_ROOT/logs"
+
+	# Resolve the bootstrap toolchain *before* the tarball is unpacked. The
+	# source tree ships its own VERSION file, so an already-extracted
+	# $GVM_ROOT/gos/$GO_NAME looks exactly like a usable Go tree and gets
+	# nominated to build itself, which make.bash then refuses.
+	if ! bootstrap="$(gvm_bootstrap_resolve "$GO_VERSION")"; then
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
+	fi
+
+	tarball_path="$(fetch_artifact "$GO_VERSION" "" "" source)" || {
+		display_error "No source tarball is published for $GO_VERSION"
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
+	}
+
+	extract_artifact "$tarball_path" "$GO_INSTALL_ROOT" || return 1
+
+	local make_script
+	case "$(uname -s)" in
+		MINGW* | MSYS* | CYGWIN*) make_script="make.bat" ;;
+		*) make_script="make.bash" ;;
 	esac
-	[ -z "$GOROOT_BOOTSTRAP" ] && export GOROOT_BOOTSTRAP=$(go env GOROOT) 
-	unset GOARCH && unset GOOS && unset GOPATH && unset GOBIN && unset GOROOT &&
-	export GOBIN=$GO_INSTALL_ROOT/bin &&
-	export PATH=$GOBIN:$PATH &&
-	export GOROOT=$GO_INSTALL_ROOT &&
-	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then echo "$GO_NAME" > "$GO_INSTALL_ROOT/VERSION"; fi &&
-	#builtin cd $GO_INSTALL_ROOT/src && ./all.bash &> $GVM_ROOT/logs/go-$GO_NAME-compile.log ||
-	builtin cd "$GO_INSTALL_ROOT/src" && chmod -f +x $MAKE_SCRIPT && ./$MAKE_SCRIPT &> "$GVM_ROOT/logs/go-$GO_NAME-compile.log" ||
-		(rm -rf "$GO_INSTALL_ROOT" && display_fatal "Failed to compile. Check the logs at $GVM_ROOT/logs/go-$GO_NAME-compile.log")
-}
 
-create_enviroment() {
-	new_env_file=$GVM_ROOT/environments/$GO_NAME
-	echo "export GVM_ROOT; GVM_ROOT=\"$GVM_ROOT\"" > "$new_env_file"
-	echo "export gvm_go_name; gvm_go_name=\"$GO_NAME\"" >> "$new_env_file"
-	echo "export gvm_pkgset_name; gvm_pkgset_name=\"global\"" >> "$new_env_file"
-	echo "export GOROOT; GOROOT=\"\$GVM_ROOT/gos/$GO_NAME\"" >> "$new_env_file"
-	echo "export GOPATH; GOPATH=\"\$GVM_ROOT/pkgsets/$GO_NAME/global\"" >> "$new_env_file"
-	echo "export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay\"" >> "$new_env_file"
-	echo "export PATH; PATH=\"\${GVM_ROOT}/pkgsets/${GO_NAME}/global/bin:\${GVM_ROOT}/gos/${GO_NAME}/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}\"" >> "$new_env_file"
-	echo "export LD_LIBRARY_PATH; LD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\"" >> "$new_env_file"
-	echo "export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH=\"\${GVM_OVERLAY_PREFIX}/lib\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}\"" >> "$new_env_file"
-	echo "export PKG_CONFIG_PATH; PKG_CONFIG_PATH=\"\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> "$new_env_file"
-	. "$GVM_ROOT/scripts/env/use"
-	. "$GVM_ROOT/scripts/env/implode"
-	gvm_use "$GO_NAME" &> /dev/null ||
-		display_fatal "Failed to use installed version"
-	gvm pkgset create global
-	unset GOPATH
-}
-
-create_global_package_set() {
-	# Create the global package set folder
-	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME" >> "$GVM_ROOT/logs/go-$GO_NAME-install.log" 2>&1 ||
-		display_fatal "Couldn't create global package set folder. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
-	GVM_OVERLAY_ROOT="${GVM_ROOT}/pkgsets/${GO_NAME}/global/overlay"
-	mkdir -p "${GVM_OVERLAY_ROOT}/lib/pkgconfig" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay library directory. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
-	mkdir -p "${GVM_OVERLAY_ROOT}/bin" >> "${GVM_ROOT}/logs/go-${GO_NAME}-install.log" 2>&1 ||
-		display_fatal "Couldn't create global overlay bin directory. Check the logs at ${GVM_ROOT}/logs/go-${GO_NAME}-install.log"
-}
-
-install_go() {
-	GO_INSTALL_ROOT=$GVM_ROOT/gos/$GO_NAME
-	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Cancelled!"' INT
-
-	# Check for existing install
-	if [[ -d "$GO_INSTALL_ROOT" ]]; then
-		if [[ -f "$GO_INSTALL_ROOT/manifest" ]]; then
-			display_message "Already installed!"
-			exit 0
-		fi
-		display_warning "Removing corrupt install..."
-		gvm uninstall "$GO_NAME"
+	if [ ! -f "$GO_INSTALL_ROOT/src/$make_script" ]; then
+		display_error "$GO_VERSION has no src/$make_script, so it cannot be built from source here"
+		display_message "Try 'gvm install $GO_VERSION --binary' instead."
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
 	fi
 
-	if [[ "$version" != "$GO_NAME" ]]; then
-		display_message "Installing $version as $GO_NAME..."
+	if [ -n "$bootstrap" ]; then
+		display_message "Bootstrapping with $(gvm_go_version_of "$bootstrap") ($bootstrap)"
+		export GOROOT_BOOTSTRAP="$bootstrap"
 	else
-		display_message "Installing $version..."
+		display_message "Bootstrapping from C (no Go toolchain needed)"
+		unset GOROOT_BOOTSTRAP
 	fi
 
-	create_global_package_set
-	copy_source
-	compile_go
-	create_enviroment
+	display_message "Building $GO_VERSION from source (log: $log)"
 
-	display_message "$GO_NAME successfully installed!"
+	# make.bash derives GOROOT from its own location and refuses to run when
+	# GOROOT_BOOTSTRAP == GOROOT, so neither is set here. GOOS/GOARCH/GOPATH
+	# are cleared so the build is host-native and reproducible regardless of
+	# the invoking shell's environment.
+	(
+		unset GOROOT GOPATH GOBIN GOOS GOARCH GOFLAGS GO111MODULE
+		# Keep the bootstrap from trying to fetch an even newer toolchain
+		# over the network halfway through the build.
+		export GOTOOLCHAIN=local
+		cd "$GO_INSTALL_ROOT/src" || exit 1
+		chmod -f +x "./$make_script"
+		if [ -n "$VERBOSE" ]; then
+			"./$make_script" -v 2>&1 | tee "$log"
+			exit "${PIPESTATUS[0]}"
+		fi
+		"./$make_script" > "$log" 2>&1
+	) || {
+		display_error "Failed to build $GO_VERSION from source"
+		display_message "See $log for the last output."
+		return 1
+	}
+
+	if [ ! -x "$GO_INSTALL_ROOT/bin/go" ]; then
+		display_error "The build finished but produced no $GO_INSTALL_ROOT/bin/go"
+		display_message "See $log"
+		return 1
+	fi
+	return 0
 }
 
-download_binary() {
-	mkdir -p $GO_INSTALL_ROOT >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
-	if [ "$(uname)" == "Darwin" ]; then
-		GVM_OS="darwin"
-		osx_major_version="$(sw_vers -productVersion | cut -d "." -f 1)"
-		osx_minor_version="$(sw_vers -productVersion | cut -d "." -f 2)"
-		if [ "${osx_major_version}" -le 10 ]; then
-			if [ "${osx_minor_version}" -ge 8 ]; then
-				GVM_OS_VERSION="-osx10.8"
-			elif [ "${osx_minor_version}" -ge 6 ]; then
-				GVM_OS_VERSION="-osx10.6"
+# install_from_git
+# Kept for development trees and for tags that were never published as a
+# tarball. This is the only path that clones the Go repository.
+function install_from_git() {
+	local log="$GVM_ROOT/logs/go-$GO_NAME-git.log"
+	mkdir -p "$GVM_ROOT/logs" "$GVM_ROOT/cache"
+
+	# Go's repository is over a gigabyte of history and none of it is needed to
+	# build one ref, so ask for a shallow clone of exactly that ref first. Only
+	# fall back to the full history if the ref is not a branch or tag, which is
+	# what a raw commit id looks like.
+	display_message "Cloning $GIT_SOURCE_URL at $GIT_REF (shallow)"
+	if ! git clone --quiet --depth 1 --single-branch --branch "$GIT_REF" \
+		"$GIT_SOURCE_URL" "$GO_INSTALL_ROOT" > "$log" 2>&1; then
+		display_message "'$GIT_REF' is not a branch or tag; cloning the full history instead"
+		rm -rf "$GO_INSTALL_ROOT"
+		if ! git clone --quiet --filter=blob:none "$GIT_SOURCE_URL" "$GO_INSTALL_ROOT" >> "$log" 2>&1; then
+			display_error "Failed to clone $GIT_SOURCE_URL"
+			display_message "See $log"
+			return 1
+		fi
+	fi
+
+	if ! (cd "$GO_INSTALL_ROOT" && git checkout --quiet "$GIT_REF") >> "$log" 2>&1; then
+		display_error "No such ref: $GIT_REF"
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
+	fi
+
+	# "master" is not a version number, so ask the checkout what it is going to
+	# become and pick a bootstrap from that.
+	local build_version
+	build_version="$(gvm_bootstrap_checkout_version "$GO_INSTALL_ROOT")" ||
+		build_version="$GIT_REF"
+	[ -n "$build_version" ] || build_version="$GIT_REF"
+
+	local bootstrap
+	if ! bootstrap="$(gvm_bootstrap_resolve "$build_version")"; then
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
+	fi
+
+	local make_script
+	case "$(uname -s)" in
+		MINGW* | MSYS* | CYGWIN*) make_script="make.bat" ;;
+		*) make_script="make.bash" ;;
+	esac
+
+	[ -f "$GO_INSTALL_ROOT/src/$make_script" ] || {
+		display_error "$GIT_REF has no src/$make_script"
+		rm -rf "$GO_INSTALL_ROOT"
+		return 2
+	}
+
+	display_message "Building $GIT_REF from the git checkout (log: $log)"
+	(
+		unset GOROOT GOPATH GOBIN GOOS GOARCH GOFLAGS GO111MODULE
+		export GOTOOLCHAIN=local
+		[ -n "$bootstrap" ] && export GOROOT_BOOTSTRAP="$bootstrap"
+		cd "$GO_INSTALL_ROOT/src" || exit 1
+		chmod -f +x "./$make_script"
+		"./$make_script" > "$log" 2>&1
+	) || {
+		display_error "Failed to build $GIT_REF"
+		display_message "See $log"
+		return 1
+	}
+
+	# A checkout does not ship a VERSION file, and its git describe output is
+	# not a version string either. Ask the binary that was just built.
+	BUILT_VERSION="$("$GO_INSTALL_ROOT/bin/go" env GOVERSION 2> /dev/null)"
+	BUILT_VERSION="${BUILT_VERSION#go}"
+	if ! gvm_version_is_valid "$BUILT_VERSION"; then
+		BUILT_VERSION="${build_version#go}"
+	fi
+	return 0
+}
+
+# The environment file is what `gvm use` sources. Keep the variable set in sync
+# with scripts/function/gvm_environment_defaults.
+function create_environment() {
+	local env_file="$GVM_ROOT/environments/$GO_NAME"
+
+	mkdir -p "$GVM_ROOT/environments" "$GVM_ROOT/pkgsets/$GO_NAME" || return 1
+
+	cat > "$env_file" <<EOF
+export GVM_ROOT; GVM_ROOT="$GVM_ROOT"
+export gvm_go_name; gvm_go_name="$GO_NAME"
+export gvm_pkgset_name; gvm_pkgset_name="global"
+export GOROOT; GOROOT="\$GVM_ROOT/gos/$GO_NAME"
+export GOPATH; GOPATH="\$GVM_ROOT/pkgsets/$GO_NAME/global"
+export GVM_OVERLAY_PREFIX; GVM_OVERLAY_PREFIX="\${GVM_ROOT}/pkgsets/$GO_NAME/global/overlay"
+export PATH; PATH="\${GVM_ROOT}/pkgsets/$GO_NAME/global/bin:\${GVM_ROOT}/gos/$GO_NAME/bin:\${GVM_OVERLAY_PREFIX}/bin:\${GVM_ROOT}/bin:\${PATH}"
+export LD_LIBRARY_PATH; LD_LIBRARY_PATH="\${GVM_OVERLAY_PREFIX}/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+export DYLD_LIBRARY_PATH; DYLD_LIBRARY_PATH="\${GVM_OVERLAY_PREFIX}/lib\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"
+# Pin the toolchain: a go.mod asking for a newer Go must not make the selected
+# one quietly download and use that instead. See scripts/function/gvm_export_path.
+export GOTOOLCHAIN; GOTOOLCHAIN="local"
+export PKG_CONFIG_PATH; PKG_CONFIG_PATH="\${GVM_OVERLAY_PREFIX}/lib/pkgconfig:\${PKG_CONFIG_PATH}"
+EOF
+
+	# The default pkgset that every install gets.
+	mkdir -p "$GVM_ROOT/pkgsets/$GO_NAME/global/overlay/bin" \
+		"$GVM_ROOT/pkgsets/$GO_NAME/global/overlay/lib/pkgconfig" || return 1
+
+	cp "$env_file" "$GVM_ROOT/environments/${GO_NAME}@global" || return 1
+	cat >> "$GVM_ROOT/environments/${GO_NAME}@global" <<EOF
+export GOPATH; GOPATH="\$GOPATH:\$GVM_ROOT/pkgsets/$GO_NAME/global"
+export PATH; PATH="\$GVM_ROOT/pkgsets/$GO_NAME/global/bin:\$PATH"
+EOF
+	return 0
+}
+
+function write_manifest() {
+	(cd "$GO_INSTALL_ROOT" && find . > manifest) 2> /dev/null
+}
+
+function prepare_install_root() {
+	GO_INSTALL_ROOT="$GVM_ROOT/gos/$GO_NAME"
+
+	if [ -d "$GO_INSTALL_ROOT" ]; then
+		if [ -f "$GO_INSTALL_ROOT/VERSION" ] || [ -x "$GO_INSTALL_ROOT/bin/go" ]; then
+			if [ -n "$FORCE" ]; then
+				display_warning "Replacing the existing $GO_NAME install"
+				# Only what is being replaced is removed. Going through `uninstall`
+				# here also ran `go clean -modcache` and deleted the whole pkgset,
+				# so reinstalling a version - the way you recover from a corrupted
+				# GOROOT - threw away every module in the download cache and
+				# everything `go get` had built for it. Aliases still resolve: the
+				# version is about to exist again under the same name.
+				rm -rf "$GO_INSTALL_ROOT" "$GVM_ROOT/environments/${GO_NAME}"* 2> /dev/null
 			else
-				display_error "Binary Go unavailable for this platform"
-				rm -rf $GO_INSTALL_ROOT
-				rm -f $GO_BINARY_PATH
-				exit 1
+				display_message "$GO_NAME is already installed"
+				return 1
 			fi
-		fi
-	else
-		GVM_OS="linux"
-	fi
-
-	if [[ "$(uname -m)" == "x86_64" ]]; then
-		GVM_ARCH="amd64"
-	elif [[ "$(uname -m)" == "ppc64le" ]]; then
-		GVM_ARCH="ppc64le"
-	elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
-		GVM_ARCH="arm64"
-	elif [[ "$(uname -m)" == "i386" || "$(uname -m)" == "i686" ]]; then
-		GVM_ARCH="i386"
-	elif [[ "$(uname -m)" == "armv7l" || "$(uname -m)" == "armv6l" ]]; then
-		GVM_ARCH="armv6l"
-	else
-		GVM_ARCH="s390x"
-	fi
-
-	SEMVER=$(extract_version $VERSION)
-	compare_version $SEMVER "1.4.3"
-	if [ $? -eq 2 ]; then
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}${GVM_OS_VERSION}.tar.gz
-	else
-		GO_BINARY_FILE=${VERSION}.${GVM_OS}-${GVM_ARCH}.tar.gz
-	fi
-	# `GO_BINARY_BASE_URL` env allow user setting base URL for binaries
-	# download, e.g. "https://dl.google.com/go".
-	GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL:-"https://go.dev/dl"}
-	GO_BINARY_URL="${GO_BINARY_BASE_URL}/${GO_BINARY_FILE}"
-	GO_BINARY_PATH=${GVM_ROOT}/archive/${GO_BINARY_FILE}
-
-	if [ ! -f $GO_BINARY_PATH ]; then
-		curl -s -f -L $GO_BINARY_URL > ${GO_BINARY_PATH}
-
-		if [[ $? -ne 0 ]]; then
-			display_error "Failed to download binary go"
-			rm -rf $GO_INSTALL_ROOT
-			rm -f $GO_BINARY_PATH
-			exit 1
+		else
+			display_warning "Removing the incomplete $GO_NAME install"
+			rm -rf "$GO_INSTALL_ROOT"
 		fi
 	fi
 
-	tar zxf ${GO_BINARY_PATH} -C $GO_INSTALL_ROOT --strip-components 1 >> "${GVM_ROOT}/logs/go-${GO_NAME}-download-binary" 2>&1
-
-	if [[ $? -ne 0 ]]; then
-		display_error "Failed to extract binary go"
-		rm -rf $GO_INSTALL_ROOT
-		rm -f $GO_BINARY_PATH
-		exit 1
-	fi
+	# The environment files describe the install and are rewritten below, so they
+	# always go. The pkgset does not: it holds the module cache and everything
+	# `go get` built, and deleting it here meant that reinstalling a version -
+	# the way you recover from a broken GOROOT - also threw all of that away.
+	rm -rf "$GVM_ROOT/environments/${GO_NAME}"* 2> /dev/null
+	mkdir -p "$GO_INSTALL_ROOT" || return 1
+	trap 'rm -rf "$GO_INSTALL_ROOT"' INT TERM
+	return 0
 }
 
-install_go_binary() {
-	GO_INSTALL_ROOT=$GVM_ROOT/gos/$GO_NAME
-	trap 'rm -rf $GO_INSTALL_ROOT; display_fatal "Cancelled!"' INT
+function run_install() {
+	local rc=0
 
-	# Check for existing install
-	if [[ -d "$GO_INSTALL_ROOT" ]]; then
-		if [[ -f "$GO_INSTALL_ROOT/manifest" ]]; then
-			display_message "Already installed!"
-			exit 0
-		fi
-		display_warning "Removing corrupt install..."
-		gvm uninstall "$GO_NAME"
-	fi
+	case "$INSTALL_METHOD" in
+		binary) install_from_binary || rc=$? ;;
+		source) install_from_source || rc=$? ;;
+		git) install_from_git || rc=$? ;;
+		prefer-binary)
+			install_from_binary || rc=$?
+			[ "$rc" = "0" ] || {
+				display_warning "Falling back to a source build of $GO_VERSION"
+				rm -rf "$GO_INSTALL_ROOT"
+				mkdir -p "$GO_INSTALL_ROOT"
+				install_from_source || rc=$?
+			}
+			;;
+		prefer-source)
+			install_from_source || rc=$?
+			[ "$rc" = "0" ] || {
+				display_warning "Falling back to the prebuilt binary of $GO_VERSION"
+				rm -rf "$GO_INSTALL_ROOT"
+				mkdir -p "$GO_INSTALL_ROOT"
+				install_from_binary || rc=$?
+			}
+			;;
+	esac
 
-	display_message "Installing $GO_NAME from binary source"
+	[ "$rc" = "0" ] || {
+		rm -rf "$GO_INSTALL_ROOT" 2> /dev/null
+		return "$rc"
+	}
 
-	create_global_package_set
-	download_binary
-	create_enviroment
-}
-
-install_gpkg() {
-	display_message " * Installing gpkg..."
-	$GVM_GOINSTALL github.com/moovweb/gpkg > "$GVM_ROOT/logs/$GO_NAME-gpkg.log" 2>&1 || return 1
-}
-
-install_gb() {
-	display_message " * Installing gb..."
-	$GVM_GOINSTALL github.com/jbussdieker/go-gb/gb > "$GVM_ROOT/logs/$GO_NAME-gb.log" 2>&1 || return 1
-}
-
-install_goprotobuf() {
-	command -v protoc &> /dev/null || display_warning "Could not find protocol buffer compiler
-
-  linux: apt-get install protobuf-compiler
-  mac:   brew install protobuf
-"
-	display_message " * Installing goprotobuf..."
-	if [[ "$GVM_GOINSTALL" == "goinstall" ]]; then
-		$GVM_GOINSTALL goprotobuf.googlecode.com/hg/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
-		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
-			return 1
-		fi
-		builtin cd "$GVM_ROOT/gos/$GO_NAME/src/pkg/goprotobuf.googlecode.com/hg/compiler"
-		make install >> "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
-		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
-			return 1
-		fi
-	else
-		$GVM_GOINSTALL code.google.com/p/goprotobuf/proto > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
-		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
-			return 1
-		fi
-		$GVM_GOINSTALL code.google.com/p/goprotobuf/protoc-gen-go > "$GVM_ROOT/logs/$GO_NAME-pb-compiler.log" 2>&1
-		if [[ $? -ne 0 ]]; then
-			display_warning "Failed to install goprotobuf compiler. Check the logs at $GVM_ROOT/logs/$GO_NAME-pb-compiler.log"
+	# Record what is actually installed, then wire up the environment.
+	# A binary tarball ships its own VERSION file; a git checkout and a source
+	# build both need one written for them, and writing a blank one would make
+	# the install look broken to every later command.
+	if [ ! -f "$GO_INSTALL_ROOT/VERSION" ]; then
+		local recorded="${BUILT_VERSION:-${GO_VERSION#go}}"
+		[ -n "$recorded" ] || recorded="$("$GO_INSTALL_ROOT/bin/go" env GOVERSION 2> /dev/null)"
+		recorded="${recorded#go}"
+		if [ -n "$recorded" ]; then
+			echo "$recorded" > "$GO_INSTALL_ROOT/VERSION"
+		else
+			display_error "Could not determine the version that was built"
+			rm -rf "$GO_INSTALL_ROOT" 2> /dev/null
 			return 1
 		fi
 	fi
+	BUILT_VERSION=""
+	write_manifest
+	create_environment || {
+		display_error "Failed to create the environment for $GO_NAME"
+		return 1
+	}
+
+	display_message "$GO_NAME successfully installed"
+
+	if [ -n "$SET_DEFAULT" ]; then
+		cp "$GVM_ROOT/environments/$GO_NAME" "$GVM_ROOT/environments/default" &&
+			display_message "$GO_NAME is now the default version"
+	elif [ -f "$GVM_ROOT/environments/default" ] &&
+		grep -q "gvm_go_name; gvm_go_name=\"$GO_NAME\"" "$GVM_ROOT/environments/default" 2> /dev/null; then
+		# The default is a copy of some version's environment. When that version
+		# is reinstalled, the copy is now older than the original: reinstalling
+		# go1.27.0 over an older gvm left `default` without GOTOOLCHAIN, so a new
+		# shell quietly lost the pinning that `gvm use` reports.
+		cp "$GVM_ROOT/environments/$GO_NAME" "$GVM_ROOT/environments/default" 2> /dev/null &&
+			display_message "  refreshed environments/default for $GO_NAME"
+	fi
+	return 0
 }
 
-install_from_source() {
-	download_source
-	check_tag
-	if [[ "$?" == "1" ]]; then
-		update_source
-		check_tag || display_fatal "Unrecognized Go version"
-	fi
-	if [[ "$GO_NAME" == "" ]]; then
-		GO_NAME=$version
-	fi
-	install_go
-
-	GVM_GOINSTALL="goinstall"
-	command -v goinstall &> /dev/null ||
-		GVM_GOINSTALL="go get"
-
-	x="$(builtin cd "$GO_CACHE_PATH" && git tag)"; echo "${x#*b0819469a6df}" | $GREP_PATH "$version " &> /dev/null
-	if [[ "$?" == "1" ]]; then
-		if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
-			install_gb || display_warning "Failed to install gb"
-			install_gpkg || display_warning "Failed to install gpkg"
-		fi
-		if [[ "$INSTALL_PB" == "true" ]]; then
-			install_goprotobuf
-		fi
-	fi
-
-	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
-}
-
-main() {
-	trap 'display_fatal "Canceled!"' INT
+function main() {
 	read_command_line "$@"
-	[[ "$VERSION" == "" ]] && display_fatal "No version specified"
 
-	if [[ "$GO_NAME" == "" ]]; then
-		GO_NAME=$VERSION
+	REQUESTED="$GO_VERSION"
+
+	# Resolve before touching the filesystem so a typo fails fast.
+	if [ "$INSTALL_METHOD" != "git" ]; then
+		local resolved
+		if ! resolved="$(gvm_resolve_version "$GO_VERSION" remote)"; then
+			display_error "No published Go release matches '$GO_VERSION'"
+			display_message "Run 'gvm ls-remote $GO_VERSION' to see what exists."
+			return 1
+		fi
+		GO_VERSION="$resolved"
+
+		# `gvm install 1.28` falls back to a release candidate when Go has not
+		# shipped a stable 1.28 yet. That is a reasonable thing to do, but the
+		# user has to be told: release candidates are not what most people mean
+		# by "the 1.28 toolchain".
+		if gvm_version_is_prerelease "$GO_VERSION" && [[ "$GO_VERSION" != *"$REQUESTED"* ]]; then
+			display_warning "$GO_VERSION is a pre-release, the newest match for '$REQUESTED'."
+			display_message "Install the newest stable release instead with 'gvm install stable'."
+		fi
 	fi
 
-	if [[ "x$INSTALL_SOURCE" == "xbinary" ]]; then
-		install_go_binary
-	elif [[ "x$INSTALL_SOURCE" == "xprefer-binary" ]]; then
-		install_go_binary || {
-			display_message "Falling back to source installation of $GO_NAME"
-			install_from_source
-		}
-	else
-		install_from_source
+	[ -n "$GO_NAME" ] || GO_NAME="$GO_VERSION"
+
+	if ! prepare_install_root; then
+		return 0
 	fi
 
-	builtin cd "$GO_INSTALL_ROOT" && find . > manifest
+	run_install
+	local rc=$?
+
+	if [ "$rc" = "0" ] && [ -z "$SET_DEFAULT" ]; then
+		# Match nvm: installing a version is not the same as selecting it.
+		# Make the first install the default so a fresh gvm is usable.
+		if [ ! -f "$GVM_ROOT/environments/default" ]; then
+			cp "$GVM_ROOT/environments/$GO_NAME" "$GVM_ROOT/environments/default" 2> /dev/null
+		fi
+	fi
+
+	return "$rc"
 }
 
 main "$@"

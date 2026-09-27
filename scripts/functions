@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-for function in $GVM_ROOT/scripts/function/*; do
+# "$GVM_ROOT"/... and not $GVM_ROOT/...: unquoted, a prefix with a space in it
+# word-splits into nonsense paths. --prefix is allowed to contain spaces.
+for function in "$GVM_ROOT"/scripts/function/*; do
+	# With no match and no nullglob, the glob comes through as itself.
+	[ -f "$function" ] || continue
 	# function names preceded by an underscore should be loaded by other
 	# scripts explicitly as needed.
 	if [[ "${function##*/}" =~ ^_ ]]; then

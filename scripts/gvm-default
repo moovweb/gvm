@@ -1,22 +1,41 @@
-unset GOROOT
-unset GOARCH
-unset GOOS
-unset GOPATH
-unset GOBIN
+#!/usr/bin/env bash
+#
+# gvm-default - the payload sourced by the line in scripts/gvm.
+#
+# Sourced, not executed: this file's whole job is to leave the calling shell
+# with a sane environment and a `gvm` function defined.
 
-unset gvm_go_name
-unset gvm_pkgset_name
+# A Go inherited from a distro package, another manager, or a Docker image
+# will fight with everything below.
+unset GOROOT GOPATH GOBIN GOOS GOARCH GOFLAGS GO111MODULE
+unset gvm_go_name gvm_pkgset_name gvm_alias_name
 
-mkdir -p "$GVM_ROOT/logs" > /dev/null 2>&1
-mkdir -p "$GVM_ROOT/gos" > /dev/null 2>&1
-mkdir -p "$GVM_ROOT/archive" > /dev/null 2>&1
-mkdir -p "$GVM_ROOT/archive/package" > /dev/null 2>&1
-mkdir -p "$GVM_ROOT/environments" > /dev/null 2>&1
+GVM_VERSION="$(cat "$GVM_ROOT/VERSION" 2> /dev/null)"
+export GVM_VERSION
 
-export GVM_VERSION=$(cat "$GVM_ROOT/VERSION")
-export PATH="$GVM_ROOT/bin:$PATH"
+# Runtime directories.
+for dir in logs gos archive cache environments aliases pkgsets; do
+	mkdir -p "$GVM_ROOT/$dir" 2> /dev/null
+done
+
+# Our bin directory holds bin/gvm, which everything else calls.
+case ":$PATH:" in
+	*":$GVM_ROOT/bin:"*) ;;
+	*) PATH="$GVM_ROOT/bin:$PATH" ;;
+esac
+export PATH
 export GVM_PATH_BACKUP="$PATH"
-[ -f "$GVM_ROOT/environments/default" ] && . "$GVM_ROOT/environments/default"
+
+# A version recorded by `gvm use --default`.
+if [ -f "$GVM_ROOT/environments/default" ]; then
+	. "$GVM_ROOT/environments/default"
+fi
+
 . "$GVM_ROOT/scripts/env/gvm"
 
-. "$GVM_ROOT/scripts/env/cd" && cd .
+# Auto-switching on .go-version / .go-pkgset, and the version already
+# selected when the shell starts.
+if [ -f "$GVM_ROOT/scripts/env/cd" ]; then
+	. "$GVM_ROOT/scripts/env/cd"
+	cd . 2> /dev/null
+fi

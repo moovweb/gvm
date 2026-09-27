@@ -1,3 +1,0 @@
-export GVM_ROOT=@prefix@/gvm
-. $GVM_ROOT/scripts/gvm-default
-

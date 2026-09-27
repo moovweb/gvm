@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+#
+# Downloading and integrity verification.
+#
+# Every artifact gvm fetches is verified against the SHA256 published in the
+# go.dev release index before it is unpacked. The previous implementation
+# downloaded tarballs with no verification at all.
+
+# gvm_checksum_tool -> the first usable SHA256 utility
+gvm_checksum_tool() {
+	if command -v sha256sum > /dev/null 2>&1; then
+		echo sha256sum
+	elif command -v shasum > /dev/null 2>&1; then
+		echo shasum
+	elif command -v gsha256sum > /dev/null 2>&1; then
+		echo gsha256sum
+	elif command -v sha256 > /dev/null 2>&1; then
+		echo sha256
+	elif command -v openssl > /dev/null 2>&1; then
+		echo openssl
+	else
+		return 1
+	fi
+}
+
+# gvm_checksum_file <file> -> lowercase hex SHA256
+gvm_checksum_file() {
+	local file="${1:-}" tool
+	[ -f "$file" ] || return 1
+	local tool
+	tool="$(gvm_checksum_tool)" || return 1
+	case "$tool" in
+		sha256sum | gsha256sum) command "$tool" "$file" | awk '{ print $1; exit }' ;;
+		shasum) command shasum -a 256 "$file" | awk '{ print $1; exit }' ;;
+		sha256) command sha256 -q "$file" ;;
+		openssl) command openssl dgst -sha256 "$file" | awk '{ print $NF; exit }' ;;
+	esac
+}
+
+# gvm_verify_checksum <file> <expected-sha256> [label]
+# Hard failure on mismatch: a corrupt or tampered tarball must never be
+# unpacked into a GOROOT. GVM_NO_VERIFY=1 exists for air-gapped mirrors that
+# serve the same bytes under a different name, and warns loudly.
+gvm_verify_checksum() {
+	local file="${1:-}" expected="${2:-}" label="${3:-$1}"
+	local actual
+
+	if [ -z "$expected" ] || [ "$expected" = "-" ]; then
+		if gvm_flag_is_set GVM_NO_VERIFY; then
+			display_warning "Skipping checksum verification of $label (GVM_NO_VERIFY is set)"
+			return 0
+		fi
+		display_error "No published checksum for $label; refusing to install unverified"
+		return 1
+	fi
+
+	if gvm_flag_is_set GVM_NO_VERIFY; then
+		display_warning "Skipping checksum verification of $label (GVM_NO_VERIFY is set)"
+		return 0
+	fi
+
+	local tool
+	if ! tool="$(gvm_checksum_tool)"; then
+		display_error "No SHA256 utility found (need sha256sum, shasum, gsha256sum, sha256 or openssl)"
+		return 1
+	fi
+
+	actual="$(gvm_checksum_file "$file")" || {
+		display_error "Failed to compute the SHA256 of $label"
+		return 1
+	}
+
+	if [ "$actual" != "$expected" ]; then
+		display_error "Checksum mismatch for $label"
+		display_message "  expected $expected"
+		display_message "  actual   $actual"
+		display_error "The download is corrupt or has been tampered with; discarding it."
+		rm -f "$file"
+		return 1
+	fi
+	return 0
+}
+
+# gvm_download <url> <dest>
+gvm_download() {
+	local url="${1:-}" dest="${2:-}"
+	[ -n "$url" ] && [ -n "$dest" ] || return 1
+
+	mkdir -p "$(dirname "$dest")" || return 1
+
+	# curl only draws a progress bar onto a terminal; keep log files clean
+	# when there is no tty, and keep the user informed when there is one.
+	if [ -t 2 ] && ! gvm_flag_is_set GVM_QUIET; then
+		command curl --fail --location --retry 3 --progress-bar --output "$dest" "$url"
+	else
+		command curl --fail --location --retry 3 --silent --show-error --output "$dest" "$url"
+	fi
+}

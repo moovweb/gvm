@@ -2,5 +2,19 @@
 function gvm_export_path() {
 	export PATH="$GVM_ROOT/bin:$(echo "$PATH" | $TR_PATH ":" "\n" | "$GREP_PATH" -v '^$' | $EGREP_PATH -v "$GVM_ROOT/(pkgsets|gos|bin)" | $TR_PATH "\n" ":" | $SED_PATH 's/:*$//')"
 	export GVM_PATH_BACKUP="$PATH"
+
+	# Pin the toolchain. Since Go 1.21 a `go` command will download and switch
+	# to whatever a go.mod asks for, so a project declaring `go 1.30` makes the
+	# selected version fetch a different one and quietly build with it. A
+	# version manager that lets that happen is not selecting anything, so the
+	# selected Go is pinned and a project needing newer is told to install it.
+	#
+	# `gvm use system` unsets this again, because an unmanaged Go is entitled to
+	# manage its own toolchains.
+	if [ "${gvm_go_name:-}" = "system" ]; then
+		unset GOTOOLCHAIN
+	else
+		export GOTOOLCHAIN=local
+	fi
 }
 

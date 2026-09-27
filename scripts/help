@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+#
+# gvm help - the real help text.
+#
+# This used to be a hardcoded 20-line blob inside bin/gvm that went stale and
+# omitted half the commands. It lives in its own file now, and every command
+# also answers --help.
+
+. "$GVM_ROOT/scripts/functions"
+
+# bin/gvm can be called without scripts/gvm having been sourced, so GVM_VERSION
+# may not be set even though the file next door has it.
+if [ -f "$GVM_ROOT/VERSION" ]; then
+	GVM_VERSION="$(cat "$GVM_ROOT/VERSION")"
+fi
+
+cat <<EOF
+
+  gvm ${GVM_VERSION:-unknown} - the Go Version Manager
+
+  Usage: gvm <command> [<args>]
+
+  Getting started
+    install <version>       Install a Go release. Bare \`gvm install\` takes the
+                            newest stable release; '1.24' takes the newest
+                            go1.24.x. Add --source to build it yourself.
+    use <version>           Select a version for this shell. --default makes it
+                            the one new shells start with.
+    ls                      List installed versions and aliases.
+                            Also: gvm list, gvm listall.
+    ls-remote [glob]        List published releases.
+
+  Inspecting
+    applymod                Select the version the local go.mod asks for.
+    current                 Print the selected version.
+    which [version] [cmd]   Print a version's GOROOT, or a binary inside it.
+    version                 The version of gvm itself.
+    doctor                  Diagnose the installation.
+    diff [version]          Show local modifications to a Go tree.
+    pkgenv                  Print or edit the environment of a pkgset.
+
+  Managing
+    update                  Update gvm itself, from its git checkout.
+    uninstall <version>     Remove an installed version.
+    delete <version>        The same thing, under its other name.
+    alias                   Manage version aliases.
+    pkgset                  Manage GOPATH package sets.
+    linkthis                Symlink the current directory into GOPATH.
+    implode                 Remove gvm and everything it installed.
+    completion              Print a shell completion script.
+
+  Cross compilation
+    gvm does not keep a separate tree per platform; build for another platform
+    with the toolchain you have selected:
+
+      GOOS=darwin GOARCH=arm64 go build ./...
+      GOOS=windows GOARCH=amd64 go build -o app.exe .
+
+    If you want a per-platform toolchain, the Go team ships golang.org/dl,
+    which manages its own downloads:
+
+      go install golang.org/dl/go1.27.1@latest
+      go1.27.1 download
+
+  Everyday workflow
+    gvm install 1.24
+    gvm use 1.24
+    gvm use 1.24 --default
+    gvm ls
+    gvm install master --from-git   # build the unreleased tree
+    gvm use stable                  # jump to the newest stable release
+
+  Environment
+    GVM_ROOT                Where gvm keeps everything. Do not set by hand.
+    GOROOT_BOOTSTRAP        Go toolchain used to build a source install.
+    GVM_DL_BASE_URL         Mirror to fetch artifacts from.
+    GVM_OFFLINE             Never refresh the release index.
+    GVM_NO_VERIFY           Skip checksum verification (not recommended).
+    GVM_QUIET               Say less. GVM_DEBUG traces the internals.
+    GVM_REPO                Repository to install and update gvm from, not the default.
+
+    The boolean ones take 1/true/yes/on and 0/false/no/off, so
+    GVM_NO_VERIFY=0 still verifies.
+
+  Run 'gvm <command> --help' for the options of a single command.
+
+EOF

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# gvm version - the version of gvm itself, plus where it lives.
+# nvm prints only the manager version; gvm has always reported its location
+# too, which is the single most useful thing when a version looks wrong.
+
+. "$GVM_ROOT/scripts/functions"
+
+# The VERSION file next to the scripts is authoritative. A GVM_VERSION left over
+# in the environment from an earlier install of a different gvm would otherwise
+# be reported as the truth.
+if [ -f "$GVM_ROOT/VERSION" ]; then
+	GVM_VERSION="$(cat "$GVM_ROOT/VERSION")"
+fi
+
+display_message "Go Version Manager v${GVM_VERSION:-unknown}"
+display_message "  installed at $GVM_ROOT"
+display_message "  root        $GVM_ROOT"
+display_message "  go versions  $(gvm_versions_installed | wc -l | tr -d ' ') installed"
+if [ -n "${gvm_go_name:-}" ]; then
+	display_message "  active      $gvm_go_name ($(gvm_go_version_of "$GVM_ROOT/gos/$gvm_go_name" 2> /dev/null))"
+else
+	display_message "  active      none"
+fi

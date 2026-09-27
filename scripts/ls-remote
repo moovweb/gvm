@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+#
+# gvm ls-remote - published Go releases.
+#
+# Replaces the old `gvm listall`, which shelled out to
+# `git ls-remote -t https://github.com/golang/go`. That required git, hit
+# github.com, and returned development tags that were never downloadable.
+# The go.dev index is smaller, faster, offline-cacheable, and only lists
+# releases that actually exist as artifacts.
+
+. "$GVM_ROOT/scripts/functions"
+
+show_usage() {
+	cat <<'EOF'
+Usage: gvm ls-remote [<glob>] [options]
+
+  <glob>               Only list matching releases. '1.24' and '1.24*' both
+                       work; without a 'go' prefix it is added for you.
+
+  -s, --stable         Only stable releases (the default).
+      --prerelease     Include beta and release candidates.
+      --all            Stable and pre-releases together.
+  -t, --table          One release per line with the current/new column, so it
+                       can be diffed over time.
+      --no-cache       Ignore the cached index and refetch.
+      --refresh        Force a refetch, then list.
+  -h, --help           Show this message.
+EOF
+}
+
+filter="stable"
+table=""
+refresh=""
+glob=""
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-s | --stable) filter="stable" ;;
+		--prerelease) filter="all" ;;
+		--all) filter="all" ;;
+		-t | --table) table=1 ;;
+		--no-cache) refresh=1 ;;
+		--refresh) refresh=1 ;;
+		-h | --help)
+			show_usage
+			exit 0
+			;;
+		-*)
+			display_warning "Invalid option: $1"
+			show_usage
+			exit 65
+			;;
+		*)
+			glob="$1"
+			;;
+	esac
+	shift
+done
+
+[ -n "$refresh" ] && gvm_index_refresh --force || gvm_index_refresh
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+# Accept a bare 1.24 as well as an explicit glob, by trying each of the
+# expansions gvm_version_candidates produces.
+versions=""
+if [ -n "$glob" ]; then
+	while IFS= read -r candidate; do
+		versions="$(gvm_index_versions "$filter" "$candidate")"
+		[ -n "$versions" ] && break
+	done <<< "$(gvm_version_candidates "$glob")"
+else
+	versions="$(gvm_index_versions "$filter")"
+fi
+
+if [ -z "$versions" ]; then
+	display_warning "No published Go release matches '${glob:-(any)}' in the $filter set"
+	exit 1
+fi
+
+echo
+display_message "gvm gos (available remotely)"
+echo
+
+if [ -n "$table" ]; then
+	printf "%-14s  %s\n" "RELEASE" "STATUS"
+	printf "%-14s  %s\n" "--------------" "--------"
+		printf "%s\n" "$versions" | gvm_versions_sorted desc | while IFS= read -r version; do
+			[ -n "$version" ] || continue
+			if gvm_version_installed "$version"; then
+			printf "%-14s  %s\n" "$version" "installed"
+		elif gvm_index_is_stable "$version"; then
+			printf "%-14s  %s\n" "$version" "current"
+		else
+			printf "%-14s  %s\n" "$version" "unstable"
+		fi
+	done
+else
+	# Newest first, the way nvm and every other version manager shows them.
+	printf "%s\n" "$versions" | gvm_versions_sorted desc | while IFS= read -r version; do
+		[ -n "$version" ] || continue
+		marker=" "
+		if gvm_version_installed "$version"; then
+			marker="*"
+		fi
+		printf "   %s %s\n" "$marker" "$version"
+	done
+	echo
+	printf "   (*) = already installed\n"
+fi
+
+echo

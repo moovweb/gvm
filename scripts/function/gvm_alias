@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+#
+# Version aliases.
+#
+# gvm's original alias implementation cloned whole environment files, so an
+# alias and the version it pointed at were two independent objects that could
+# drift apart, and aliases could not point at other aliases. These are
+# one-line pointer files, like nvm's $NVM_DIR/alias, which makes resolution a
+# cheap loop and cycle detection possible.
+
+# gvm_alias_path <name>
+gvm_alias_path() {
+	echo "$GVM_ROOT/aliases/$(basename -- "$GVM_ROOT/aliases/${1:-}")"
+}
+
+# gvm_alias_is_valid_name <name>
+gvm_alias_is_valid_name() {
+	local name="${1:-}"
+	[ -n "$name" ] || return 1
+	case "$name" in
+		-* | */* | *. | *..*) return 1 ;;
+	esac
+	[[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+}
+
+# Implicit aliases always exist and cannot be overwritten, matching how nvm
+# treats `default`, `stable` and `node`.
+gvm_alias_is_implicit() {
+	case "${1:-}" in
+		default | stable | latest | unstable | newest | oldest) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+# gvm_alias_list   every alias name, one per line
+gvm_alias_list() {
+	[ -d "$GVM_ROOT/aliases" ] || return 0
+	local f
+	for f in "$GVM_ROOT"/aliases/*; do
+		[ -f "$f" ] || continue
+		basename -- "$f"
+	done | sort
+}
+
+# gvm_alias_raw <name>   the literal target stored for <name>
+gvm_alias_raw() {
+	local name="${1:-}" path
+	[ -n "$name" ] || return 1
+	path="$GVM_ROOT/aliases/$name"
+	[ -f "$path" ] || return 1
+	head -n 1 "$path"
+}
+
+# gvm_alias_create <name> <target-version-or-alias>
+gvm_alias_create() {
+	local name="${1:-}" target="${2:-}"
+	[ -n "$name" ] || return 1
+	[ -n "$target" ] || return 1
+
+	gvm_alias_is_valid_name "$name" || {
+		display_error "'$name' is not a valid alias name"
+		return 1
+	}
+	if gvm_alias_is_implicit "$name"; then
+		display_error "'$name' is a built-in alias and cannot be redefined"
+		display_message "Built-in aliases: default, stable, latest, unstable, newest, oldest"
+		return 1
+	fi
+	if [ -f "$GVM_ROOT/aliases/$name" ]; then
+		display_error "Alias '$name' already exists: $(gvm_alias_raw "$name")"
+		return 1
+	fi
+
+	# An alias that points at itself can never resolve to anything.
+	if [ "$name" = "$target" ]; then
+		display_error "Alias '$name' cannot point at itself"
+		return 1
+	fi
+
+	# Refuse to create a cycle up front rather than hanging on resolve.
+	if gvm_alias_resolves_to "$target" "$name"; then
+		display_error "Alias '$name' would point at itself via '$target'"
+		return 1
+	fi
+
+	mkdir -p "$GVM_ROOT/aliases" || return 1
+	printf '%s\n' "$target" > "$GVM_ROOT/aliases/$name" || return 1
+}
+
+# gvm_alias_delete <name>
+gvm_alias_delete() {
+	local name="${1:-}"
+	[ -n "$name" ] || return 1
+	if gvm_alias_is_implicit "$name"; then
+		display_error "'$name' is a built-in alias and cannot be deleted"
+		return 1
+	fi
+	[ -f "$GVM_ROOT/aliases/$name" ] || {
+		display_error "Alias '$name' does not exist"
+		return 1
+	}
+	rm -f "$GVM_ROOT/aliases/$name"
+}
+
+# gvm_alias_resolves_to <name> <version>   would <name> end up at <version>?
+gvm_alias_resolves_to() {
+	local name="${1:-}" version="${2:-}" current="$1" hops=0
+	while [ -n "$current" ] && [ "$hops" -lt 32 ]; do
+		if [ "$current" = "$version" ]; then
+			return 0
+		fi
+		local next
+		next="$(gvm_alias_raw "$current")" || return 1
+		[ -n "$next" ] || return 1
+		current="$next"
+		hops=$((hops + 1))
+	done
+	return 1
+}
+
+# gvm_alias_resolve <name>
+# Follow the alias chain to a concrete version name. Built-in aliases resolve
+# against the release index or the installed set. Returns 1 and prints nothing
+# when the name is not an alias at all; returns 2 when it is an alias but
+# dangling.
+gvm_alias_resolve() {
+	local name="${1:-}" seen="" hops=0 result=""
+
+	[ -n "$name" ] || return 1
+
+	# Only walk the chain for names that really are aliases. Without this,
+	# every version name would "resolve" to itself and shadow the index.
+	gvm_alias_is_implicit "$name" || gvm_alias_raw "$name" > /dev/null || return 1
+
+	# Must be a separate statement: bash expands every argument of a single
+	# `local` before assigning any of them, so `local a=$1 b=$a` would not work.
+	local current="$name"
+	# An alias may be written the way a human types it (`gvm alias create work
+	# 1.24.13`), but everything downstream compares full names, so normalise
+	# once here rather than at every call site.
+	case "$current" in
+		[0-9]*) current="go$current" ;;
+	esac
+	while [ -n "$current" ] && [ "$hops" -lt 32 ]; do
+		case "
+$seen
+" in
+			*"
+$current
+"*)
+				display_error "Alias loop: $name -> $current"
+				return 2
+				;;
+		esac
+		seen="$seen$current
+"
+
+		# A concrete version name ends the walk.
+		if ! gvm_alias_is_implicit "$current" && ! gvm_alias_raw "$current" > /dev/null; then
+			result="$current"
+			break
+		fi
+
+		local next
+		next="$(gvm_alias_expand "$current")" || {
+			display_error "Alias '$current' points at nothing that exists"
+			return 2
+		}
+		current="$next"
+		hops=$((hops + 1))
+	done
+
+	if [ "$hops" -ge 32 ]; then
+		display_error "Alias chain for '$name' is too deep (loop?)"
+		return 2
+	fi
+
+	[ -n "$result" ] || return 1
+	case "$result" in
+		[0-9]*) result="go$result" ;;
+	esac
+	echo "$result"
+}
+
+# gvm_alias_expand <name>   one step of alias resolution
+gvm_alias_expand() {
+	local name="${1:-}"
+	case "$name" in
+		default)
+			# The default is whatever `gvm use --default` last recorded, or
+			# the newest stable release.
+			local recorded
+			recorded="$(gvm_default_recorded 2> /dev/null)"
+			if [ -n "$recorded" ]; then
+				echo "$recorded"
+				return 0
+			fi
+			local latest
+			latest="$(gvm_index_latest_stable 2> /dev/null)"
+			[ -n "$latest" ] || return 1
+			echo "$latest"
+			return 0
+			;;
+		stable | latest)
+			local latest
+			latest="$(gvm_index_latest_stable 2> /dev/null)"
+			[ -n "$latest" ] || return 1
+			echo "$latest"
+			return 0
+			;;
+		unstable)
+			# The pre-release channel: the newest release candidate or beta.
+			# `unstable` must not mean "newest of anything", or `gvm use unstable`
+			# would quietly hand over a stable release.
+			local latest
+			latest="$(gvm_index_latest_prerelease 2> /dev/null)"
+			[ -n "$latest" ] || return 1
+			echo "$latest"
+			return 0
+			;;
+		newest)
+			local latest
+			latest="$(gvm_index_latest 2> /dev/null)"
+			[ -n "$latest" ] || return 1
+			echo "$latest"
+			return 0
+			;;
+		oldest)
+			local oldest
+			oldest="$(gvm_index_versions stable 2> /dev/null | head -n 1)"
+			[ -n "$oldest" ] || return 1
+			echo "$oldest"
+			return 0
+			;;
+		*)
+			gvm_alias_raw "$name"
+			;;
+	esac
+}
+
+# gvm_default_recorded   the version name stored in environments/default
+# Those files are written as: export gvm_go_name; gvm_go_name="go1.24.0"
+gvm_default_recorded() {
+	local file="$GVM_ROOT/environments/default"
+	[ -f "$file" ] || return 1
+	local line
+	line="$(grep -m1 'gvm_go_name=' "$file" 2> /dev/null)" || return 1
+	line="${line##*gvm_go_name=}"
+	line="${line#\"}"
+	line="${line%\"}"
+	[ -n "$line" ] || return 1
+	echo "$line"
+}

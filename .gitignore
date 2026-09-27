@@ -1,11 +1,30 @@
+# Editor and OS leftovers
 *~
-go
+*.swp
+.DS_Store
+
+# A gvm checkout used as its own GVM_ROOT, which is what a bare
+# `source scripts/gvm` in the repository does. The directory layout is
+# documented in README.md under "Layout".
 gos/
 pkgsets/
 archive/
 environments/
+aliases/
+cache/
 tmp/
+logs/
+go
+
+# What the installer records about this install. Written by install.sh and by
+# `gvm update`; it is this installation's own metadata, not part of gvm.
+.gvm-source
+.gvm-source.tmp.*
+
+# Nothing in an installed gvm should be a build artefact.
 *.log
-scripts/gvm
+*.tsv
+
+# Local overrides
 Gemfile.lock
 .vagrant/

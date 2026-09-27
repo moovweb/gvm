@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+#
+# gvm doctor - diagnose an installation.
+#
+# nvm has this and it earns its keep, because the two things that go wrong
+# with a version manager are always environmental: a broken GOROOT_BOOTSTRAP
+# chain, a PATH polluted by another Go, or a half-finished install.
+
+. "$GVM_ROOT/scripts/functions"
+
+failures=0
+warnings=0
+
+ok() {
+	printf '  \033[0;32mok\033[0m    %s\n' "$1"
+}
+
+warn() {
+	printf '  \033[0;33mwarn\033[0m  %s\n' "$1"
+	warnings=$((warnings + 1))
+}
+
+fail() {
+	printf '  \033[0;31mfail\033[0m  %s\n' "$1"
+	failures=$((failures + 1))
+}
+
+info() {
+	printf '        %s\n' "$1"
+}
+
+section() {
+	echo
+	display_message "$1"
+}
+
+if [ "${TERM:-dumb}" = "dumb" ] || [ ! -t 1 ]; then
+	ok() { printf '  ok    %s\n' "$1"; }
+	warn() {
+		printf '  warn  %s\n' "$1"
+		warnings=$((warnings + 1))
+	}
+	fail() {
+		printf '  fail  %s\n' "$1"
+		failures=$((failures + 1))
+	}
+fi
+
+echo
+display_message "gvm doctor"
+
+section "Environment"
+if [ -n "$GVM_ROOT" ]; then
+	ok "GVM_ROOT is $GVM_ROOT"
+else
+	fail "GVM_ROOT is not set. Add this to your shell profile:"
+	info '[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"'
+fi
+
+if [ -f "$GVM_ROOT/scripts/gvm" ]; then
+	ok "shell hook $GVM_ROOT/scripts/gvm is present"
+elif [ -f "$GVM_ROOT/scripts/gvm-default" ]; then
+	ok "scripts/gvm-default found (installed without autotools)"
+else
+	fail "cannot find scripts/gvm; reinstall gvm"
+fi
+
+if [ -d "$GVM_ROOT/.git" ]; then
+	if gvm_source_is_checkout; then
+		ok "this install is a git checkout, so 'gvm update' can update it"
+		info "State directories are .gitignore'd; 'git clean -x' in $GVM_ROOT would still delete them."
+	else
+		warn "a .git directory is present in GVM_ROOT that this install did not put there"
+		info "gvm warns once per shell about it, and 'git clean' here would delete gvm's state."
+		info "Reinstall with install.sh, or set GVM_NO_GIT_BAK=1 to silence the warning."
+	fi
+fi
+
+section "Required tools"
+for tool in tar gzip awk sed grep; do
+	command -v "$tool" > /dev/null 2>&1 && ok "$tool found" || fail "$tool is missing and is required"
+done
+
+if command -v curl > /dev/null 2>&1; then
+	curl_version="$(curl --version 2> /dev/null | sed -n '1s/^curl \([0-9.]*\).*/\1/p')"
+	ok "curl found${curl_version:+ $curl_version}"
+else
+	fail "curl is missing and is required"
+fi
+
+if checksum_tool="$(gvm_checksum_tool)"; then
+	ok "SHA256 verification available via $checksum_tool"
+else
+	fail "no SHA256 tool (sha256sum, shasum, gsha256sum, sha256 or openssl)"
+	info "gvm refuses to install unverified artifacts, so this is required."
+fi
+
+section "Platform"
+if platform="$(gvm_platform_pair)"; then
+	ok "detected $platform"
+	latest="$(gvm_index_latest_stable 2> /dev/null)"
+	if [ -n "$latest" ] && gvm_index_has_binary "$latest"; then
+		ok "prebuilt binaries are published for $platform ($latest)"
+	elif [ -n "$latest" ]; then
+		warn "no prebuilt binary for $platform; gvm install will build from source"
+	fi
+else
+	warn "unrecognised platform: $(uname -s) $(uname -m)"
+	info "gvm install will have to build from source"
+fi
+
+section "Building from source"
+buildable="$(gvm_index_latest_stable 2> /dev/null)"
+if [ -n "$buildable" ]; then
+	requirement="$(gvm_bootstrap_floor "$buildable")"
+	case "$requirement" in
+		c) ok "$buildable builds from C: needs gcc, make and bison" ;;
+		unknown) warn "unknown bootstrap requirement for $buildable" ;;
+		*)
+			ok "$buildable needs Go ${requirement#go} or later to build"
+			if bootstrap="$(gvm_bootstrap_resolve "$buildable" 2> /dev/null)"; then
+				if [ -n "$bootstrap" ]; then
+					ok "bootstrap available: $(gvm_go_version_of "$bootstrap") at $bootstrap"
+				else
+					ok "no Go bootstrap needed (C toolchain build)"
+				fi
+			else
+				warn "no usable bootstrap toolchain found for $buildable"
+				info "Fix it with: gvm install $requirement"
+			fi
+			;;
+	esac
+fi
+
+for tool in gcc make; do
+	command -v "$tool" > /dev/null 2>&1 && ok "$tool found" ||
+		warn "$tool is missing; needed only to build Go from source"
+done
+
+section "Release index"
+if gvm_index_refresh > /dev/null 2>&1; then
+	age="$(gvm_index_age)"
+	ok "$(gvm_index_release_count) releases indexed (cache age ${age}s)"
+	gvm_flag_is_set GVM_OFFLINE && info "GVM_OFFLINE is set: index refreshes are disabled"
+else
+	warn "the release index could not be refreshed"
+	info "Commands that need it will fail until the network is reachable."
+fi
+
+section "Where this gvm came from"
+# The question every bug report starts with, and the one an install cannot
+# answer by looking at its own files.
+if recorded_repo="$(gvm_source_field repo 2> /dev/null)" && [ -n "$recorded_repo" ]; then
+	ok "installed from $recorded_repo"
+else
+	info "this install records no repository"
+fi
+if recorded_commit="$(gvm_source_field commit 2> /dev/null)" && [ -n "$recorded_commit" ]; then
+	recorded_ref="$(gvm_source_field ref 2> /dev/null || true)"
+	recorded_at="$(gvm_source_field installed 2> /dev/null || true)"
+	info "commit ${recorded_commit:0:7}${recorded_ref:+ on $recorded_ref}${recorded_at:+, installed $recorded_at}"
+fi
+
+if [ -e "$GVM_ROOT/.git" ] || [ -d "$GVM_ROOT/git.bak" ]; then
+	if [ -e "$GVM_ROOT/.git" ]; then
+		ok "'gvm update' is available"
+	else
+		ok "'gvm update' is available; it will restore git.bak first"
+	fi
+	[ -n "$(gvm_source_field repo 2> /dev/null)" ] ||
+		info "No repository recorded, so 'gvm update' needs --repo <url>."
+else
+	warn "'gvm update' is not available: this install kept no git history"
+	info "Install from a checkout to fix it:"
+	info "  bash <(curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer) -- --keep-repo"
+fi
+
+section "Installed versions"
+installed=0
+broken=0
+for version in $(gvm_versions_installed); do
+	installed=$((installed + 1))
+	goroot="$GVM_ROOT/gos/$version"
+	if [ -x "$goroot/bin/go" ] && [ -f "$goroot/VERSION" ]; then
+		ok "$version ($(head -1 "$goroot/VERSION"))"
+	else
+		fail "$version is incomplete: missing bin/go or VERSION"
+		info "Reinstall it with: gvm install $version --force"
+		broken=$((broken + 1))
+	fi
+done
+[ "$installed" = "0" ] && info "no Go versions installed yet: gvm install $buildable"
+
+section "Selected version"
+if [ -n "$gvm_go_name" ]; then
+	if [ -x "$GVM_ROOT/gos/$gvm_go_name/bin/go" ]; then
+		ok "using $gvm_go_name"
+	else
+		fail "gvm_go_name is $gvm_go_name but $GVM_ROOT/gos/$gvm_go_name/bin/go is missing"
+		info "Run 'gvm use $gvm_go_name' after reinstalling, or 'gvm use default'."
+	fi
+else
+	info "no version selected; gvm use --default sets one for new shells"
+fi
+
+section "PATH hygiene"
+stray=""
+IFS=':' read -ra entries <<< "$PATH"
+for entry in "${entries[@]}"; do
+	[ -z "$entry" ] && continue
+	case "$entry" in
+		*/bin/go | */go/bin)
+			[ "$entry" = "$GVM_ROOT/gos/$gvm_go_name/bin" ] ||
+				stray="$stray $entry"
+			;;
+	esac
+done
+if [ -z "$stray" ]; then
+	ok "no foreign Go directories on PATH"
+else
+	warn "other Go installations are on PATH and may take precedence:"
+	for entry in $stray; do info "$entry"; done
+	info "Put gvm earlier in PATH, or unset GOROOT in your shell profile."
+fi
+
+if [ -n "$GOROOT" ] && [ -n "$gvm_go_name" ] && [ "$GOROOT" != "$GVM_ROOT/gos/$gvm_go_name" ]; then
+	warn "GOROOT ($GOROOT) does not match the selected version"
+	info "This is usually a GOROOT left over from a distro Go or another manager."
+fi
+
+section "Aliases"
+for name in $(gvm_alias_list); do
+	target="$(gvm_alias_raw "$name")"
+	if resolved="$(gvm_alias_resolve "$name" 2> /dev/null)"; then
+		ok "$name -> $target (resolves to $resolved)"
+	else
+		fail "$name -> $target is dangling"
+	fi
+done
+
+echo
+if [ "$failures" = "0" ] && [ "$warnings" = "0" ]; then
+	display_message "No problems found."
+	exit 0
+fi
+display_message "$failures failure(s), $warnings warning(s)."
+[ "$failures" = "0" ] && exit 0 || exit 1

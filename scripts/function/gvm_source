@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# Where this gvm came from.
+#
+# $GVM_ROOT/.gvm-source records the repository, the ref, the commit and the
+# version that were installed. It is what lets `gvm update` know where to fetch
+# from, and what lets `gvm doctor` tell a user which gvm they are actually
+# running - the question a bug report always starts with.
+#
+# Deliberately not shell: key=value lines, read with a loop. eval would turn a
+# file inside GVM_ROOT into code, and the only thing that ever writes this is
+# our own installer.
+
+# gvm_source_file -> the path of the provenance file
+gvm_source_file() {
+	printf '%s/.gvm-source' "$GVM_ROOT"
+}
+
+# gvm_source_field <key> -> the value, or nothing
+gvm_source_field() {
+	local key="${1:-}" name value
+	[ -n "$key" ] || return 1
+	[ -f "$(gvm_source_file)" ] || return 1
+
+	# IFS='=' with two names: the second gets the rest of the line, so a URL
+	# carrying its own '=' survives.
+	while IFS='=' read -r name value; do
+		[ "$name" = "$key" ] || continue
+		printf '%s\n' "$value"
+		return 0
+	done < "$(gvm_source_file)"
+	return 1
+}
+
+# gvm_source_is_checkout -> true when this install is a git work tree on purpose
+# install.sh records it, so a reinstall can tell "the user asked for a checkout
+# with --keep-repo" from "somebody cloned into GVM_ROOT by hand".
+gvm_source_is_checkout() {
+	[ "$(gvm_source_field checkout 2> /dev/null)" = "yes" ]
+}
+
+# gvm_source_write <repo> <ref> <commit> <version> <checkout yes|no>
+# Rewrites the file in one go, through a temporary file in the same directory,
+# so an interrupted write cannot leave a half-record behind. git and the
+# installer both go through here or write the same keys; tests/17 keeps the two
+# in step.
+gvm_source_write() {
+	local repo="${1:-}" ref="${2:-}" commit="${3:-}" version="${4:-}" checkout="${5:-no}"
+	local file tmp
+	file="$(gvm_source_file)"
+	tmp="${file}.tmp.$$"
+
+	{
+		printf '# Written by gvm. Records what was installed, and where from.\n'
+		printf 'repo=%s\n' "$repo"
+		printf 'ref=%s\n' "$ref"
+		printf 'commit=%s\n' "$commit"
+		printf 'version=%s\n' "$version"
+		printf 'checkout=%s\n' "$checkout"
+		printf 'installed=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2> /dev/null || echo unknown)"
+	} > "$tmp" 2> /dev/null || {
+		rm -f "$tmp" 2> /dev/null
+		return 1
+	}
+
+	mv "$tmp" "$file" 2> /dev/null || {
+		rm -f "$tmp" 2> /dev/null
+		return 1
+	}
+}
+
+# gvm_source_repo -> the repository this install came from
+# The recorded one, then GVM_REPO for anybody who overrides it at install time.
+gvm_source_repo() {
+	local repo
+	if repo="$(gvm_source_field repo 2> /dev/null)" && [ -n "$repo" ]; then
+		printf '%s\n' "$repo"
+		return 0
+	fi
+	[ -n "${GVM_REPO:-}" ] || return 1
+	printf '%s\n' "$GVM_REPO"
+}

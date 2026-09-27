@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# macOS is in the matrix on purpose: its /bin/bash is 3.2, which is the oldest
+# shell this project claims to support, and nothing else in CI would notice.
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zsh and the shell tools the tests look for
+        run: |
+          if [ "$(uname)" = Darwin ]; then
+            brew install zsh coreutils 2>/dev/null || true
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq zsh coreutils
+          fi
+
+      - name: Parse every shell script
+        run: make lint
+
+      - name: Run the test suite
+        # The suite is plain bash and needs no network: it pins the release
+        # index to a fixture and fakes every download.
+        # A per-step timeout, so a hang costs minutes and not the six hours a
+        # job gets by default - and so the log ends at the test file that hung.
+        timeout-minutes: 8
+        run: make test
+
+      - name: Install into a throwaway prefix, as a user would
+        run: ./install.sh --prefix "$RUNNER_TEMP/gvm" --no-profile
+
+      - name: Put coreutils' gtimeout on PATH
+        # run.sh uses it to cap a single test file, so a hang is a failed test
+        # with a name rather than a job that sits there for eight minutes.
+        run: echo "$(brew --prefix coreutils 2> /dev/null || true)/libexec/gnubin" >> "$GITHUB_PATH"

@@ -1,11 +1,100 @@
 #!/usr/bin/env bash
+#
+# gvm implode - remove GVM and every Go it installed.
+#
+# This is the only command here that destroys a whole directory tree, so it is
+# deliberately hard to run by accident:
+#   * it refuses to run against a GVM_ROOT that does not look like a gvm root,
+#   * it says what it is about to delete, and how much,
+#   * it only prompts when there is a terminal, so a pipeline gets an error
+#     instead of hanging forever, and --force is the way through.
 
 function gvm_implode() {
-  read -p "Are you sure? [y/N] " -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-   display_message "Action cancelled"
- else
-   (rm -rf "$GVM_ROOT" && display_message "GVM successfully removed") || display_error "Failed to uninstall gvm"
- fi
+  local force="" root="${GVM_ROOT:-}" versions count=0
+
+  for arg in "$@"; do
+    case "$arg" in
+      -f | --force) force=1 ;;
+      -h | --help)
+        display_message "Usage: gvm implode [--force]"
+        display_message ""
+        display_message "Removes $root, every Go version it installed, and all packages."
+        display_message "--force is required when there is no terminal to confirm at."
+        return 0
+        ;;
+      *)
+        display_error "Unknown option: $arg"
+        return 64
+        ;;
+    esac
+  done
+
+  if [ -z "$root" ] || [ "$root" = "/" ] || [ "$root" = "$HOME" ]; then
+    display_error "Refusing to remove '$root'."
+    display_message "GVM_ROOT does not look like a gvm installation."
+    return 1
+  fi
+
+  if [ ! -d "$root" ]; then
+    display_error "No such directory: $root"
+    return 1
+  fi
+
+  # A gvm root always has both: VERSION carries the manager's own version, and
+  # scripts/ holds the commands. Requiring both means a mistyped GVM_ROOT that
+  # happens to point at something with a scripts/ directory still cannot delete
+  # it.
+  if [ ! -d "$root/scripts" ] || [ ! -f "$root/VERSION" ]; then
+    display_error "Refusing to remove '$root': it does not look like a gvm root."
+    display_message "A gvm root has both a scripts/ directory and a VERSION file."
+    return 1
+  fi
+
+  if [ -d "$root/gos" ]; then
+    count="$(ls -1 "$root/gos" 2> /dev/null | wc -l | tr -d ' ')"
+    versions="$count Go version(s)"
+  else
+    versions="no Go versions"
+  fi
+
+  display_warning "This deletes $root entirely: $versions, all packages and all aliases."
+  display_message "Your Go modules and build cache in \$GOPATH outside $root are not touched."
+
+  if [ -z "$force" ]; then
+    if [ ! -t 0 ]; then
+      display_error "Not a terminal, so there is nothing to confirm at."
+      display_message "Run 'gvm implode --force' if you are sure."
+      return 1
+    fi
+    read -p "Are you sure? [y/N] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      display_message "Action cancelled"
+      return 0
+    fi
+  fi
+
+  # Remove the profile line too, or every new shell prints an error.
+  local rc=0
+  for rcfile in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.bash_profile"; do
+    [ -f "$rcfile" ] || continue
+    grep -l 'scripts/gvm' "$rcfile" > /dev/null 2>&1 || continue
+    local backup="$rcfile.gvm-backup"
+    if [ ! -f "$backup" ]; then
+      cp "$rcfile" "$backup" || {
+        display_error "Could not back up $rcfile; not removing it."
+        continue
+      }
+    fi
+    if grep -v 'scripts/gvm' "$backup" > "$rcfile"; then
+      display_message "Removed the gvm line from $rcfile (backup: $backup)"
+    fi
+  done
+
+  (cd / && rm -rf "$root") || {
+    display_error "Failed to remove $root"
+    return 1
+  }
+  display_message "GVM successfully removed"
+  return 0
 }

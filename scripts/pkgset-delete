@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-[[ $gvm_go_name != "" ]] ||
+[[ -n "${gvm_go_name:-}" ]] || {
+	display_message "Run 'gvm use <version>' first"
 	display_fatal "No Go version selected"
+	exit 1
+}
 
 [[ $1 != "" ]] ||
 	display_fatal "Please specify the name"

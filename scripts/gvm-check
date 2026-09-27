@@ -1,57 +1,64 @@
 #!/usr/bin/env bash
+#
+# gvm-check - verify that everything needed for the requested command exists.
+#
+# The old version required git, ar, bison and gcc for *every* command, and its
+# git failure message told you to install mercurial. Requirements now depend
+# on what you asked for: downloading needs curl, building from source needs a
+# C toolchain, and merely listing versions needs neither.
+
 . "$GVM_ROOT/scripts/functions"
 
-error_message=""
-
-# Check for git
-command -v git &> /dev/null ||
-	error_message="${error_message}
-Could not find git
-
-  linux: apt-get install mercurial
-  mac:   brew install mercurial
+missing=""
+add_missing() {
+	missing="$missing
+  $1
+    $2
 "
-# Check for ar
-command -v ar &> /dev/null ||
-	error_message="${error_message}
-Could not find binutils
+}
 
-  linux: apt-get install binutils
-"
-# Check for bison
-command -v bison &> /dev/null ||
-	error_message="${error_message}
-Could not find bison
+command -v tar > /dev/null 2>&1 || add_missing "Could not find tar" "Debian/Ubuntu: apt-get install tar"
+command -v gzip > /dev/null 2>&1 || add_missing "Could not find gzip" "Debian/Ubuntu: apt-get install gzip"
+command -v awk > /dev/null 2>&1 || add_missing "Could not find awk" "Debian/Ubuntu: apt-get install gawk mawk"
 
-  linux: apt-get install bison
-"
-# Check for gcc
-command -v gcc &> /dev/null ||
-	error_message="${error_message}
-Could not find gcc
+# Only needed to fetch anything.
+case "${1:-}" in
+	install)
+		if ! command -v curl > /dev/null 2>&1; then
+			add_missing "Could not find curl, which is required to download Go" "Debian/Ubuntu: apt-get install curl
+  macOS:         brew install curl
+  RedHat:        yum install curl"
+		fi
+		;;
+esac
 
-  linux: apt-get install gcc
-"
-# Check for make
-command -v make &> /dev/null ||
-	error_message="${error_message}
-Could not find make
+# Only needed for source builds.
+case "${1:-}" in
+	install)
+		if [ "${2:-}" = "-s" ] || [ "${2:-}" = "--source" ] || [ "${2:-}" = "--prefer-source" ]; then
+			command -v make > /dev/null 2>&1 || add_missing "Could not find make, which is required to build Go from source" "Debian/Ubuntu: apt-get install make
+  macOS:         xcode-select --install"
+			command -v gcc > /dev/null 2>&1 || command -v clang > /dev/null 2>&1 ||
+				add_missing "Could not find a C compiler, which Go 1.4 and earlier need to bootstrap" "Debian/Ubuntu: apt-get install build-essential
+  macOS:         xcode-select --install"
+		fi
+		;;
+esac
 
-  linux: apt-get install make
-"
-# Check for curl
-command -v curl &> /dev/null ||
-	error_message="${error_message}
-Could not find curl
-
-  linux: apt-get install curl
-  mac:   brew install curl
-"
-
-if [ -n "$error_message" ]; then
-	display_warning "$error_message"
-	exit 1
-else
-	# All good!
-	exit 0
+# gvm refuses to unpack an artifact it cannot verify, so this is mandatory.
+if ! command -v sha256sum > /dev/null 2>&1 &&
+	! command -v shasum > /dev/null 2>&1 &&
+	! command -v gsha256sum > /dev/null 2>&1 &&
+	! command -v sha256 > /dev/null 2>&1 &&
+	! command -v openssl > /dev/null 2>&1; then
+	add_missing "No SHA256 utility found, and gvm will not install unverified artifacts" "Debian/Ubuntu: apt-get install coreutils
+  macOS:         shasum ships with the system
+  RedHat:        yum install coreutils"
 fi
+
+if [ -n "$missing" ]; then
+	display_warning "Missing requirements:$missing"
+	display_message "Run 'gvm doctor' for a full report."
+	exit 1
+fi
+exit 0

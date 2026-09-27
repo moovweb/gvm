@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Colour handling for the display_* helpers.
+#
+# These used to colour only when TERM was exactly "xterm", so a warning printed
+# in tmux, in screen, in a terminal called "xterm-256color", or through any pipe
+# lost its "WARNING: " prefix entirely and looked like an ordinary message. The
+# prefix is not decoration: it is how a user tells a warning from output they
+# asked for. So the prefix is always printed, and only the colour is conditional.
+#
+# Sourced by display_message, display_error, display_warning and display_fatal.
+
+# gvm_display_color <color>
+# Prints the escape sequence for a color, or nothing when colour is off.
+gvm_display_color() {
+	# An explicit opt-out, the https://no-color.org convention, and GVM_NO_COLORS
+	# for parity with `gvm ls --no-colors`.
+	# NO_COLOR is defined by no-color.org as "any non-empty value", so -n is
+	# right for it. GVM_NO_COLORS is ours and follows the usual boolean rules.
+	if [ -n "${NO_COLOR:-}" ] || gvm_flag_is_set GVM_NO_COLORS; then
+		return 0
+	fi
+	# Only colour an interactive terminal: output in a pipe, a log file or a test
+	# capture should stay plain.
+	if [ ! -t 1 ] || [ "${TERM:-dumb}" = "dumb" ] || [ -z "${TERM:-}" ]; then
+		return 0
+	fi
+	command -v tput > /dev/null 2>&1 || return 0
+
+	case "$1" in
+		red) tput setaf 1 2> /dev/null ;;
+		green) tput setaf 2 2> /dev/null ;;
+		yellow) tput setaf 3 2> /dev/null ;;
+		blue) tput setaf 4 2> /dev/null ;;
+		cyan) tput setaf 6 2> /dev/null ;;
+		reset) tput sgr0 2> /dev/null ;;
+	esac
+	return 0
+}

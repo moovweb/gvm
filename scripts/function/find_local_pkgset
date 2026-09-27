@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
+#
+# find_local_pkgset
+# /*!
+# @abstract Print the root of the local package-set tree containing the current
+#   directory, or nothing.
+# @discussion
+# A "local" package set is one that lives in the checkout rather than under
+# $GVM_ROOT, marked by a .gvm_local directory. This walks up from the current
+# directory looking for one, the same way __gvm_find_path_upwards does, but
+# without `cd`-ing: the old version cd'd around and then cd'd back, which left
+# the shell in the wrong directory if a path disappeared mid-search, and it
+# dereferenced $T unset when it reached the filesystem root.
+# @return Prints the directory containing .gvm_local (status 0) or nothing
+#   (status 1).
+# */
+function find_local_pkgset {
+	local marker=".gvm_local" current="$PWD" top
 
-function find_local_pkgset
-{
-    local TOPFILE=.gvm_local
-    if [ -d $TOPFILE ] ; then
-        PWD= /bin/pwd
-    else
-        local HERE=$PWD
-        T=
-        while [ \( ! \( -d $TOPFILE \) \) -a \( $PWD != "/" \) ]; do
-            builtin cd ..
-            T=`PWD= /bin/pwd`
-        done
-        builtin cd $HERE
-        if [ -d "$T/$TOPFILE" ]; then
-            echo $T
-        fi
-    fi
+	while true; do
+		if [ -d "$current/$marker" ]; then
+			printf '%s\n' "$current"
+			return 0
+		fi
+		[ "$current" = "/" ] && break
+		current="$(dirname "$current")"
+	done
+
+	unset top
+	return 1
 }
-

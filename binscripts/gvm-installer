@@ -1,144 +1,89 @@
 #!/usr/bin/env bash
+#
+# gvm-installer - the one-liner installer.
+#
+#   bash <(curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+#
+# The previous version cloned the repository, renamed .git to git.bak, guessed a
+# profile with `finger`, and then overwrote scripts/gvm with two generated lines
+# - so the file a user sourced was not the one the project ships, and moving the
+# directory broke every shell. All of that now lives in install.sh, which is
+# part of the repository. This script only has to fetch it and hand over.
+
+set -u
+
+repo="${GVM_REPO:-https://github.com/moovweb/gvm}"
+raw="https://raw.githubusercontent.com/moovweb/gvm"
 
 display_error() {
-	tput sgr0
-	tput setaf 1
-	echo "ERROR: $1"
-	tput sgr0
+	printf 'ERROR: %s\n' "$1" >&2
+}
+
+display_message() {
+	printf '%s\n' "$1"
+}
+
+usage() {
+	cat <<EOF
+Usage: bash <(curl -sSL $raw/master/binscripts/gvm-installer) -- [options]
+
+Downloads install.sh from gvm and runs it. Every option is passed straight
+through:
+
+  --prefix <dir>    Where to install. Default: \$HOME/.gvm
+  --profile <file>  Profile to update instead of guessing
+  --no-profile      Do not touch any profile file
+  --force           Install over an existing gvm
+  --no-clone        Install from a gvm checkout you already have
+  --keep-repo       Keep the git checkout, so 'gvm update' can update gvm
+  --uninstall       Remove an installed gvm
+  -h, --help        Show install.sh's own help
+
+Environment:
+  GVM_REPO          Clone from this URL instead of $repo
+EOF
+}
+
+# -h/--help and --version are answered here, everything else is forwarded.
+args=()
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage
+			exit 0
+			;;
+		--version)
+			printf 'gvm installer; run with --help for usage\n'
+			exit 0
+			;;
+		*) args+=("$1") ;;
+	esac
+	shift
+done
+
+command -v bash > /dev/null 2>&1 || {
+	display_error "This installer needs bash"
 	exit 1
 }
 
-update_profile() {
-	[ -f "$1" ] || return 1
-
-	grep -F "$source_line" "$1" > /dev/null 2>&1
-	if [ $? -ne 0 ]; then
-		echo -e "\n$source_line" >> "$1"
-	fi
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/gvm-installer.XXXXXX")" || {
+	display_error "Could not create a temporary directory"
+	exit 1
 }
+trap 'rm -rf "$tmp"' EXIT INT TERM
 
-check_existing_go() {
-
-	if [ "$GOROOT" = "" ]; then
-		if which go > /dev/null 2>&1; then
-			GOROOT=$(go env | grep GOROOT | cut -d"=" -f2)
-		else
-			echo "No existing Go versions detected"
-			return
-		fi
-	fi
-	echo "Created profile for existing install of Go at $GOROOT"
-	mkdir -p "$GVM_DEST/$GVM_NAME/environments" &> /dev/null || display_error "Failed to create environment directory"
-	mkdir -p "$GVM_DEST/$GVM_NAME/pkgsets/system/global" &> /dev/null || display_error "Failed to create new package set"
-	mkdir -p "$GVM_DEST/$GVM_NAME/gos/system" &> /dev/null || display_error "Failed to create new Go folder"
-	cat << EOF > $GVM_DEST/$GVM_NAME/environments/system
-# Automatically generated file. DO NOT EDIT!
-export GVM_ROOT; GVM_ROOT="$GVM_DEST/$GVM_NAME"
-export gvm_go_name; gvm_go_name="system"
-export gvm_pkgset_name; gvm_pkgset_name="global"
-export GOROOT; GOROOT="$GOROOT"
-export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global"
-export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:$GOROOT/bin:$GVM_ROOT/bin:\$PATH"
-EOF
-
-	# create system@global pkgset
-	cp $GVM_DEST/$GVM_NAME/environments/system $GVM_DEST/$GVM_NAME/environments/system@global
-	# @TODO: This is here for consistency with 'gvm pkgset create' which adds
-	# some duplicated entries when the pkgset is 'global'. Need to fix it!
-	cat << EOF >> $GVM_DEST/$GVM_NAME/environments/system@global
-export gvm_pkgset_name="global"
-export GOPATH; GOPATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global:\$GOPATH"
-export PATH; PATH="$GVM_DEST/$GVM_NAME/pkgsets/system/global/bin:\$PATH"
-EOF
-}
-
-BRANCH=${1:-master}
-GVM_DEST=${2:-$HOME}
-GVM_NAME="gvm"
-SRC_REPO=${SRC_REPO:-https://github.com/moovweb/gvm.git}
-
-[ "$GVM_DEST" = "$HOME" ] && GVM_NAME=".gvm"
-
-[ -d "$GVM_DEST/$GVM_NAME" ] && display_error \
-    "Already installed! Remove old installation by running
-
-    rm -rf $GVM_DEST/$GVM_NAME"
-
-[ -d "$GVM_DEST" ] || mkdir -p "$GVM_DEST" > /dev/null 2>&1 || display_error "Failed to create $GVM_DEST"
-[ -z "$(which git)" ] && display_error "Could not find git
-
-  debian/ubuntu: apt-get install git
-  redhat/centos: yum install git
-  archlinux: pacman -S git
-  mac:   brew install git
-"
-
-# Is gvm-installer being called from the origin repo?
-# If so, skip the clone and source locally!
-# This prevents CI from breaking on non-merge commits.
-
-GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-
-if [[ -z "$GIT_ROOT" || "$(basename "$GIT_ROOT")" != "gvm" ]]
-then
-  echo "Cloning from $SRC_REPO to $GVM_DEST/$GVM_NAME"
-
-  git clone --quiet "$SRC_REPO" "$GVM_DEST/$GVM_NAME" 2> /dev/null ||
-	  display_error "Failed to clone from $SRC_REPO into $GVM_DEST/$GVM_NAME"
-else
-  if [[ $GVM_DEST == *"$GIT_ROOT"* ]]
-  then
-    ln -s "$GIT_ROOT" "$GVM_DEST"
-  else
-    cp -r "$GIT_ROOT" "$GVM_DEST/$GVM_NAME"
-  fi
+if ! curl -fsSL "$raw/master/install.sh" -o "$tmp/install.sh"; then
+	display_error "Could not download install.sh from $raw/master/install.sh"
+	display_message ""
+	display_message "Download it by hand, or clone and install locally:"
+	display_message "  git clone $repo"
+	display_message "  cd gvm && ./install.sh --no-clone"
+	exit 1
 fi
 
-# GVM_DEST may be a non-relative path
-# i.e: gvm-installer master foo
-pushd . > /dev/null
-
-builtin cd "$GVM_DEST/$GVM_NAME" && git checkout --quiet "$BRANCH" 2> /dev/null ||	display_error "Failed to checkout $BRANCH branch"
-
-popd > /dev/null
-
-[ -z "$GVM_NO_GIT_BAK" ] && mv "$GVM_DEST/$GVM_NAME/.git" "$GVM_DEST/$GVM_NAME/git.bak"
-
-source_line="[[ -s \"${GVM_DEST}/$GVM_NAME/scripts/gvm\" ]] && source \"${GVM_DEST}/$GVM_NAME/scripts/gvm\""
-source_file="${GVM_DEST}/$GVM_NAME/scripts/gvm"
-
-if [ -z "$GVM_NO_UPDATE_PROFILE" ] ; then
-  if [ -f "$HOME/.zshrc" ]; then
-    update_profile "$HOME/.zshrc"
-  fi
-  if [ "$(uname)" == "Linux" ]; then
-    update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
-  elif [ "$(uname)" == "Darwin" ]; then
-    LOGIN_SHELL=$(finger $(id -u -n) | grep Shell | cut -d : -f 3)
-    echo "macOS detected. User shell is:" $LOGIN_SHELL
-    if [ $LOGIN_SHELL == "/bin/zsh" ]; then 		# macOS moved to ZSH after macOS Catalina
-      update_profile "$HOME/.zshrc"
-    else
-      update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
-    fi
-  fi
+if [ ! -s "$tmp/install.sh" ]; then
+	display_error "The downloaded install.sh is empty; that is not a working installer"
+	exit 1
 fi
 
-if [ -z "$GVM_NO_UPDATE_PROFILE" ] && [ "$?" != "0" ]; then
-	echo "Unable to locate profile settings file(Something like $HOME/.bashrc or $HOME/.bash_profile)"
-	echo
-	echo " You will have to manually add the following line:"
-	echo
-	echo "  $source_line"
-	echo
-fi
-
-echo "export GVM_ROOT=$GVM_DEST/$GVM_NAME" > "$GVM_DEST/$GVM_NAME/scripts/gvm"
-echo ". \$GVM_ROOT/scripts/gvm-default" >> "$GVM_DEST/$GVM_NAME/scripts/gvm"
-check_existing_go
-[[ -s "$GVM_DEST/$GVM_NAME/scripts/gvm" ]] && source "$GVM_DEST/$GVM_NAME/scripts/gvm"
-echo "Installed GVM v${GVM_VERSION}"
-echo
-echo "Please restart your terminal session or to get started right away run"
-echo " \`source ${source_file}\`"
-echo
+bash "$tmp/install.sh" "${args[@]:-}"

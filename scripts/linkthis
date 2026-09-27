@@ -43,7 +43,35 @@ force=""
 
 read_command_line "$@"
 
+if [ -z "${GOPATH:-}" ]; then
+	display_error "GOPATH is not set"
+	display_message "Run 'gvm use <version>' first"
+	exit 1
+fi
+
 target="${GOPATH%%:*}/src/$package_name"
 
+# A package name with a slash in it, or one that is `..`, would let `gvm
+# linkthis` write outside GOPATH/src, so require a plain import path.
+case "$package_name" in
+	/* | .* | ~*)
+		display_error "'$package_name' is not a usable package path"
+		display_message "Pass an import path like github.com/you/repo."
+		exit 65
+		;;
+esac
+
 mkdir -p "$(dirname "$target")"
-ln -sv $force "$PWD" "$target"
+
+# `ln -s src dst` where dst is an existing symlink to a directory does not
+# fail: it follows the link and creates src *inside* it, so `gvm linkthis` twice
+# in a row ends up with a chain of copies. Refuse instead.
+if [ -z "$force" ] && { [ -L "$target" ] || [ -e "$target" ]; }; then
+	display_error "$target already exists"
+	display_message "Remove it, or pass --force to replace it."
+	exit 1
+fi
+
+ln_args=(-sv)
+[ -n "$force" ] && ln_args+=(-f)
+ln "${ln_args[@]}" "$PWD" "$target"

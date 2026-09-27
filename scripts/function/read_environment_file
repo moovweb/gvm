@@ -24,7 +24,15 @@
 #   or an empty string (status 1) on failure.
 # */
 __gvm_read_environment_file() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -35,9 +43,9 @@ __gvm_read_environment_file() {
 
     if [[ -z "${filepath}" || ! -r "${filepath}" ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -64,16 +72,16 @@ __gvm_read_environment_file() {
     echo "${hash[@]}"
 
     if [[ ${#hash[@]} -eq 0 ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }

@@ -1,12 +1,13 @@
+#!/usr/bin/env bash
+. "$GVM_ROOT/scripts/function/_display_colors"
+
+# display_message <text>
+# Ordinary progress output. Always succeeds: a function whose last statement is
+# display_message must not accidentally return non-zero.
 display_message() {
-	command -v tput &> /dev/null
-	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
-		# GREEN!
-		tput sgr0
-		tput setaf 2
-		echo "$1"
-		tput sgr0
-	else
-		echo "$1"
-	fi
+	local color
+	color="$(gvm_display_color green)"
+	[ -n "$color" ] && printf '%s%s%s\n' "$color" "${1:-}" "$(gvm_display_color reset)"
+	[ -z "$color" ] && printf '%s\n' "${1:-}"
+	return 0
 }

@@ -4,7 +4,7 @@
 [[ ${GVM_SHELL_COMPAT:-} -eq 1 ]] && return || readonly GVM_SHELL_COMPAT=1
 
 # force zsh to start arrays at index 0
-# [[ -n $ZSH_VERSION ]] && setopt KSH_ARRAYS
+# [[ -n "${ZSH_VERSION:-}" ]] && setopt KSH_ARRAYS
 
 # __gvm_is_function()
 # /*!
@@ -61,8 +61,18 @@ __gvm_callstack() {
 # */
 
 
+# It used to `unsetopt KSH_ARRAYS` on the way out unconditionally, which is
+# wrong for a nested call: gvm_use turns KSH_ARRAYS on for its own 0-based array
+# arithmetic, then calls this once per argument, and the first call switched the
+# option back off underneath it. The result was that `gvm use 1.24.13` in zsh
+# parsed the request into nothing and reported the version as not installed.
+# Save and restore instead, so a caller's setting survives the call.
 __gvm_rematch() {
-    if [[ -n $ZSH_VERSION ]]; then
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -71,46 +81,29 @@ __gvm_rematch() {
     local regex="${1}"; shift
     local var_name="${1:-GVM_REMATCH}"
     local rematch_ary; rematch_ary=()
+    local _gvm_status=1
 
-    if [[ ${#string} -eq 0 ]];then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+    if [[ ${#string} -ne 0 && ${#regex} -ne 0 ]]; then
+        # perform regex - same on bash and ksh
+        if [[ "${string}" =~ $regex ]]; then
+            _gvm_status=0
+            # support bash and zsh
+            #
+            # NOTE: 'setopt KSH_ARRAYS' must be set for zsh to force array
+            # indexes to start at 0, like bash.
+            rematch_ary+=( "${BASH_REMATCH[@]}" )
+
+            if [[ "${var_name}" != "$" ]]; then
+                # assign to passed var
+                eval "${var_name}=( \"\${rematch_ary[@]}\" )"
+            fi
         fi
-        return 1
-    fi
-    if [[ ${#regex} -eq 0 ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
-        fi
-        return 1
     fi
 
-    # perform regex - same on bash and ksh
-    [[ "${string}" =~ $regex ]]
-    if [[ $? -ne 0 ]];then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
-        fi
-        return 1
-    fi
-    # support bash and zsh
-    #
-    # NOTE: 'setopt KSH_ARRAYS' must be set for zsh to force array indexes to
-    # start at 0, like bash.
-    #
-    rematch_ary+=( "${BASH_REMATCH[@]}" )
-
-    if [[ "${var_name}" != "$" ]]; then
-        # assign to passed var
-        eval "${var_name}=( \"\${rematch_ary[@]}\" )"
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
-    fi
-    return 0
+    return $_gvm_status
 }

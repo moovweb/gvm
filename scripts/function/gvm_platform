@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Host platform detection, mapped to go.dev's os/arch vocabulary.
+#
+# The legacy install script mapped every unrecognised `uname -m` to s390x,
+# which meant an unknown machine silently tried to download a s390x tarball
+# and then failed with a confusing HTTP 404. Unknown platforms now fail loudly
+# and fall back to a source build.
+
+# gvm_platform_map_os <uname -s>  -> linux, darwin, freebsd, ... (empty if unsupported)
+# The tables are split from the uname call so they can be tested directly.
+gvm_platform_map_os() {
+	case "$1" in
+		Linux*) echo linux ;;
+		Darwin*) echo darwin ;;
+		FreeBSD*) echo freebsd ;;
+		NetBSD*) echo netbsd ;;
+		OpenBSD*) echo openbsd ;;
+		DragonFly*) echo dragonfly ;;
+		SunOS | illumos) echo solaris ;;
+		AIX*) echo aix ;;
+		Plan9*) echo plan9 ;;
+		MINGW* | MSYS* | MINGW32* | CYGWIN* | Windows_NT) echo windows ;;
+		*) echo "" ;;
+	esac
+}
+
+# gvm_platform_map_arch <uname -m>  -> amd64, arm64, 386, ... (empty if unsupported)
+gvm_platform_map_arch() {
+	case "$1" in
+		x86_64 | amd64) echo amd64 ;;
+		aarch64 | arm64) echo arm64 ;;
+		i386 | i486 | i586 | i686) echo 386 ;;
+		armv6l | armv7l | armv8l | armv5l | arm) echo armv6l ;;
+		ppc64le) echo ppc64le ;;
+		ppc64) echo ppc64 ;;
+		s390x) echo s390x ;;
+		riscv64) echo riscv64 ;;
+		loongarch64 | loong64) echo loong64 ;;
+		mips) echo mips ;;
+		mips64) echo mips64 ;;
+		mipsel | mipsle) echo mipsle ;;
+		mips64el | mips64le) echo mips64le ;;
+		*) echo "" ;;
+	esac
+}
+
+# gvm_platform_pair  -> "linux amd64", or empty when unrecognised
+gvm_platform_pair() {
+	local os arch
+	os="$(gvm_platform_os)"
+	arch="$(gvm_platform_arch)"
+	[ -n "$os" ] && [ -n "$arch" ] || return 1
+	echo "$os $arch"
+}
+
+# gvm_platform_tarball  -> "linux-amd64" (the go.dev artifact infix)
+gvm_platform_tarball() {
+	local os arch
+	os="$(gvm_platform_os)"
+	arch="$(gvm_platform_arch)"
+	[ -n "$os" ] && [ -n "$arch" ] || return 1
+	echo "$os-$arch"
+}
+
+# gvm_platform_os  -> linux, darwin, freebsd, ... (empty if unsupported)
+gvm_platform_os() { gvm_platform_map_os "$(uname -s 2> /dev/null)"; }
+
+# gvm_platform_arch  -> amd64, arm64, 386, ... (empty if unsupported)
+gvm_platform_arch() { gvm_platform_map_arch "$(uname -m 2> /dev/null)"; }

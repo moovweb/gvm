@@ -3,19 +3,32 @@
 . "$GVM_ROOT/scripts/functions" || return 1
 
 gvm() {
-	if [[ "$GVM_ROOT" == "" ]]; then
+	if [[ -z "${GVM_ROOT:-}" ]]; then
 		display_error "GVM_ROOT not set. Try running: \'source \$GVM_ROOT/scripts/gvm\'."
 		return 1
 	fi
 
-	if [[ -z "$GVM_NO_GIT_BAK" && -d $GVM_ROOT/.git ]]; then
-		display_error "Looks like the .git directory is present. Please reinstall GVM."
+	if [[ ! -d "${GVM_ROOT:-/nonexistent}" ]]; then
+		display_error "GVM_ROOT does not exist. Please reinstall GVM."
 		return 1
 	fi
 
-	if [[ ! -d $GVM_ROOT ]]; then
-		display_error "GVM_ROOT does not exist. Please reinstall GVM."
-		return 1
+	# A .git here means $GVM_ROOT is a git work tree as well as an install, and
+	# gvm keeps state of its own here - gos/, pkgsets/, the release index cache -
+	# so a `git clean` in this directory would take it out. Warn once per shell
+	# rather than refusing every command: nothing is broken until somebody runs
+	# git, and a user who asked for a checkout with install.sh --keep-repo gets
+	# 'gvm update' out of it.
+	if [[ -z "${GVM_NO_GIT_BAK:-}" && -e "$GVM_ROOT/.git" && -z "${_gvm_warned_git:-}" ]]; then
+		if gvm_source_is_checkout; then
+			display_warning "$GVM_ROOT is a git checkout, so 'gvm update' can update it."
+			display_message "Its state directories are .gitignore'd, but 'git clean -x' here would still delete them."
+		else
+			display_warning "$GVM_ROOT is a git work tree, not just an install."
+			display_message "gvm keeps its own state here; 'git clean' in this directory would delete it."
+			display_message "Reinstall with install.sh to fix this, or set GVM_NO_GIT_BAK=1 to silence it."
+		fi
+		_gvm_warned_git=1
 	fi
 
 	mkdir -p "$GVM_ROOT/logs" > /dev/null 2>&1
@@ -24,18 +37,20 @@ gvm() {
 	mkdir -p "$GVM_ROOT/archive/package" > /dev/null 2>&1
 	mkdir -p "$GVM_ROOT/environments" > /dev/null 2>&1
 
-	if [[ "$1" == "use" ]]; then
+	if [[ "${1:-}" == "use" ]]; then
 		. "$GVM_ROOT/scripts/env/use"
 		shift
 		gvm_use "$@"
-	elif [[ "$1" == "applymod" ]]; then
+	elif [[ "${1:-}" == "applymod" ]]; then
 		. "$GVM_ROOT/scripts/env/use"
 		. "$GVM_ROOT/scripts/env/applymod"
-		gvm_applymod
-	elif [[ "$1" == "implode" ]]; then
+		shift
+		gvm_applymod "$@"
+	elif [[ "${1:-}" == "implode" ]]; then
 		. "$GVM_ROOT/scripts/env/implode"
-		gvm_implode
-	elif [[ "$1" == "pkgset" ]] && [[ "$2" == "use" ]]; then
+		shift
+		gvm_implode "$@"
+	elif [[ "${1:-}" == "pkgset" ]] && [[ "${2:-}" == "use" ]]; then
 		. "$GVM_ROOT/scripts/env/pkgset-use"
 		shift
 		shift

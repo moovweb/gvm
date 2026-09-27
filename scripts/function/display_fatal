@@ -1,13 +1,15 @@
+#!/usr/bin/env bash
+. "$GVM_ROOT/scripts/function/_display_colors"
+
+# display_fatal <text>
+# An error that ends the command. Exits 1.
 display_fatal() {
-	command -v tput &> /dev/null
-	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
-		tput sgr0
-		tput setaf 1
-		echo "ERROR: $1" >&2
-		tput sgr0
+	local color
+	color="$(gvm_display_color red)"
+	if [ -n "$color" ]; then
+		printf '%s%sERROR: %s%s\n' "$color" "$(gvm_display_color reset)" "${1:-}" "$(gvm_display_color reset)" >&2
 	else
-		echo "ERROR: $1" >&2
+		printf 'ERROR: %s\n' "${1:-}" >&2
 	fi
 	exit 1
 }
-

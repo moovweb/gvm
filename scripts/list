@@ -1,15 +1,3 @@
 #!/usr/bin/env bash
-. "$GVM_ROOT/scripts/functions"
-
-echo
-display_message "gvm gos (installed)"
-echo
-if [[ -d $GVM_ROOT/gos ]]; then
-	if [[ "$gvm_go_name" != "" ]]; then
-		$LS_PATH -1 "$GVM_ROOT/gos" | sed 's/^/   /g' | sed 's/^   '$gvm_go_name\$'/=> '$gvm_go_name'/g'
-	else
-		$LS_PATH -1 "$GVM_ROOT/gos" | sed 's/^/   /g'
-	fi
-fi
-echo
-
+# gvm list is the old name for gvm ls.
+exec "$GVM_ROOT/scripts/ls" "$@"

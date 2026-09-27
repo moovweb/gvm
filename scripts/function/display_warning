@@ -1,13 +1,18 @@
+#!/usr/bin/env bash
+. "$GVM_ROOT/scripts/function/_display_colors"
+
+# display_warning <text>
+# Something the user should know about but that is not fatal. The WARNING: prefix
+# is printed whether or not colour is available, and this always returns 0: the
+# old version returned 1, which silently turned `[ -n "$X" ] && display_warning
+# "..."` into a failing statement and lost warnings in the middle of a function.
 display_warning() {
-	command -v tput &> /dev/null
-	if [[ "$?" == "0" ]]  && [[ "$TERM" == "xterm" ]]; then
-		# YELLOW!
-		tput sgr0
-		tput setaf 3
-		echo "WARNING: $1"
-		tput sgr0
+	local color
+	color="$(gvm_display_color yellow)"
+	if [ -n "$color" ]; then
+		printf '%s%sWARNING: %s%s\n' "$color" "$(gvm_display_color reset)" "${1:-}" "$(gvm_display_color reset)"
 	else
-		echo "$1"
+		printf 'WARNING: %s\n' "${1:-}"
 	fi
-	return 1
+	return 0
 }

@@ -36,7 +36,15 @@
 # */
 
 setValueForKeyFakeAssocArray() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -52,9 +60,9 @@ setValueForKeyFakeAssocArray() {
 
     if [[ -z "${target_key}" ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -80,9 +88,9 @@ setValueForKeyFakeAssocArray() {
 
     printf "%s" "${target_ary[*]}"
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }
@@ -113,7 +121,15 @@ setValueForKeyFakeAssocArray() {
 #   (status 1) on failure.
 # */
 valueForKeyFakeAssocArray() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -127,9 +143,9 @@ valueForKeyFakeAssocArray() {
 
     if [[ -z "${target_key}" || ${#target_ary[@]} -eq 0 ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -145,9 +161,9 @@ valueForKeyFakeAssocArray() {
 
     printf "%b" "${value}"
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }
@@ -163,7 +179,15 @@ valueForKeyFakeAssocArray() {
 #   (status 1) on failure.
 # */
 keysForFakeAssocArray() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -176,9 +200,9 @@ keysForFakeAssocArray() {
 
     if [[ ${#target_ary[@]} -eq 0 ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -193,16 +217,16 @@ keysForFakeAssocArray() {
     printf "%s" "${target_ary_keys[*]}"
 
     if [[ "${#target_ary_keys[@]}" -eq 0 ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }
@@ -221,7 +245,15 @@ keysForFakeAssocArray() {
 #   (status 1) on failure.
 # */
 prettyDumpFakeAssocArray() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -233,9 +265,9 @@ prettyDumpFakeAssocArray() {
 
     if [[ ${#target_ary[@]} -eq 0 ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -248,9 +280,9 @@ prettyDumpFakeAssocArray() {
         unset __key __val
     done
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     unset _item
 }
@@ -260,7 +292,15 @@ prettyDumpFakeAssocArray() {
 # @internal
 # */
 _encode() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -270,9 +310,9 @@ _encode() {
 
     if [[ -z "${string}" ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
@@ -296,16 +336,16 @@ _encode() {
     printf "%s" "${new_string}"
 
     if [[ -z "${new_string}" ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }
@@ -315,7 +355,15 @@ _encode() {
 # @internal
 # */
 _decode() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -324,27 +372,33 @@ _decode() {
 
     if [[ -z "${string}" ]]; then
         echo ""
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    new_string="$(printf '%b' "${string//%/\\x}")"
+    # No ${string//%/\\x} rewrite here. It was belt-and-braces for a printf that
+    # could not read a hex escape, and zsh does not implement ${var//pat/repl} the
+    # way bash does: with no match it returns the original string with the
+    # replacement appended, so every version gvm parsed in zsh came out as
+    # "1.24.13 " and was then reported as not installed. printf %b already
+    # decodes the %XX that _encode writes, in both shells.
+    new_string="$(printf '%b' "$string")"
     printf "%b" "${new_string}"
 
     if [[ -z "${new_string}" ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }

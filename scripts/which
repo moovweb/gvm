@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+#
+# gvm which - print the GOROOT of a version, or the binary of a command in it.
+
+. "$GVM_ROOT/scripts/functions"
+
+show_usage() {
+	cat <<'EOF'
+Usage: gvm which [version] [command]
+
+  gvm which                  the GOROOT of the current version
+  gvm which 1.24             the GOROOT of the newest go1.24.x
+  gvm which 1.24 go          the path to that version's `go` binary
+  gvm which current go       the `go` binary on PATH right now
+EOF
+}
+
+version="${1:-current}"
+command_name="${2:-}"
+
+# `gvm which go` is what people type; the documented spelling is
+# `gvm which current go`. Answering "install it with 'gvm install go'" instead
+# reads like a Go version called "go" is missing, which is a worse answer than
+# the one that was asked for. A single argument that is not a version but is a
+# command is therefore treated as the command.
+if [ -z "$command_name" ] && [ -n "$version" ] && [ "$version" != "current" ]; then
+	if ! gvm_resolve_version "$version" local > /dev/null 2>&1 &&
+		command -v "$version" > /dev/null 2>&1; then
+		command_name="$version"
+		version="current"
+	fi
+fi
+
+if [ "$version" = "current" ] || [ -z "$version" ]; then
+	version="$gvm_go_name"
+	if [ -z "$version" ]; then
+		display_error "No Go version is currently selected"
+		exit 1
+	fi
+fi
+
+resolved="$(gvm_resolve_version "$version" local 2> /dev/null)"
+if [ -z "$resolved" ]; then
+	display_error "'$version' is not an installed version"
+	display_message "Install it with 'gvm install $version', or ask for a"
+	display_message "command instead: 'gvm which current $version'"
+	exit 1
+fi
+
+goroot="$GVM_ROOT/gos/$resolved"
+
+if [ -z "$command_name" ]; then
+	echo "$goroot"
+	exit 0
+fi
+
+if [ "$command_name" = "go" ]; then
+	echo "$goroot/bin/go"
+elif [ -x "$goroot/bin/$command_name" ]; then
+	echo "$goroot/bin/$command_name"
+else
+	display_error "No '$command_name' in $resolved"
+	exit 1
+fi

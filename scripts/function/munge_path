@@ -22,7 +22,15 @@
 #   (status 1) on failure.
 # */
 __gvm_munge_path() {
-    if [[ -n $ZSH_VERSION ]]; then
+    # Save before setting, restore on the way out. Unconditionally unsetting here
+    # switched KSH_ARRAYS off underneath any caller that had turned it on for its
+    # own 0-based array arithmetic -- which is how `gvm use 1.24.13` in zsh parsed
+    # the request into a version with a trailing space and then reported the
+    # version as not installed.
+    local _gvm_unset_arrays="" _gvm_unset_rematch=""
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -o KSH_ARRAYS ]] || _gvm_unset_arrays=1
+        [[ -o BASH_REMATCH ]] || _gvm_unset_rematch=1
         setopt KSH_ARRAYS
         setopt BASH_REMATCH
     fi
@@ -40,9 +48,9 @@ __gvm_munge_path() {
     local IFS="$defaultIFS"
 
     if [[ -z "${path_in}" ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         echo ""
         return 1
@@ -69,7 +77,12 @@ __gvm_munge_path() {
     unset _path
 
     # assemble path array
-    path_out_ary=( ${rvm_ary[@]} ${gvm_ary[@]} ${general_ary[@]} )
+    # ${ary[@]:-} rather than ${ary[@]}: bash 3.2 - still the default on macOS -
+    # treats an empty array as unset, so under `set -u` an unset PATH segment
+    # aborts the shell instead of contributing nothing. The :- default is only
+    # taken when a group is empty, and it is a single empty word, which word
+    # splitting discards.
+    path_out_ary=( ${rvm_ary[@]:-} ${gvm_ary[@]:-} ${general_ary[@]:-} )
 
     # deduplicate path_out_ary if requested, do this just to be helpful :)
     if [[ "${path_dedupe_flag}" == true ]]
@@ -96,16 +109,16 @@ __gvm_munge_path() {
     printf "%s" "${path_out}"
 
     if [[ -z "${path_out}" ]]; then
-        if [[ -n $ZSH_VERSION ]]; then
-            unsetopt KSH_ARRAYS
-            unsetopt BASH_REMATCH
+        if [[ -n "${ZSH_VERSION:-}" ]]; then
+            [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+            [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
         fi
         return 1
     fi
 
-    if [[ -n $ZSH_VERSION ]]; then
-        unsetopt KSH_ARRAYS
-        unsetopt BASH_REMATCH
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+        [[ -n "${_gvm_unset_arrays}" ]] && unsetopt KSH_ARRAYS
+        [[ -n "${_gvm_unset_rematch}" ]] && unsetopt BASH_REMATCH
     fi
     return 0
 }

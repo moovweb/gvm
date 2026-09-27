@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 . "$GVM_ROOT/scripts/functions"
 
-[[ $gvm_go_name != "" ]] ||
+[[ -n "${gvm_go_name:-}" ]] || {
+	display_message "Run 'gvm use <version>' first"
 	display_fatal "No Go version selected"
+	exit 1
+}
 [[ -d $GVM_ROOT/gos/$gvm_go_name ]] ||
 	display_fatal "Invalid or corrupt Go version"
 [[ -d $GVM_ROOT/pkgsets/$gvm_go_name ]] ||
@@ -17,7 +20,7 @@ elif [[ -n $command ]]; then
 else
   echo "= gvm pkgset
 
-* http://github.com/moovweb/gvm
+* https://github.com/moovweb/gvm
 
 == DESCRIPTION:
 

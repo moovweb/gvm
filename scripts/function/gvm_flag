@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Reading a boolean environment variable.
+#
+# The obvious `[ -n "$VAR" ]` is wrong for this: GVM_NO_VERIFY=0 and
+# GVM_OFFLINE=false are non-empty strings, so `-n` says "on" and
+# GVM_NO_VERIFY=0 would silently skip checksum verification. Anything a user
+# writes in a config file or a CI job has to mean what it looks like it means.
+
+# gvm_flag_enabled <value>
+# True for 1, true, yes, on and y, in any case. False for 0, false, no, off, n,
+# and for the empty string, which is what an unset variable expands to.
+# Anything else is an error the user should hear about, not a silent false.
+gvm_flag_enabled() {
+	local value="${1:-}"
+
+	case "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" in
+		1 | true | yes | on | y) return 0 ;;
+		"" | 0 | false | no | off | n) return 1 ;;
+		*)
+			display_error "Expected a boolean (true/false, 1/0, yes/no), got '$value'."
+			display_message "Treating it as false."
+			return 1
+			;;
+	esac
+}
+
+# gvm_flag_is_set <name>
+# The same question, asked about a variable by name, so call sites do not have
+# to expand it themselves.
+#
+# eval, because the alternatives are each valid in only one shell: ${!1} is a
+# bad substitution in zsh, ${(P)1} is a bad substitution in bash, and gvm is
+# sourced by both (install.sh offers to write .zshrc, and scripts/function/
+# _shell_compat exists for the same reason). The argument is always a variable
+# name written in this repository, never anything a user supplied.
+gvm_flag_is_set() {
+	eval "gvm_flag_enabled \"\${$1-}\""
+}

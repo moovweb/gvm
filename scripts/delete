@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gvm delete is a synonym for gvm uninstall.
+exec "$GVM_ROOT/scripts/uninstall" "$@"

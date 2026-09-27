@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# scripts/gvm - the one line a shell profile needs.
+#
+#   [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
+#
+# This used to be generated at install time with the destination path baked
+# into it, from the autotools template scripts/gvm.in. That meant the file in
+# an installed gvm was not the file in the repository, and moving the directory
+# broke every shell. Finding GVM_ROOT from this file's own location instead
+# means the same bytes work wherever gvm is unpacked.
+
+# When sourced, BASH_SOURCE[0] is this file; when executed, $0 is.
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+	__gvm_bootstrap_self="${BASH_SOURCE[0]}"
+else
+	__gvm_bootstrap_self="$0"
+fi
+
+# <root>/scripts/gvm -> <root>
+__gvm_bootstrap_root="$(cd "$(dirname "$__gvm_bootstrap_self")/.." > /dev/null 2>&1 && pwd -P)" || __gvm_bootstrap_root=""
+unset __gvm_bootstrap_self
+
+if [ -z "$__gvm_bootstrap_root" ]; then
+	echo "gvm: could not work out where this installation lives." >&2
+	echo "Reinstall with:  bash <(curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)" >&2
+	echo "or download https://github.com/moovweb/gvm and run its install.sh." >&2
+	return 1 2> /dev/null || exit 1
+fi
+
+# Sourcing this twice is normal: on most Linux systems .profile sources .bashrc,
+# so a line in both is read twice in an interactive shell. gvm-default munges
+# PATH and re-applies the default version, so it has to be cheap and safe to
+# repeat rather than something the installer has to guess about.
+if [ "${GVM_SOURCED:-}" = "1" ] && [ -f "${GVM_ROOT:-/nonexistent}/scripts/gvm-default" ]; then
+	return 0 2> /dev/null || exit 0
+fi
+
+# A GVM_ROOT already in the environment wins, but only if it is still a working
+# install: a stale export from an earlier shell should not stop a fresh one from
+# starting.
+if [ -n "${GVM_ROOT:-}" ] && [ ! -f "$GVM_ROOT/scripts/gvm-default" ]; then
+	unset GVM_ROOT
+fi
+: "${GVM_ROOT:=$__gvm_bootstrap_root}"
+unset __gvm_bootstrap_root
+export GVM_ROOT
+
+if [ ! -f "$GVM_ROOT/scripts/gvm-default" ]; then
+	echo "gvm: $GVM_ROOT does not look like a gvm installation (no scripts/gvm-default)." >&2
+	echo "Set GVM_ROOT to the directory gvm was installed into, or unset it to autodetect." >&2
+	return 1 2> /dev/null || exit 1
+fi
+
+. "$GVM_ROOT/scripts/gvm-default"
+
+GVM_SOURCED=1
+export GVM_SOURCED

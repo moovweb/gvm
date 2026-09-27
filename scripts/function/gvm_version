@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+#
+# Go version parsing, comparison and ordering.
+#
+# The sort key itself lives in _gvm_sort_key.awk so that bulk sorting and
+# single comparisons cannot drift apart. See that file for why `sort -V` is
+# not good enough.
+
+# gvm_version_sort_key <version>
+gvm_version_sort_key() {
+	local version="${1:-}" key
+	[ -n "$version" ] || return 1
+	key="$(printf '%s\n' "$version" | awk -f "$GVM_ROOT/scripts/function/_gvm_sort_key.awk" 2> /dev/null | cut -f1)"
+	[ -n "$key" ] || return 1
+	echo "$key"
+}
+
+# gvm_versions_sorted [asc|desc] [versions-on-stdin]
+# Ascending order by default. This is the only ordering gvm trusts.
+#
+# The temporary file has to come from mktemp rather than "$$": $$ is the same in
+# every subshell of a pipeline, so two nested calls (gvm_index_versions pipes
+# into this, and its result is then sorted again) would share one path and the
+# inner call would delete the file the outer call was about to read.
+gvm_versions_sorted() {
+	local order="${1:-asc}"
+	local tmp
+	tmp="$(mktemp "${TMPDIR:-/tmp}/gvm-sort.XXXXXX")" || return 1
+	cat > "$tmp"
+	if [ "$order" = "desc" ]; then
+		awk -f "$GVM_ROOT/scripts/function/_gvm_sort_key.awk" "$tmp" | sort -r | cut -f2-
+	else
+		awk -f "$GVM_ROOT/scripts/function/_gvm_sort_key.awk" "$tmp" | sort | cut -f2-
+	fi
+	local rc=$?
+	rm -f "$tmp"
+	return "$rc"
+}
+
+# gvm_version_is_valid <version>
+gvm_version_is_valid() {
+	gvm_version_sort_key "${1:-}" > /dev/null 2>&1
+}
+
+# gvm_version_is_prerelease <version>
+gvm_version_is_prerelease() {
+	local key
+	key="$(gvm_version_sort_key "${1:-}")" || return 1
+	[ "${key#*.}" != "" ] && [ "$(echo "$key" | cut -d. -f4)" = "0" ]
+}
+
+# gvm_version_compare <a> <b>
+#   0  a == b
+#   1  a >  b
+#   2  a <  b
+# (Matches the return convention of the legacy compare_version.)
+gvm_version_compare() {
+	local ka kb
+	ka="$(gvm_version_sort_key "${1:-}")" || return 1
+	kb="$(gvm_version_sort_key "${2:-}")" || return 1
+	[ "$ka" = "$kb" ] && return 0
+	if [[ "$ka" < "$kb" ]]; then return 2; else return 1; fi
+}
+
+# gvm_version_is_at_least <version> <minimum>
+gvm_version_is_at_least() {
+	local rc
+	gvm_version_compare "${1:-}" "${2:-}" > /dev/null
+	rc=$?
+	[ "$rc" = "0" ] || [ "$rc" = "1" ]
+}
+
+# gvm_version_stable <version>   go1.24rc1 -> go1.24.0
+gvm_version_stable() {
+	local key
+	if key="$(gvm_version_sort_key "${1:-}")" && [ "$(echo "$key" | cut -d. -f4)" = "0" ]; then
+		printf "go%s.%s.%s\n" \
+			"$((10#$(echo "$key" | cut -d. -f1)))" \
+			"$((10#$(echo "$key" | cut -d. -f2)))" \
+			"$((10#$(echo "$key" | cut -d. -f3)))"
+		return 0
+	fi
+	echo "${1:-}"
+}
+
+# gvm_version_major_minor <version>   -> 1.27
+gvm_version_major_minor() {
+	local key
+	key="$(gvm_version_sort_key "${1:-}")" || return 1
+	echo "$key" | cut -d. -f1,2 | sed 's/^0*\([0-9]\)/\1/; s/\.0*\([0-9]\)/.\1/'
+}
+
+# gvm_version_candidates <query>
+# Expands a version-shaped query into the globs to try, most specific first.
+# Each missing component becomes "any value", which is what makes
+# `gvm install 1.24` mean the newest go1.24.x while `gvm install 1.2` matches
+# go1.2.2 and not go1.24. Queries that are not version shaped (aliases, or a
+# query that already carries its own glob) are passed through unchanged.
+#
+#   1.27.1    -> go1.27.1
+#   1.24      -> go1.24.*  then go1.24
+#   1.2       -> go1.2.*   then go1.2
+#   1         -> go1.*     then go1
+#   go1.24*   -> go1.24*
+#   stable    -> stable
+gvm_version_candidates() {
+	local query="${1:-}" body components dots
+	[ -n "$query" ] || return 1
+
+	body="$query"
+	[[ "$body" == go[0-9]* ]] && body="${body#go}"
+
+	# A glob the caller wrote themselves (`1.24.1?`, `1.*`): add the go prefix
+	# if it looks version shaped, and otherwise leave the pattern alone.
+	if [[ "$body" == *'*'* || "$body" == *'?'* || "$body" == *'['* ]]; then
+		[[ "$body" == [0-9]* ]] && body="go$body"
+		echo "$body"
+		return 0
+	fi
+
+	# Not a bare version shape: hand it to the glob matcher as-is. A pre-release
+	# suffix such as 1.25.0rc1 or 1.21.0beta1 is still a version shape, and
+	# forgetting the go prefix for it made `gvm install 1.25.0rc1` fail while
+	# `gvm install go1.25.0rc1` worked.
+	if [[ ! "$body" =~ ^[0-9]+(\.[0-9]+)*([a-z]+[0-9]*)?$ ]]; then
+		echo "$query"
+		return 0
+	fi
+
+	dots="${body//[^.]/}"
+	components=$((${#dots} + 1))
+
+	if [ "$components" -ge 3 ]; then
+		echo "go$body"
+		return 0
+	fi
+
+	# A single trailing ".*" covers any number of missing components, because
+	# "*" in a shell glob also matches dots.
+	echo "go$body.*"
+	echo "go$body"
+}
+
+# gvm_pattern_matches <glob> <candidate>
+# Shell glob semantics: `*` and `?` only, everything else literal, so there is
+# no regex to escape. `gvm install 1.24` therefore means "the newest go1.24.x"
+# instead of "the first match in ls output".
+#
+# The `${~pattern}` is not a typo. zsh does not treat an expanded parameter as
+# a glob in `[[ == ]]` unless it is given the `~` flag, while bash always does.
+# Without this, every pattern silently matched nothing under zsh.
+gvm_pattern_matches() {
+	local pattern="${1:-}" candidate="${2:-}"
+	[ -n "$pattern" ] || return 0
+	[ -n "$candidate" ] || return 1
+	if [ -n "${ZSH_VERSION:-}" ]; then
+		[[ "${candidate}" == ${~pattern} ]]
+	else
+		[[ "${candidate}" == ${pattern} ]]
+	fi
+}
+
+# gvm_versions_latest [glob]   highest match from stdin, or nothing
+# One awk pass and one sort, rather than a version comparison per line.
+gvm_versions_latest() {
+	local pattern="${1:-}"
+	awk -f "$GVM_ROOT/scripts/function/_gvm_sort_key.awk" |
+		__gvm_versions_filter "$pattern" |
+		sort | tail -n 1 | cut -f2-
+}
+
+# Internal: filter lines by glob against their last tab-separated field,
+# passing the line through unchanged. Accepts both "version" and
+# "<key>\t<version>" input.
+__gvm_versions_filter() {
+	local pattern="${1:-}" line candidate tab
+	if [ -z "$pattern" ]; then
+		cat
+		return 0
+	fi
+	tab="$(printf '\t')"
+	while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		candidate="${line##*$tab}"
+		gvm_pattern_matches "$pattern" "$candidate" && printf '%s\n' "$line"
+	done
+}
+
+# gvm_version_is_prerelease <version>
+# True for a release candidate or beta. A toolchain manager should never hand
+# one over quietly.
+gvm_version_is_prerelease() {
+	local version="${1:-}"
+	[ -n "$version" ] || return 1
+	version="${version#go}"
+	[[ "$version" =~ (beta|rc) ]]
+}

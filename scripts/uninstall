@@ -1,23 +1,126 @@
 #!/usr/bin/env bash
+#
+# gvm uninstall - remove an installed Go.
+#
+# The old implementation grepped `ls gos`, so `gvm uninstall 1.24` removed the
+# *oldest* go1.24.x, and it happily left environments/default pointing at a
+# GOROOT that no longer existed. Both are fixed by resolving properly and
+# repairing the default.
 
 . "$GVM_ROOT/scripts/functions"
 
-[[ "$1" == "" ]] &&
-	display_fatal "Please specify the version"
+show_usage() {
+	cat <<'EOF'
+Usage: gvm uninstall <version>
 
-fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$1" | $HEAD_PATH -n 1 | $GREP_PATH "$1") ||
-	display_fatal "Invalid version $1"
+  Removes a Go version, its pkgset, and its environment files. The version may
+  be given in full (go1.24.13), in part (1.24 -> the newest go1.24.x that is
+  installed) or through an alias.
 
-if [[ -d $GVM_ROOT/gos/$fuzzy_match ]]; then
-	rm -rf "$GVM_ROOT/pkgsets/$fuzzy_match" &> /dev/null ||
-		display_fatal "Couldn't remove pkgsets. Please run 'gvm use $1 && go clean -modcache' and retry uninstall."
-	rm -f "$GVM_ROOT/environments/$fuzzy_match" &> /dev/null ||
-		display_fatal "Couldn't remove environment files"
-	rm -f "$GVM_ROOT/environments/$fuzzy_match@"* &> /dev/null ||
-		display_fatal "Couldn't remove pkgset environment files"
-	rm -rf "$GVM_ROOT/gos/$fuzzy_match" &> /dev/null ||
-		display_fatal "Couldn't remove Go folder"
-	display_message "Uninstalled version $fuzzy_match"
-else
-	display_fatal "Invalid version"
+  gvm delete is an alias for this command.
+EOF
+}
+
+force=""
+requested=""
+
+for arg in "$@"; do
+	case "$arg" in
+		-h | --help)
+			show_usage
+			exit 0
+			;;
+		--force | -f)
+			force=1
+			;;
+		"")
+			display_error "Please specify the version to uninstall"
+			display_message "Run 'gvm ls' to see what is installed."
+			exit 64
+			;;
+		-*)
+			display_error "Unknown option: $arg"
+			show_usage
+			exit 64
+			;;
+		*)
+			# The first non-option argument is the version; `gvm uninstall 1.24
+			# --force` and `gvm uninstall --force 1.24` mean the same thing.
+			[ -n "$requested" ] || requested="$arg"
+			;;
+	esac
+done
+resolved="$(gvm_resolve_version "$requested" local 2> /dev/null)" || resolved=""
+
+if [ -z "$resolved" ]; then
+	display_error "No installed Go matches '$requested'"
+	display_message "Run 'gvm ls' to see what is installed."
+	exit 65
 fi
+
+goroot="$GVM_ROOT/gos/$resolved"
+
+# Refuse to remove the toolchain the calling shell is pointing at, unless told
+# to. Deleting it leaves `go` broken in a way that looks like a broken
+# installation rather than a deleted directory.
+if [ "$resolved" = "${gvm_go_name:-}" ] && [ -z "$force" ]; then
+	display_error "$resolved is currently in use."
+	display_message "Run 'gvm use <other version>' first, or 'gvm uninstall $requested --force'."
+	exit 69
+fi
+
+# The default is a weaker promise than the current selection: another version
+# will not be selected automatically, but the removal itself is fine.
+default="$(gvm_default_recorded 2> /dev/null)"
+if [ "$default" = "$resolved" ] && [ -z "$force" ]; then
+	display_warning "$resolved is the default version."
+	display_message "Another version will not be selected automatically; run 'gvm use <version>' after."
+fi
+
+# Anything in the pkgset has to be cleaned through `go clean`, otherwise a
+# module cache full of absolute paths is left behind.
+if [ -d "$GVM_ROOT/pkgsets/$resolved" ]; then
+	display_message "Removing the pkgset for $resolved"
+	"$goroot/bin/go" clean -modcache -cache > /dev/null 2>&1
+	rm -rf "$GVM_ROOT/pkgsets/$resolved" ||
+		display_fatal "Couldn't remove the pkgset. Remove $GVM_ROOT/pkgsets/$resolved by hand."
+fi
+
+rm -f "$GVM_ROOT/environments/$resolved" "$GVM_ROOT/environments/${resolved}@"* 2> /dev/null
+
+if ! rm -rf "$goroot"; then
+	display_fatal "Couldn't remove $goroot"
+fi
+
+# A version is not useful without its GOROOT: the compiled objects and the
+# standard library source both live inside it.
+if [ -d "$goroot/pkg" ]; then
+	display_message "  (removed compiled packages along with the GOROOT)"
+fi
+
+# Aliases that pointed here would now be dangling.
+dangling=""
+for name in $(gvm_alias_list); do
+	# Compare the resolved form, so an alias written as `1.24.13` is recognised
+	# as pointing at go1.24.13.
+	if [ "$(gvm_alias_resolve "$name" 2> /dev/null)" = "$resolved" ]; then
+		gvm_alias_delete "$name" > /dev/null 2>&1 && dangling="$dangling $name"
+	fi
+done
+[ -n "$dangling" ] && display_message "Removed aliases that pointed at it:$dangling"
+
+if [ "$default" = "$resolved" ]; then
+	remaining="$(gvm_versions_installed | gvm_versions_latest)"
+	if [ -n "$remaining" ]; then
+		# Fall back to the newest release that is actually installed.
+		if [ -f "$GVM_ROOT/environments/$remaining" ]; then
+			cp "$GVM_ROOT/environments/$remaining" "$GVM_ROOT/environments/default"
+			display_message "$remaining is now the default version"
+		fi
+	else
+		rm -f "$GVM_ROOT/environments/default"
+		display_message "No versions left; run 'gvm install' to get started"
+	fi
+fi
+
+display_message "Uninstalled $resolved"

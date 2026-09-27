@@ -1,8 +1,375 @@
 #!/usr/bin/env bash
+#
+# gvm update - update gvm itself, the way `brew update` does.
+#
+# gvm was always installed out of a git checkout, and the installer kept the
+# history: it renames .git to git.bak rather than deleting it, so the record of
+# where a gvm came from survives the install. That is what makes an update a
+# fetch and a fast-forward instead of "download a tarball from somewhere and
+# hope", and it is the whole reason this command is git rather than HTTP.
+#
+# There is no merge, ever. An install with local commits or local edits is
+# refused with an explanation rather than being resolved by gvm's opinion about
+# somebody's work: the alternative is a tool that silently overwrites the files
+# a user edited to make gvm work on their machine.
+#
+# Installs that kept no history at all - a tarball unpacked by hand, say - are
+# told how to get a checkout rather than being updated from a URL that nothing
+# has verified.
+
 . "$GVM_ROOT/scripts/functions"
 
-builtin cd "$GVM_ROOT/archive/go" &> /dev/null ||
-	display_fatal "Failed to find local Go source"
+usage() {
+	cat <<EOF
+Usage: gvm update [options]
 
-git pull || display_fatal "Failed to update"
+Updates gvm itself from the git repository it was installed from, the way
+'brew update' does. Fetches, reports what is new, and fast-forwards. Go
+versions under \$GVM_ROOT/gos are not touched.
 
+Options:
+  --check         Report what an update would do, and change nothing
+  --repo <url>    Fetch from this repository instead of the recorded one
+  --ref <name>    Fetch this branch or tag instead of the current upstream
+  -h, --help      Show this message
+
+An install is only updatable if it kept its git history. A checkout installed
+with 'install.sh --keep-repo' always has it; the one-line installer keeps it as
+git.bak, and the first 'gvm update' puts it back where git can see it.
+EOF
+}
+
+check_only=""
+repo=""
+ref=""
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--check) check_only=1 ;;
+		--repo)
+			[ $# -ge 2 ] || {
+				display_error "--repo needs a repository URL"
+				exit 64
+			}
+			repo="$2"
+			shift
+			;;
+		--repo=*) repo="${1#--repo=}" ;;
+		--ref)
+			[ $# -ge 2 ] || {
+				display_error "--ref needs a branch or tag"
+				exit 64
+			}
+			ref="$2"
+			shift
+			;;
+		--ref=*) ref="${1#--ref=}" ;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			display_error "Unknown option: $1"
+			usage >&2
+			exit 64
+			;;
+	esac
+	shift
+done
+
+# The files the installer puts in a GVM_ROOT, used to decide whether the files
+# gvm actually owns have local edits. install.sh owns the real list
+# (installed_items); this has to be a copy of it, because a gvm updating itself
+# must not parse the installer to find out. tests/17_update_test.sh reads both
+# and fails if they drift apart.
+installed_paths="bin scripts locales VERSION LICENSE AUTHORS README.md README.zh-CN.md"
+
+echo
+
+if ! command -v git > /dev/null 2>&1; then
+	display_error "gvm update needs git, and it is not installed."
+	display_message "  Debian/Ubuntu: apt-get install git"
+	display_message "  macOS:         xcode-select --install"
+	display_message "  RedHat:        yum install git"
+	exit 1
+fi
+
+git_in_root() {
+	git -C "$GVM_ROOT" "$@"
+}
+
+# --- is there a repository to update -----------------------------------------
+
+# git.bak is only treated as a repository if it looks like one. A directory
+# somebody else happened to call git.bak must not be renamed into place and
+# handed to git.
+have_repo=no
+if [ -e "$GVM_ROOT/.git" ] && git_in_root rev-parse --git-dir > /dev/null 2>&1; then
+	have_repo=yes
+elif [ -d "$GVM_ROOT/git.bak" ] && [ -f "$GVM_ROOT/git.bak/HEAD" ] && [ -f "$GVM_ROOT/git.bak/config" ]; then
+	have_repo=restorable
+fi
+
+if [ "$have_repo" = "no" ]; then
+	display_error "This gvm was not installed from git, so there is nothing to update."
+	display_message "  $GVM_ROOT has no .git and no usable git.bak."
+	display_message ""
+	display_message "Install it from a checkout to get updates:"
+	display_message "  bash <(curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer) -- --keep-repo"
+	display_message ""
+	display_message "Existing Go versions and aliases are left alone either way."
+	exit 1
+fi
+
+if [ "$have_repo" = "restorable" ]; then
+	if [ -n "$check_only" ]; then
+		display_message "This install kept its git history as git.bak."
+		display_message "gvm update would move it back to .git, then fast-forward the checkout."
+		exit 0
+	fi
+	display_message "Restoring the git history in $GVM_ROOT/git.bak"
+	if ! mv "$GVM_ROOT/git.bak" "$GVM_ROOT/.git"; then
+		display_error "Could not move $GVM_ROOT/git.bak to $GVM_ROOT/.git; not changing anything."
+		exit 1
+	fi
+	display_message ""
+fi
+
+# --- refuse to update over something in progress -----------------------------
+
+# A merge or a rebase that somebody interrupted is a repository with a
+# half-finished state, not one that is behind. Fast-forwarding it would either
+# fail confusingly or resolve it by guesswork.
+operation=""
+for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+	if git_in_root rev-parse -q --verify "$marker" > /dev/null 2>&1; then
+		operation="$marker"
+		break
+	fi
+done
+if [ -z "$operation" ] && { [ -d "$GVM_ROOT/.git/rebase-merge" ] || [ -d "$GVM_ROOT/.git/rebase-apply" ]; }; then
+	operation="a rebase"
+fi
+if [ -z "$operation" ] && [ -f "$GVM_ROOT/.git/index.lock" ]; then
+	operation="another git holding the index lock"
+fi
+
+if [ -n "$operation" ]; then
+	display_error "$GVM_ROOT is in the middle of $operation."
+	display_message "Finish or abandon that first; git will not fast-forward over it."
+	display_message "  git -C \"$GVM_ROOT\" status"
+	exit 1
+fi
+
+# --- is this a branch we can move? -------------------------------------------
+
+if ! branch="$(git_in_root symbolic-ref --quiet --short HEAD 2> /dev/null)"; then
+	display_error "HEAD is detached at $(git_in_root rev-parse --short HEAD 2> /dev/null)."
+	display_message "gvm update moves a branch, so it needs one:"
+	if [ -n "$ref" ]; then
+		display_message "  git -C \"$GVM_ROOT\" checkout $ref"
+	else
+		display_message "  git -C \"$GVM_ROOT\" checkout <branch>"
+	fi
+	display_message "Or pass --ref <name> if that is the branch you meant."
+	exit 1
+fi
+
+# --- local changes to the files gvm owns -------------------------------------
+
+# Scoped to the installed paths on purpose. A fresh install is a subset of the
+# repository, so every path the installer does not copy - tests/, Makefile,
+# install.sh - reads as deleted in `git status`, and treating that as "the user
+# has local changes" would refuse every update forever. Anything outside this
+# list stays git's business: the fast-forward below refuses it, in git's own
+# words, which is the right place for that.
+# core.fileMode=false: a permission bit is not a change to gvm's code, and an
+# install that an older installer chmod'ed - or that was copied onto a
+# filesystem which does not keep modes - would otherwise be permanently
+# un-updatable because of it.
+dirty="$(git_in_root -c core.fileMode=false status --porcelain --untracked-files=no -- $installed_paths 2> /dev/null)"
+if [ -n "$dirty" ]; then
+	display_error "gvm's own files in $GVM_ROOT have local changes:"
+	printf '%s\n' "$dirty" | sed 's/^/  /'
+	display_message ""
+	if ! gvm_source_is_checkout; then
+		# The likeliest way to land here, and a trap. install.sh copies one
+		# version's files over whatever history the directory had, so a tree
+		# installed over an older clone never matches the commit it was cloned
+		# at - and "git checkout -- ." then looks like the fix while putting the
+		# older code back. Saying so is the difference between a user reading
+		# this and a user losing a working gvm to a suggestion in an error
+		# message.
+		display_message "This install is not recorded as a checkout, so its files do not match the"
+		display_message "commit it was installed over. That is what install.sh leaves behind when"
+		display_message "it copies one version over the history of another."
+		display_message ""
+		display_message "'git checkout -- .' below would put that older code back, not update anything."
+		if [ -n "$(gvm_source_field commit 2> /dev/null)" ]; then
+			display_message "  Put the installed version back under git:  git -C \"$GVM_ROOT\" reset --hard <the recorded commit>"
+			display_message "  gvm doctor prints it."
+		else
+			display_message "  Reinstall to get an install that matches its history:  install.sh --keep-repo"
+		fi
+		display_message ""
+	fi
+	display_message "gvm update does not merge, and it will not throw your changes away."
+	display_message "  Keep them:  git -C \"$GVM_ROOT\" stash"
+	display_message "  Lose them:  git -C \"$GVM_ROOT\" checkout -- ."
+	exit 1
+fi
+
+# --- fetch -------------------------------------------------------------------
+
+quiet=""
+gvm_flag_is_set GVM_QUIET && quiet="--quiet"
+
+upstream="$(git_in_root rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2> /dev/null)"
+
+fetch_from=""
+fetch_ref=""
+target=""
+
+if [ -n "$repo" ]; then
+	# An explicit repository: fetch from it without touching the checkout's
+	# remotes, the way you would ask a tool to look somewhere else once.
+	fetch_from="$repo"
+	fetch_ref="$ref"
+	target="FETCH_HEAD"
+elif [ -n "$ref" ]; then
+	branch_remote="$(git_in_root config --get "branch.$branch.remote" 2> /dev/null)"
+	if [ -z "$branch_remote" ]; then
+		display_error "Branch $branch has no remote, so --ref $ref has nowhere to fetch from."
+		display_message "  gvm update --repo <url> --ref $ref"
+		exit 1
+	fi
+	fetch_from="$branch_remote"
+	fetch_ref="$ref"
+	target="FETCH_HEAD"
+elif [ -n "$upstream" ]; then
+	# The ordinary case: whatever this branch already tracks. Resolved after the
+	# fetch, so the target is the ref that just moved.
+	target="@{upstream}"
+elif fetch_from="$(gvm_source_repo)"; then
+	target="FETCH_HEAD"
+else
+	display_error "Branch $branch has no upstream and this install records no repository."
+	display_message "  gvm update --repo <url>"
+	exit 1
+fi
+
+if [ -n "$fetch_from" ]; then
+	if [ -n "$fetch_ref" ]; then
+		display_message "Fetching $fetch_ref from $fetch_from"
+		git_in_root fetch $quiet --tags "$fetch_from" "$fetch_ref" || {
+			display_error "Could not fetch $fetch_ref from $fetch_from"
+			display_message "  Check the network, and that this is a repository git can read."
+			exit 1
+		}
+	else
+		display_message "Fetching $fetch_from"
+		git_in_root fetch $quiet --tags "$fetch_from" || {
+			display_error "Could not fetch $fetch_from"
+			display_message "  Check the network, and that this is a repository git can read."
+			exit 1
+		}
+	fi
+else
+	display_message "Fetching $upstream"
+	git_in_root fetch $quiet --tags || {
+		display_error "Could not fetch $upstream"
+		exit 1
+	}
+fi
+
+head_before="$(git_in_root rev-parse HEAD)"
+short_before="$(git_in_root rev-parse --short HEAD)"
+
+if ! target_commit="$(git_in_root rev-parse --verify "$target" 2> /dev/null)"; then
+	display_error "The fetched ref did not resolve to a commit; nothing was changed."
+	exit 1
+fi
+short_target="$(git_in_root rev-parse --short "$target_commit")"
+
+# --- report ------------------------------------------------------------------
+
+if [ "$head_before" = "$target_commit" ]; then
+	display_message "Already up to date. gvm $(cat "$GVM_ROOT/VERSION" 2> /dev/null || echo unknown) ($short_before)"
+	exit 0
+fi
+
+ahead="$(git_in_root rev-list --count "$target_commit..HEAD" 2> /dev/null || echo 0)"
+behind="$(git_in_root rev-list --count "HEAD..$target_commit" 2> /dev/null || echo 0)"
+
+if [ "$ahead" != "0" ]; then
+	display_error "This gvm is $ahead commit(s) ahead of $target, so it cannot fast-forward."
+	display_message "  Local commits in $GVM_ROOT:  $(git_in_root log --oneline -n 3 "$target_commit..HEAD" 2> /dev/null | tr '\n' ' ')"
+	display_message ""
+	display_message "gvm update only moves forward. If those commits are yours to keep,"
+	display_message "point it at your own remote:"
+	display_message "  gvm update --repo <your fork>"
+	exit 1
+fi
+
+version_before="$(cat "$GVM_ROOT/VERSION" 2> /dev/null || echo unknown)"
+version_after="$(git_in_root show "$target_commit:VERSION" 2> /dev/null | tr -d '\n\r')"
+
+if [ -n "$version_after" ]; then
+	display_message "gvm $version_before -> $version_after ($short_before..$short_target)"
+else
+	display_message "gvm $version_before ($short_before..$short_target)"
+fi
+display_message "$behind new commit(s):"
+git_in_root log --oneline --no-decorate "HEAD..$target_commit" 2> /dev/null |
+	head -n 20 |
+	sed 's/^/  /'
+if [ "$behind" -gt 20 ] 2> /dev/null; then
+	display_message "  ... and $((behind - 20)) more"
+fi
+
+if [ -n "$check_only" ]; then
+	echo
+	display_message "Nothing was changed. Run 'gvm update' to fast-forward."
+	exit 0
+fi
+
+# --- fast-forward ------------------------------------------------------------
+
+echo
+if ! git_in_root -c core.fileMode=false merge --ff-only "$target_commit"; then
+	display_error "Could not fast-forward $GVM_ROOT to $short_target."
+	display_message "Nothing was changed. git said why above."
+	exit 1
+fi
+
+# Record where the install now stands, so the next update and `gvm doctor` know.
+# Falling back to the recorded repository rather than writing an empty one: an
+# update should never be the thing that loses the answer to "where did this
+# come from".
+resolved_repo="$repo"
+if [ -z "$resolved_repo" ]; then
+	branch_remote="$(git_in_root config --get "branch.$branch.remote" 2> /dev/null)"
+	[ -n "$branch_remote" ] &&
+		resolved_repo="$(git_in_root remote get-url "$branch_remote" 2> /dev/null)"
+fi
+if [ -z "$resolved_repo" ]; then
+	resolved_repo="$(git_in_root remote get-url origin 2> /dev/null)"
+fi
+if [ -z "$resolved_repo" ]; then
+	resolved_repo="$(gvm_source_field repo 2> /dev/null)"
+fi
+
+gvm_source_write "$resolved_repo" "$branch" "$short_target" \
+	"$(cat "$GVM_ROOT/VERSION" 2> /dev/null | tr -d '\n\r')" yes ||
+	display_warning "Could not update $GVM_ROOT/.gvm-source; gvm update still works."
+
+installed_version="$(cat "$GVM_ROOT/VERSION" 2> /dev/null | tr -d '\n\r')"
+echo
+if [ -n "$installed_version" ]; then
+	display_message "gvm is now at $installed_version ($short_target)."
+else
+	display_message "gvm is now at $short_target."
+fi
+display_message "Start a new shell to pick it up:  exec \$SHELL"
+display_message "Go versions under $GVM_ROOT/gos were not touched."
+exit 0

@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+#
+# The Go release index.
+#
+# GVM used to run `git ls-remote -t https://github.com/golang/go` and
+# `git clone` the whole Go repository just to learn which versions exist.
+# Both are gone: go.dev publishes a machine readable index that also carries
+# the SHA256 of every artifact, which is the same thing nodejs.org's index.tab
+# provides for nvm.
+#
+# Cached at $GVM_ROOT/cache/releases.tsv as flat TSV so lookups are plain awk
+# and no jq/python dependency is required.
+
+GVM_DL_INDEX_URL="${GVM_DL_INDEX_URL:-https://go.dev/dl/?mode=json&include=all}"
+GVM_DL_BASE_URL="${GVM_DL_BASE_URL:-https://go.dev/dl}"
+# Seconds. The index changes a handful of times per year; a day-old cache is
+# always fine. Set to 0 to force a refetch on every lookup.
+GVM_INDEX_TTL="${GVM_INDEX_TTL:-86400}"
+
+# gvm_index_file
+# An explicit GVM_INDEX_FILE pins the index to a file on disk. That is what the
+# test suite uses to run without a network, and it is also how you point gvm at
+# a curated or mirrored index.
+gvm_index_file() {
+	if [ -n "${GVM_INDEX_FILE:-}" ]; then
+		echo "$GVM_INDEX_FILE"
+		return 0
+	fi
+	echo "$GVM_ROOT/cache/releases.tsv"
+}
+
+gvm_index_age() {
+	local f
+	f="$(gvm_index_file)"
+	[ -f "$f" ] || {
+		echo ""
+		return 1
+	}
+	local now mtime
+	now=$(date +%s)
+	mtime=$(gvm_stat_mtime "$f")
+	echo $((now - mtime))
+}
+
+# gvm_stat_mtime <file>   portable epoch mtime
+gvm_stat_mtime() {
+	local f="${1:-}"
+	stat -c %Y "$f" 2> /dev/null && return 0
+	stat -f %m "$f" 2> /dev/null && return 0
+	# No stat(1): fall back to the file's own timestamp via ls.
+	ls -ld "$f" 2> /dev/null | awk '{ print $6" "$7 }' > /dev/null
+	echo 0
+}
+
+# gvm_index_fetch   download + parse. Writes atomically.
+gvm_index_fetch() {
+	local cache url tmp_json tmp_tsv
+	cache="$(gvm_index_file)"
+	url="${GVM_DL_INDEX_URL:-}"
+	mkdir -p "$GVM_ROOT/cache" "$GVM_ROOT/logs" || return 1
+	tmp_json="$(mktemp "$GVM_ROOT/cache/releases.json.XXXXXX")" || return 1
+	tmp_tsv="$(mktemp "$GVM_ROOT/cache/releases.tsv.XXXXXX")" || {
+		rm -f "$tmp_json"
+		return 1
+	}
+
+	if ! gvm_download "$url" "$tmp_json" 2> "$GVM_ROOT/logs/index.log"; then
+		display_error "Failed to fetch the Go release index from $url"
+		display_message "See $GVM_ROOT/logs/index.log"
+		rm -f "$tmp_json" "$tmp_tsv"
+		return 1
+	fi
+
+	if ! awk -f "$GVM_ROOT/scripts/function/_gvm_index_parse.awk" "$tmp_json" > "$tmp_tsv"; then
+		display_error "Failed to parse the Go release index from $url"
+		rm -f "$tmp_json" "$tmp_tsv"
+		return 1
+	fi
+	rm -f "$tmp_json"
+
+	# A truncated or empty index is worse than a stale one: refuse to install
+	# it over a good cache.
+	if ! grep -q '^V' "$tmp_tsv" 2> /dev/null; then
+		display_error "Go release index from $url contained no releases"
+		rm -f "$tmp_tsv"
+		return 1
+	fi
+
+	mv -f "$tmp_tsv" "$cache" || {
+		rm -f "$tmp_tsv"
+		return 1
+	}
+	return 0
+}
+
+# gvm_index_refresh [--force] [--offline]
+gvm_index_refresh() {
+	local force="" offline="" arg
+	for arg in "$@"; do
+		case "$arg" in
+			--force | -f) force=1 ;;
+			--offline) offline=1 ;;
+		esac
+	done
+
+	# A pinned index file is authoritative: never fetched, never expired.
+	if [ -n "${GVM_INDEX_FILE:-}" ]; then
+		[ -f "$GVM_INDEX_FILE" ] && return 0
+		display_error "GVM_INDEX_FILE points at '$GVM_INDEX_FILE', which does not exist"
+		return 1
+	fi
+
+	local age
+	age="$(gvm_index_age)"
+	if [ -n "$age" ] && [ -z "$force" ] && [ "$age" -lt "$GVM_INDEX_TTL" ]; then
+		return 0
+	fi
+
+	if [ -n "$offline" ] || gvm_flag_is_set GVM_OFFLINE; then
+		if [ -n "$age" ]; then
+			return 0
+		fi
+		display_error "No cached Go release index and --offline was requested"
+		return 1
+	fi
+
+	gvm_index_fetch
+}
+
+# gvm_index_versions [all|stable|prerelease] [glob]
+# Matching release names, oldest first. The second argument is a shell glob
+# (`go1.24*`), not a regex, so there is no escaping to get wrong.
+gvm_index_versions() {
+	local filter="${1:-all}" pattern="${2:-}"
+
+	gvm_index_refresh || return 1
+
+	awk -F'\t' -v want="$filter" '
+		$1 != "V" { next }
+		{
+			if (want == "stable" && $3 != "stable") next
+			if (want == "prerelease" && $3 != "unstable") next
+			print $2
+		}
+	' "$(gvm_index_file)" | __gvm_versions_filter "$pattern" | gvm_versions_sorted
+}
+
+# gvm_index_latest [glob]   highest matching release
+gvm_index_latest() {
+	gvm_index_versions all "${1:-}" | gvm_versions_latest
+}
+
+# gvm_index_latest_stable [glob]
+gvm_index_latest_stable() {
+	gvm_index_versions stable "${1:-}" | gvm_versions_latest
+}
+
+# gvm_index_latest_prerelease [glob]
+# The newest release candidate or beta. `unstable` means "the pre-release
+# channel", not merely "newest of anything", which is what `newest` is for.
+gvm_index_latest_prerelease() {
+	gvm_index_refresh || return 1
+	awk -F'\t' -v g="${1:-}" '
+		$1 == "V" && $3 != "stable" && (g == "" || $2 ~ g) { print $2 }
+	' "$(gvm_index_file)" | gvm_versions_latest
+}
+
+# gvm_index_is_stable <version>
+gvm_index_is_stable() {
+	gvm_index_refresh || return 1
+	awk -F'\t' -v v="${1:-}" '$1 == "V" && $2 == v { print $3; found = 1; exit } END { exit !found }' \
+		"$(gvm_index_file)" | grep -q '^stable$'
+}
+
+# gvm_index_file_for <version> <os> <arch> <archive|source>
+# Prints "<filename> <size> <sha256>". Fails when the artifact is not published.
+gvm_index_file_for() {
+	local version="${1:-}" os="${2:-}" arch="${3:-}" kind="${4:-archive}"
+	gvm_index_refresh || return 1
+	awk -F'\t' -v v="$version" -v o="$os" -v a="$arch" -v k="$kind" '
+		$1 == "F" && $2 == v && $6 == k && $4 == o && $5 == a {
+			print $3 " " $7 " " $8
+			exit
+		}
+	' "$(gvm_index_file)"
+}
+
+# gvm_index_has_binary <version> [os] [arch]
+gvm_index_has_binary() {
+	local version="${1:-}" os="${2:-}" arch="${3:-}"
+	[ -n "$os" ] || os="$(gvm_platform_os)"
+	[ -n "$arch" ] || arch="$(gvm_platform_arch)"
+	[ -n "$(gvm_index_file_for "$version" "$os" "$arch" archive)" ]
+}
+
+# gvm_index_platforms <version>
+# Prints "os/arch" for every prebuilt binary of a release, sorted, so that a
+# failed install can say what Go does publish instead of just "not found".
+gvm_index_platforms() {
+	local version="${1:-}"
+	[ -n "$version" ] || return 1
+	gvm_index_refresh || return 1
+	awk -F'\t' -v v="$version" '
+		$1 == "F" && $2 == v && $6 == "archive" && $4 != "" && $5 != "" {
+			print $4 "/" $5
+		}
+	' "$(gvm_index_file)" | sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+# gvm_index_release_count
+gvm_index_release_count() {
+	gvm_index_refresh || return 1
+	awk -F'\t' '$1 == "V"' "$(gvm_index_file)" | wc -l | tr -d ' '
+}

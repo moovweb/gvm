@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+#
+# Turning what the user typed into a concrete Go version.
+#
+# Precedence, mirroring nvm:
+#   1. an exact installed version
+#   2. an alias (which may point at another alias)
+#   3. an exact release in the index
+#   4. a glob against released versions, taking the newest match
+#
+# The old implementation was `ls | sort | grep "$1" | head -1`, which resolves
+# `gvm use 1.24` to the *oldest* go1.24.x and treats `1.2` as matching `1.24`.
+
+# gvm_resolve_version <query> [mode]
+#   mode: local  -> only consider installed versions
+#         remote -> only consider published releases
+#         any    -> both (default)
+# Echoes a concrete version name. Returns 1 when nothing matches.
+gvm_resolve_version() {
+	local query="${1:-}" mode="${2:-any}" result
+
+	[ -n "$query" ] || return 1
+
+	case "$mode" in
+		local | remote | any) ;;
+		*) mode=any ;;
+	esac
+
+	# Names that are not version numbers. `master` is only ever created by
+	# `gvm install master --from-git`, so it exists locally or not at all.
+	case "$query" in
+		master)
+			if gvm_version_installed master; then
+				echo master
+				return 0
+			fi
+			return 1
+			;;
+		system)
+			# Not a gvm-managed version; `gvm use` handles this itself.
+			return 1
+			;;
+	esac
+
+	# An explicit goN name is taken at face value; it may legitimately be a
+	# locally built version that was never published.
+	if [[ "$query" =~ ^go[0-9] ]] && gvm_version_is_valid "$query"; then
+		if [ "$mode" = remote ] && ! gvm_index_has_release "$query"; then
+			return 1
+		fi
+		if [ "$mode" = local ] && [ ! -d "$GVM_ROOT/gos/$query" ]; then
+			return 1
+		fi
+		echo "$query"
+		return 0
+	fi
+
+	# An alias. The result still has to exist in whatever mode was asked for,
+	# otherwise `gvm use stable` would resolve to a release nobody installed.
+	if result="$(gvm_alias_resolve "$query" 2> /dev/null)"; then
+		if [ "$mode" = local ] && ! gvm_version_installed "$result"; then
+			result=""
+		elif [ "$mode" = remote ] && ! gvm_index_has_release "$result"; then
+			result=""
+		else
+			echo "$result"
+			return 0
+		fi
+	fi
+
+	# Installed versions, exact first then newest-glob.
+	if [ "$mode" != remote ]; then
+		if gvm_version_installed "$query"; then
+			echo "$query"
+			return 0
+		fi
+		while IFS= read -r glob; do
+			result="$(gvm_versions_installed | gvm_versions_latest "$glob")"
+			if [ -n "$result" ]; then
+				echo "$result"
+				return 0
+			fi
+		done <<< "$(gvm_version_candidates "$query")"
+	fi
+
+	# Published releases, exact first then newest-glob. Pre-releases are only
+	# considered when nothing stable matches, so `gvm install 1.28` picks
+	# go1.28.0 over go1.28rc1 when both exist.
+	if [ "$mode" != local ]; then
+		while IFS= read -r glob; do
+			result="$(gvm_index_latest_stable "$glob")"
+			[ -n "$result" ] || result="$(gvm_index_latest "$glob")"
+			if [ -n "$result" ]; then
+				echo "$result"
+				return 0
+			fi
+		done <<< "$(gvm_version_candidates "$query")"
+	fi
+
+	return 1
+}
+
+# gvm_versions_installed   installed version names, oldest first
+gvm_versions_installed() {
+	[ -d "$GVM_ROOT/gos" ] || return 0
+	local dir
+	for dir in "$GVM_ROOT"/gos/*; do
+		[ -d "$dir" ] || continue
+		# A finished install has a VERSION file; a half-finished one does not.
+		[ -f "$dir/VERSION" ] || [ -x "$dir/bin/go" ] || continue
+		basename -- "$dir"
+	done | gvm_versions_sorted
+}
+
+# gvm_version_installed <name>
+gvm_version_installed() {
+	[ -d "$GVM_ROOT/gos/${1:-}" ]
+}
+
+# gvm_index_has_release <version>
+gvm_index_has_release() {
+	gvm_index_refresh || return 1
+	awk -F'\t' -v v="${1:-}" \
+		'$1 == "V" && $2 == v { found = 1; exit } END { exit !found }' \
+		"$(gvm_index_file)"
+}

@@ -1,30 +1,86 @@
 #!/usr/bin/env bash
+#
+# gvm applymod - select the Go version the go.mod in this directory asks for.
+#
+# This matters more now that GOTOOLCHAIN is pinned to local: a go.mod asking for
+# a version that is not installed used to send the Go command off to download one
+# by itself, and now it just fails. This reads the `go` directive and switches.
+#
+# The old version of this script called `gvm listall -a` (which needed the
+# network), installed a toolchain without asking, and ended most of its error
+# paths with `return $(display_error ...)`, which returns the output of a
+# message rather than a status. It also ran `gvm use` without it being defined.
+#
+# It deliberately does not download anything. A surprise 70MB download is not
+# what "apply" should mean, so an uninstalled version gets the install command
+# printed instead, which is also what `gvm use` itself says.
+
 . "$GVM_ROOT/scripts/functions"
 
-function gvm_applymod(){
+# gvm_mod_version <go.mod>
+# The `go` directive as gvm spells it: "go 1.24.0" in the file, "1.24.0" here.
+# Prints nothing if there is no directive to read.
+gvm_mod_version() {
+	local mod_file="${1:-go.mod}" directive
 
-	mod_file=go.mod
-	if [ ! -f $mod_file ]; then
-		return $(display_error "can not find go.mod")
+	[ -f "$mod_file" ] || return 1
+
+	# `go 1.24.0`, and not the module line, and not a comment. A `toolchain
+	# go1.25.1` line is deliberately ignored: it states a minimum for the Go
+	# command, while the `go` line is the language version, which is what
+	# decides which toolchain builds the package.
+	directive="$(awk '
+		/^[[:space:]]*go[[:space:]]+1\.[0-9]/ {
+			line = $0
+			sub(/^[[:space:]]*go[[:space:]]+/, "", line)
+			sub(/[[:space:]]*(\/\/.*)?$/, "", line)
+			print line
+			exit
+		}
+	' "$mod_file")"
+
+	[ -n "$directive" ] || return 1
+	printf '%s' "$directive"
+}
+
+gvm_applymod() {
+	local mod_file="${1:-go.mod}" wanted
+
+	if ! wanted="$(gvm_mod_version "$mod_file")"; then
+		if [ ! -f "$mod_file" ]; then
+			display_error "No $mod_file here."
+			display_message "Run this from a Go module, or name one: gvm applymod path/to/go.mod"
+		else
+			display_error "$mod_file has no 'go' directive, so there is no version to apply."
+		fi
+		return 1
 	fi
 
-	mod_ver=$(cat go.mod | grep -E 'go [[:digit:]]+.[[:digit:]]+' | tr -d ' ' | tr -d '\n')
-    mod_name=$(cat go.mod | grep 'module ' | tr -d '\n')
-	display_message "$mod_name use go version: $mod_ver"
-
-	if [ $(gvm list | grep $mod_ver | wc -l | tr -d '\n') -lt 1 ]; then
-		if [ $(gvm listall -a| grep $mod_ver | wc -l | tr -d '\n') -lt 1 ]; then
-			return $(display_error "can not find a go version match $mod_ver") 
-		fi
-
-		display_message "$mod_ver does not exist, try to install..."
-		$GVM_ROOT/scripts/install $mod_ver
-
-		if [ $? -ne 0 ]; then
-			return $(display_error "gvm install $mod_ver error")
-		fi
+	# The `go` line is a minimum, not a pin: `go 1.24.0` is satisfied by go1.24.13,
+	# which is what actually builds it. Try the exact version first so a project
+	# pinned to a patch release still gets that one, then fall back to the newest
+	# installed release of the same minor.
+	local attempt
+	if attempt="$(gvm_use "$wanted" 2>&1)"; then
+		display_message "go.mod asks for go${wanted}"
+		printf '%s\n' "$attempt"
+		return 0
 	fi
 
-	gvm_use "$mod_ver"
+	case "$wanted" in
+		*.*.*)
+			local minor="${wanted%.*}"
+			if attempt="$(gvm_use "$minor" 2>&1)"; then
+				display_message "go.mod asks for go${wanted}"
+				printf '%s\n' "$attempt"
+				return 0
+			fi
+			;;
+	esac
 
+	# Nothing in that minor line is installed. The message from the first attempt
+	# is the useful one: it names the version to install.
+	display_message "go.mod asks for go${wanted}"
+	printf '%s\n' "$attempt"
+	return 1
 }

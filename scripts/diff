@@ -1,30 +1,77 @@
 #!/usr/bin/env bash
+#
+# gvm diff - show what has been changed inside an installed Go tree.
+#
+# The old version resolved its argument with `ls | sort -V | grep | head -1`,
+# which picked the *oldest* go1.24.x for `gvm diff 1.24`, and it compared
+# against a hard-coded /tmp/manifest.test that any other user on the machine
+# could pre-create as a symlink. It now uses the real resolver and a private
+# temporary file.
+
 . "$GVM_ROOT/scripts/functions"
 
-version=$1
+function show_usage() {
+	cat <<'EOF'
+Usage: gvm diff [<version>]
 
-if [ "$version" != "" ]; then
-  fuzzy_match=$($LS_PATH -1 "$GVM_ROOT/gos" | $SORT_PATH | $GREP_PATH "$version" | $HEAD_PATH -n 1 | $GREP_PATH "$version") ||
-		display_fatal "Invalid version $version"
+  Compares an installed Go tree with the file list recorded at install time and
+  reports what was added, removed or left behind. Useful after building from
+  source with cgo, or after dropping packages into a GOROOT by hand.
 
-	foldername=$GVM_ROOT/gos/$fuzzy_match
-else
-	if [[ "$gvm_go_name" != "" ]]; then
-		foldername=$GVM_ROOT/gos/$gvm_go_name
-	else
+  With no argument, the currently selected version is used.
+EOF
+}
+
+case "${1:-}" in
+	-h | --help)
+		show_usage
+		exit 0
+		;;
+esac
+
+requested="${1:-}"
+if [ -z "$requested" ]; then
+	if [ -z "${gvm_go_name:-}" ]; then
+		display_message "Run 'gvm use <version>' first"
 		display_fatal "No version selected"
 	fi
+	requested="$gvm_go_name"
 fi
 
-if [[ -d $foldername ]]; then
-	builtin cd "$foldername"
-	find . > /tmp/manifest.test
-	diff manifest /tmp/manifest.test
-	if [[ "$?" == "0" ]]; then
-		display_message "Clean $foldername"
-	else
-		display_message "*Dirty* $foldername"
-	fi
-else
-	display_fatal "Invalid version"
+resolved="$(gvm_resolve_version "$requested" local 2> /dev/null)" || resolved=""
+if [ -z "$resolved" ]; then
+	display_error "No installed Go matches '$requested'"
+	display_message "Run 'gvm ls' to see what is installed."
+	exit 65
 fi
+
+goroot="$GVM_ROOT/gos/$resolved"
+if [ ! -f "$goroot/manifest" ]; then
+	display_error "$resolved has no manifest, so there is nothing to compare against."
+	display_message "It may predate manifests, or the install is incomplete."
+	exit 66
+fi
+
+tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/gvm-diff.XXXXXX")" || exit 1
+trap 'rm -rf "$tmpdir"' EXIT INT TERM
+current="$tmpdir/current"
+recorded="$tmpdir/recorded"
+
+# The manifest written at install time lists every entry in the tree and does
+# not list itself, so it has to be filtered out here too or it always shows up
+# as an addition.
+(cd "$goroot" && find .) 2> /dev/null | grep -v '^\./manifest$' | sort > "$current"
+grep -v '^\./manifest$' "$goroot/manifest" | sort > "$recorded"
+
+added="$(comm -13 "$recorded" "$current")"
+removed="$(comm -23 "$recorded" "$current")"
+
+if [ -z "$added" ] && [ -z "$removed" ]; then
+	display_message "Clean $goroot"
+	exit 0
+fi
+
+display_warning "*Dirty* $goroot"
+[ -n "$added" ] && display_message "  added:" && printf '    + %s\n' $added
+[ -n "$removed" ] && display_message "  removed:" && printf '    - %s\n' $removed
+exit 1

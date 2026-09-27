@@ -1,84 +1,119 @@
 #!/usr/bin/env bash
+#
+# gvm completion - shell completion for gvm.
+#
+# The old version completed `cross`, `get` and a `pkg` command that no longer
+# exist, left out doctor, diff, ls-remote, pkgenv, linkthis and implode, read
+# $gvm_go_name without a default (so `set -u` killed the shell), and offered
+# `git tag` output for `gvm install` by cd-ing into $GVM_ROOT/archive/go, a
+# directory the new installer never creates.
+#
+# Completion must never block, so nothing here touches the network: the release
+# list comes from the cached index only, and an empty cache simply means fewer
+# suggestions.
+#
+# Run it to print the script, or source it to install the completions:
+#   source <(gvm completion)
 
-. $GVM_ROOT/scripts/functions
+# When sourced, define the functions and register them. When executed, print.
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ "${BASH_SOURCE[0]}" != "${0}" ]; then
 
-_gvm() {
-	local cur prev opts base
-	COMPREPLY=()
-	cur="${COMP_WORDS[COMP_CWORD]}"
-	base="${COMP_WORDS[0]}"
-	cmd="${COMP_WORDS[1]}"
-	subcmd="${COMP_WORDS[2]}"
+	. "$GVM_ROOT/scripts/functions"
 
-	case "${cmd}" in
-		pkgset)
-			case "${subcmd}" in
-				use|delete|empty)
-					[[ "$gvm_go_name" == "" ]] && return 1
-					[[ $COMP_CWORD > 3 ]] && return 1
-					local version="$(for x in `$LS_PATH -1 $GVM_ROOT/pkgsets/$gvm_go_name`; do echo ${x} ; done )"
-					COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
-					return 0
-				;;
-				create|list)
-					return 1
-				;;
-				*)
-					opts="create delete empty list use"
-					COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-					return 0
-				;;
+	# _gvm_installed
+	# Installed versions plus every alias that points at something installed, so
+	# `gvm use sta<tab>` works the way it reads.
+	_gvm_installed() {
+		local version
+		for version in $(gvm_versions_installed); do
+			echo "$version"
+			echo "$version#go"
+		done
+		local name target
+		for name in $(gvm_alias_list); do
+			target="$(gvm_alias_raw "$name")"
+			case "$target" in
+				[0-9]*)
+					[ -d "$GVM_ROOT/gos/go$target" ] && echo "$name"
+					;;
 			esac
-		;;
-		pkg)
-			case "${subcmd}" in
-				uninstall)
-					[[ "$gvm_go_name" == "" ]] && return 1
-					[[ "$gvm_pkgset_name" == "" ]] && return 1
-					if [[ "$COMP_CWORD" == "3" ]]; then
-						local version="$(for x in `$LS_PATH -1 $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm`; do echo ${x} ; done )"
-						COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
-						return 0
-					elif [[ "$COMP_CWORD" == "4" ]]; then
-						local version="$(for x in `$LS_PATH -1 $GVM_ROOT/pkgsets/$gvm_go_name/$gvm_pkgset_name/pkg.gvm/${COMP_WORDS[3]}`; do echo ${x} ; done )"
-						COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
-						return 0
-					fi
-					return 1
-				;;
-				install|list)
-					return 1
-				;;
-				*)
-					opts="install list uninstall"
-					COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-					return 0
-				;;
-			esac
-		;;
-		install)
-			[ ! -d $GVM_ROOT/archive/go ] && return 1
-			[[ $COMP_CWORD > 2 ]] && return 1
-			local version="$(builtin cd $GVM_ROOT/archive/go && for x in `git tag | $GREP_PATH -E "release|tip|go"`; do echo ${x} ; done )"
-			COMPREPLY=( $(compgen -W "${version}" -- ${cur}) )
-			return 0
-		;;
-		use|uninstall)
-			[ ! -d $GVM_ROOT/gos ] && return 1
-			[[ $COMP_CWORD > 2 ]] && return 1
-			local installed_versions="$(for x in `$LS_PATH -1 $GVM_ROOT/gos`; do echo ${x} ; done )"
-			COMPREPLY=( $(compgen -W "${installed_versions}" -- ${cur}) )
-			return 0
-		;;
-		*)
-			[[ $COMP_CWORD > 1 ]] && return 1
-			opts="alias get install list listall uninstall use version"
-			[[ "$gvm_go_name" != "" ]] && opts="alias cross diff get install list listall pkgset uninstall use version"
-			[[ "$gvm_pkgset_name" != "" ]] && opts="alias cross diff get install list listall pkg pkgset uninstall use version"
-			COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-			return 0
-		;;
-	esac
-}
-complete -F _gvm gvm
+		done
+		for name in stable latest unstable oldest default; do
+			echo "$name"
+		done
+	}
 
+	# _gvm_index_versions
+	# Cached release names only. gvm_index_refresh would fetch, and a completion
+	# hook that opens a socket is worse than useless.
+	_gvm_index_versions() {
+		local file
+		file="$(gvm_index_file 2> /dev/null)" || return 0
+		[ -f "$file" ] || return 0
+		cut -f1 "$file" 2> /dev/null
+	}
+
+	_gvm() {
+		local cur cmd subcmd
+		COMPREPLY=()
+		cur="${COMP_WORDS[COMP_CWORD]:-}"
+		cmd="${COMP_WORDS[1]:-}"
+		subcmd="${COMP_WORDS[2]:-}"
+
+		# Nothing sensible to suggest past the first argument for most commands.
+		[[ $COMP_CWORD -gt 2 ]] && return 0
+
+		case "$cmd" in
+			install | ls-remote)
+				COMPREPLY=($(compgen -W "$(_gvm_index_versions)" -- "$cur"))
+				return 0
+				;;
+			use | uninstall | delete | diff | which | pkgenv)
+				COMPREPLY=($(compgen -W "$(_gvm_installed)" -- "$cur"))
+				return 0
+				;;
+			alias)
+				if [[ $COMP_CWORD -eq 2 ]]; then
+					COMPREPLY=($(compgen -W "create delete list" -- "$cur"))
+				else
+					COMPREPLY=($(compgen -W "$(_gvm_installed)" -- "$cur"))
+				fi
+				return 0
+				;;
+			pkgset)
+				COMPREPLY=($(compgen -W "create delete empty list use" -- "$cur"))
+				return 0
+				;;
+			linkthis)
+				# A package path, so anything the user already typed is a better
+				# guess than a list of nothing.
+				return 0
+				;;
+			*)
+				local opts="" script
+				# bin/gvm dispatches purely on "is there a file with this name in
+				# scripts/", so enumerating the same directories keeps the two in
+				# step: a new command completes as soon as it exists.
+				for script in "$GVM_ROOT"/scripts/*; do
+					[ -x "$script" ] || continue
+					opts="$opts $(basename "$script")"
+				done
+				for script in "$GVM_ROOT"/scripts/env/*; do
+					[ -x "$script" ] || continue
+					opts="$opts $(basename "$script")"
+				done
+				# The commands that exist only as shell functions.
+				opts="$opts help"
+				COMPREPLY=($(compgen -W "$opts" -- "$cur"))
+				return 0
+				;;
+		esac
+	}
+
+	complete -F _gvm gvm 2> /dev/null
+
+else
+
+	cat "$0"
+
+fi

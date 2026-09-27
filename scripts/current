@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# gvm current - what is selected right now, and where it came from.
+
+. "$GVM_ROOT/scripts/functions"
+
+if [ -z "${gvm_go_name:-}" ]; then
+	display_message "No Go version is currently selected"
+	display_message "Run 'gvm use <version>' or 'gvm install <version>'"
+	exit 1
+fi
+
+# The version itself goes to stdout so `gvm current` can be captured; the
+# annotations go to stderr so they do not pollute that.
+echo "$gvm_go_name"
+
+resolved="$(gvm_alias_resolve "$gvm_go_name" 2> /dev/null)" || resolved=""
+if [ -n "$resolved" ] && [ "$resolved" != "$gvm_go_name" ]; then
+	display_message "  alias $gvm_go_name -> $resolved" >&2
+fi
+
+recorded="$(gvm_default_recorded 2> /dev/null)"
+if [ -n "$recorded" ] && [ "$recorded" = "$gvm_go_name" ]; then
+	display_message "  this is the default version" >&2
+fi
