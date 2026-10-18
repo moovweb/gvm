@@ -32,17 +32,17 @@ To install:
 
 1.  Install [Bison](https://www.gnu.org/software/bison/):
 
-    ```
-    sudo apt-get install bison
+    ```sh
+    sudo apt install bison
+    sudo dnf install bison
+    sudo pacman -S bison
     ```
 
 1.  Install gvm:
 
+    ```sh
+    bash -c "curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer | bash"
     ```
-    bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-    ```
-
-Or if you are using zsh just change `bash` with `zsh`
 
 Installing Go
 =============
